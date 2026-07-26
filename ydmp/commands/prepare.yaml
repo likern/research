@@ -1,0 +1,69 @@
+command: PREPARE
+version: 1
+status: stable
+
+input:
+  accepted: [doi, arxiv_id, url, title, bibtex, uploaded_pdf]
+  optional_fields: [curriculum, learner_profile, requested_version, notes]
+  default_curriculum: YDB
+
+output:
+  canonical_object: PreparationPacket
+  schema: schemas/preparation-packet.schema.json
+  files:
+    - prepare.yaml
+    - prepare.json
+    - prepare.md
+    - prepare.typ
+    - references.bib
+
+pipeline:
+  - input_normalization
+  - canonical_identity_resolution
+  - version_reconciliation
+  - authoritative_source_verification
+  - content_inspection
+  - curriculum_mapping
+  - terminology_analysis
+  - pre_reading_question_generation
+  - validation
+  - persistence_rendering
+
+requirements:
+  input_normalization:
+    - classify input type
+    - preserve original input
+    - extract DOI, arXiv ID and metadata hints
+    - calculate PDF SHA-256 when supplied
+  canonical_identity_resolution:
+    - resolve title, authors, venue, year and identifiers
+    - retain ambiguous candidates
+  version_reconciliation:
+    - enumerate known versions
+    - select recommended reading version
+    - explain selection
+  authoritative_source_verification:
+    - retain evidence for metadata
+    - record conflicts
+  content_inspection:
+    - inspect abstract, introduction, headings, contribution claims and conclusion
+    - inspect important diagrams and tables
+    - avoid a complete substitute summary
+  curriculum_mapping:
+    - choose stage and position
+    - list prerequisites
+    - explain why_now
+  terminology_analysis:
+    - compare terminology with learner profile
+    - classify prerequisite, paper_defined or deferrable
+  pre_reading_question_generation:
+    - cover problem, model, mechanism, invariants, failures, evaluation and YDB mapping
+    - do not embed complete answers
+  validation:
+    - validate JSON Schema
+    - compare YAML and JSON semantics
+    - ensure selected version and authoritative evidence
+  persistence_rendering:
+    - create all five artifacts
+    - package ZIP
+    - report suggested repository path
