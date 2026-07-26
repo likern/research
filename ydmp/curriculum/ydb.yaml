@@ -1,0 +1,31 @@
+id: ydb-deep-mastery
+name: YDB Deep Mastery
+version: 1
+stages:
+  - {id: architecture-map, order: 0, name: "Архитектурная карта YDB",
+     topics: [actors, nodes, tablets, DataShard, ColumnShard, SchemeShard,
+              Hive, StateStorage, LocalDB, BlobStorage, DSProxy, VDisk, PDisk]}
+  - {id: isolation-theory, order: 1, name: "Isolation и consistency",
+     topics: [serializability, strict-serializability, linearizability,
+              snapshot-isolation, dependency-graphs, write-skew]}
+  - {id: occ-mvcc, order: 2, name: "OCC и MVCC",
+     topics: [optimistic-concurrency-control, validation, MVCC, snapshots,
+              version-order, garbage-collection]}
+  - {id: logical-time-commit, order: 3, name: "Logical time и atomic commit",
+     topics: [logical-clocks, consensus, atomic-commit, two-phase-commit,
+              paxos-commit]}
+  - {id: calvin-ydb-transactions, order: 4,
+     name: "Calvin и distributed transactions YDB",
+     topics: [Calvin, PlanStep, TxId, Coordinator, Mediator, ReadSet,
+              volatile-transactions, optimistic-locks]}
+  - {id: storage-recovery, order: 5,
+     name: "Tablets, LSM, recovery и BlobStorage",
+     topics: [LSM-tree, compaction, recovery-log, immutable-blobs,
+              erasure-coding, failure-domains, tablet-migration]}
+  - {id: query-processing, order: 6, name: "KQP, DQ и optimizer",
+     topics: [KQP, DQ, exchange, CBO, DPHyp, cardinality-estimation,
+              count-min-sketch]}
+  - {id: columnar-execution, order: 7,
+     name: "ColumnShard и vectorized execution",
+     topics: [ColumnShard, column-store, vectorized-execution, Arrow,
+              predicate-pushdown, late-materialization, LLVM]}
