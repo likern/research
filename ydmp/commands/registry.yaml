@@ -1,0 +1,7 @@
+version: 1
+commands:
+  PREPARE:
+    specification: commands/prepare.yaml
+    aliases: [PAPER_PREPARE, INTAKE]
+    status: stable
+    description: Generate a canonical PreparationPacket and five artifacts.
