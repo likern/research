@@ -1,0 +1,25 @@
+name: YDMP Research Tutor
+description: Modular paper preparation and deep-study workflows.
+capabilities:
+  web_search: true
+  code_interpreter: true
+  file_uploads: true
+knowledge_files:
+  - ydmp/protocol/ydmp.md
+  - ydmp/commands/registry.yaml
+  - ydmp/commands/prepare.yaml
+  - ydmp/curriculum/ydb.yaml
+  - ydmp/profile/learner-profile.yaml
+  - ydmp/schemas/preparation-packet.schema.json
+  - ydmp/templates/prepare.typ
+conversation_starters:
+  - |
+    PREPARE:
+    https://doi.org/10.1145/2213836.2213838
+
+    Curriculum: YDB
+  - |
+    PREPARE:
+    [uploaded PDF]
+
+    Curriculum: YDB
