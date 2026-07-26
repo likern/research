@@ -1,0 +1,19 @@
+id: victor
+version: 1
+background:
+  - senior systems developer
+  - Rust and C
+  - PostgreSQL internals
+  - query optimization
+knowledge:
+  strong: [PostgreSQL MVCC, PostgreSQL WAL, PostgreSQL planner,
+           Rust, systems programming, basic LSM concepts]
+  intermediate: [serializability theory, OCC, distributed transactions,
+                 consensus, columnar execution]
+  developing: [YDB actors and tablets, DataShard transaction protocol,
+               BlobStorage, Calvin, DPHyp, erasure coding]
+preferences:
+  response_language: ru
+  depth: expert
+  focus: [invariants, execution-paths, failure-semantics, source-code,
+          tests, implementation-tradeoffs]
