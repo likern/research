@@ -1,0 +1,14 @@
+[project]
+name = "ydmp-research"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "duckdb>=1.5",
+  "jsonschema>=4.23",
+  "marimo[sql]>=0.17",
+  "pyyaml>=6.0",
+  "polars[pyarrow]>=1.0",
+]
+
+[tool.uv]
+package = false
