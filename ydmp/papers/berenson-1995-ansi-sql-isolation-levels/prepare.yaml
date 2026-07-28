@@ -1,0 +1,379 @@
+schema_version: '1.0'
+paper_id: berenson-1995-ansi-sql-isolation-levels
+input:
+  kind: doi
+  original: 'PREPARE:
+
+    https://doi.org/10.1145/223784.223785
+
+    @Web search
+
+    https://www.researchgate.net/publication/220485004_A_critique_of_ANSI_SQL_isolation_levels
+
+    uploaded_pdf: 0701157(1).pdf'
+  pdf_sha256: 734e83d498b9730ed5a2c73edbff9785df965b64f67a4924ea2672d7f757c818
+  normalized:
+    doi: 10.1145/223784.223785
+    supplied_secondary_url: https://www.researchgate.net/publication/220485004_A_critique_of_ANSI_SQL_isolation_levels
+    uploaded_pdf_name: 0701157(1).pdf
+    uploaded_pdf_pages: 12
+paper:
+  canonical_title: A Critique of ANSI SQL Isolation Levels
+  authors:
+  - name: Hal Berenson
+    name_as_printed: Hal Berenson
+    affiliation: Microsoft Corp.
+    orcid: null
+  - name: Philip A. Bernstein
+    name_as_printed: Phil Bernstein
+    affiliation: Microsoft Corp.
+    orcid: null
+  - name: Jim Gray
+    name_as_printed: Jim Gray
+    affiliation: U.C. Berkeley in the article body; Microsoft Corp. on the technical-report cover
+    orcid: null
+  - name: Jim Melton
+    name_as_printed: Jim Melton
+    affiliation: Sybase Corp.
+    orcid: null
+  - name: Elizabeth J. O'Neil
+    name_as_printed: Elizabeth O'Neil
+    affiliation: UMass/Boston
+    orcid: null
+  - name: Patrick E. O'Neil
+    name_as_printed: Patrick O'Neil
+    affiliation: UMass/Boston
+    orcid: null
+  publication:
+    type: inproceedings
+    venue: Proceedings of the 1995 ACM SIGMOD International Conference on Management of Data
+    series: SIGMOD '95
+    publisher: Association for Computing Machinery
+    location: San Jose, California, USA
+    publication_date: '1995-05-22'
+    year: 1995
+    pages: 1-10
+    isbn: 0897917316
+    parallel_record:
+      journal: ACM SIGMOD Record
+      volume: '24'
+      issue: '2'
+      month: May
+      year: 1995
+      pages: 1-10
+  identifiers:
+    doi: 10.1145/223784.223785
+    alternate_acm_doi: 10.1145/568271.223785
+    arxiv: cs/0701157
+    arxiv_doi: 10.48550/arXiv.cs/0701157
+    msr_technical_report: MSR-TR-95-51
+    dblp_key: conf/sigmod/BerensonBGMOO95
+    isbn: 0897917316
+  versions:
+    selected_version: 'Uploaded 12-page PDF: repository copy carrying the MSR-TR-95-51 cover and the SIGMOD
+      ''95 article text'
+    selection_rationale:
+      evidence: INFERRED
+      text: This copy is complete and locally inspectable, contains the technical-report cover, article
+        body, figures, tables, and references. Cite the canonical ACM proceedings DOI while reading this
+        PDF. Its 2007 PDF metadata is consistent with a later repository deposit, not with a new publication.
+    available_versions:
+    - name: ACM SIGMOD '95 proceedings record
+      year: 1995
+      identifier: doi:10.1145/223784.223785
+      status: canonical bibliographic identity
+      selected_for_reading: false
+      source: https://dl.acm.org/doi/10.1145/223784.223785
+      evidence: CONFIRMED
+    - name: ACM SIGMOD Record 24(2) record
+      year: 1995
+      identifier: doi:10.1145/568271.223785
+      status: parallel ACM record of the same title and pagination
+      selected_for_reading: false
+      source: https://dl.acm.org/doi/10.1145/568271.223785
+      evidence: CONFIRMED
+    - name: Microsoft Research technical report
+      year: 1995
+      identifier: MSR-TR-95-51
+      status: author/institutional version
+      selected_for_reading: true
+      source: https://www.microsoft.com/en-us/research/publication/a-critique-of-ansi-sql-isolation-levels/
+      evidence: CONFIRMED
+    - name: Official arXiv repository version
+      year: 2007
+      identifier: arXiv:cs/0701157
+      status: later repository deposit of the 1995 work
+      selected_for_reading: false
+      source: https://arxiv.org/abs/cs/0701157
+      evidence: CONFIRMED
+    - name: ResearchGate page supplied by the user
+      year: 2007
+      identifier: ResearchGate publication 220485004
+      status: secondary mirror; not used as canonical identity
+      selected_for_reading: false
+      source: https://www.researchgate.net/publication/220485004_A_critique_of_ANSI_SQL_isolation_levels
+      evidence: CONFIRMED
+  authoritative_sources:
+  - source: ACM Digital Library
+    url: https://dl.acm.org/doi/10.1145/223784.223785
+    role: canonical conference identity, DOI, venue, pages
+    evidence: CONFIRMED
+    opened: true
+  - source: Microsoft Research
+    url: https://www.microsoft.com/en-us/research/publication/a-critique-of-ansi-sql-isolation-levels/
+    role: technical-report identity MSR-TR-95-51, date, authors, abstract
+    evidence: CONFIRMED
+    opened: true
+  - source: arXiv
+    url: https://arxiv.org/abs/cs/0701157
+    role: official repository identifier and 2007 deposit date
+    evidence: CONFIRMED
+    opened: true
+  - source: DBLP
+    url: https://dblp.org/rec/conf/sigmod/BerensonBGMOO95.html
+    role: independent bibliographic cross-check
+    evidence: CONFIRMED
+    opened: true
+  abstract: '[CONFIRMED] The paper argues that the SQL-92 phenomena are ambiguous and insufficient to
+    characterize common isolation implementations, proposes clearer phenomena, and defines Snapshot Isolation
+    as an important multiversion isolation type.'
+  content_inspection:
+    inspected_material:
+    - location: PDF pp. 2-3
+      content: abstract, introduction, and serializability terminology
+      evidence: CONFIRMED
+    - location: PDF pp. 3-7
+      content: strict versus broad readings of P1-P3; locking definitions; P0 and revised isolation table
+      evidence: CONFIRMED
+    - location: PDF pp. 7-10
+      content: Cursor Stability, Snapshot Isolation, Read Skew, Write Skew, and the comparison with REPEATABLE
+        READ
+      evidence: CONFIRMED
+    - location: PDF pp. 10-12
+      content: summary, conclusion, Figure 2, Table 4, and references
+      evidence: CONFIRMED
+    important_visuals:
+    - location: PDF p. 4, Table 1
+      attention: Separate the original ANSI matrix from the paper's later corrected characterization.
+      evidence: CONFIRMED
+    - location: PDF p. 5, Table 2
+      attention: Track lock scope, mode, and duration rather than treating isolation-level names as sufficient
+        semantics.
+      evidence: CONFIRMED
+    - location: PDF p. 7, Table 3
+      attention: Use this as the paper's repaired P0-P3 matrix, not as a complete multiversion taxonomy.
+      evidence: CONFIRMED
+    - location: PDF p. 11, Figure 2 and Table 4
+      attention: Reconstruct the partial order and note the incomparable branches rather than memorizing
+        a single linear ladder.
+      evidence: CONFIRMED
+curriculum:
+  curriculum_id: ydb-deep-mastery
+  stage:
+    id: isolation-theory
+    order: 1
+    name: Isolation и consistency
+  position: Core reading near the beginning of stage 1, before OCC/MVCC and distributed-transaction implementation
+    papers.
+  prerequisites:
+  - evidence: INFERRED
+    text: Basic transaction histories, conflicting operations, and conflict-serializability.
+  - evidence: INFERRED
+    text: Two-phase locking, lock duration, and the purpose of predicate or range protection.
+  - evidence: INFERRED
+    text: MVCC snapshots and transaction start/commit ordering at the level of implementation concepts.
+  why_now:
+    evidence: INFERRED
+    text: The paper supplies the anomaly vocabulary and dependency-oriented questions needed to compare
+      YDB transaction guarantees without equating product-level names such as REPEATABLE READ or SERIALIZABLE
+      with one implementation mechanism.
+prepare:
+  expected_problem:
+    evidence: CONFIRMED
+    text: The SQL-92 definition by three English-language phenomena does not uniquely characterize widely
+      deployed locking and multiversion isolation behaviors.
+  expected_contribution:
+  - evidence: CONFIRMED
+    text: Disambiguate strict anomaly instances A1-A3 from broader prohibited phenomena P1-P3.
+  - evidence: CONFIRMED
+    text: Add and use further phenomena, especially Dirty Write (P0), Lost Update (P4), Read Skew (A5A),
+      and Write Skew (A5B).
+  - evidence: CONFIRMED
+    text: Define Snapshot Isolation using a transaction snapshot and a first-committer-wins rule, then
+      place it in a partial order of isolation types.
+  reading_scope:
+    boundary:
+      evidence: CONFIRMED
+      text: Use this packet to orient attention; do not treat it as a replacement for deriving the example
+        histories and comparisons.
+    first_pass:
+    - 'Abstract and §1: intended failure of the ANSI taxonomy.'
+    - '§2.1-2.3: history, dependency graph, phenomena, and locking model.'
+    - '§3: P0 plus the strict/broad interpretation argument.'
+    - '§4.2: Snapshot Isolation and the H5 counterexample.'
+    - 'Figure 2 and Table 4: final partial-order map.'
+    derive_by_hand:
+    - For H1-H5, write the dependency edges before reading the authors' conclusion.
+    - For each table row, distinguish item locks from predicate locks.
+    - For Snapshot Isolation, separate read visibility from commit validation.
+    defer:
+    - Detailed proof references to the longer OOBBGM version can be deferred until the paper's examples
+      and definitions are stable.
+    - Product-specific historical claims about 1990s implementations are context, not the first-pass learning
+      target.
+  potentially_unknown_terms:
+  - term: phenomenon P_i versus anomaly A_i
+    classification: paper_defined
+    evidence: INFERRED
+    reason: The notation is specific to this paper and may differ from the terminology used in PostgreSQL
+      internals.
+    reading_action: Record the quantifier/commit-abort difference, not only the name.
+  - term: Degrees of Consistency (GLPT)
+    classification: deferrable
+    evidence: INFERRED
+    reason: This historical naming is less likely to be central in a modern PostgreSQL-oriented mental
+      model.
+    reading_action: Map Degree 1/2/3 only after the locking table is clear.
+  - term: predicate lock as protection of a logical, possibly absent set
+    classification: prerequisite
+    evidence: INFERRED
+    reason: The paper uses a broader formal object than a row lock and ties it directly to P3.
+    reading_action: Translate each predicate read into the set of possible conflicting writes.
+  - term: MV-history and view equivalence
+    classification: prerequisite
+    evidence: INFERRED
+    reason: The paper sketches this formal bridge but delegates fuller treatment to earlier literature
+      and a longer version.
+    reading_action: Do not assume a single-version history preserves version choice.
+  - term: Cursor Stability
+    classification: paper_defined
+    evidence: INFERRED
+    reason: It is a historically important intermediate isolation type but not a standard term in all
+      current DBMS discussions.
+    reading_action: Track exactly how long the current cursor row stays protected.
+  - term: first-committer-wins
+    classification: paper_defined
+    evidence: INFERRED
+    reason: The implementation idea may be familiar through MVCC, while the paper's timestamp interval
+      formulation is more specific.
+    reading_action: Write down the tested overlap of write sets at commit.
+  pre_reading_questions:
+  - id: Q1
+    category: problem
+    question: Which ambiguity in the SQL-92 prose lets two readers assign different operational meaning
+      to the same named phenomenon?
+  - id: Q2
+    category: model
+    question: What information must a history and its dependency graph retain for the paper's serializability
+      comparisons?
+  - id: Q3
+    category: model
+    question: How do the broad P1-P3 patterns differ logically from the strict A1-A3 anomaly instances?
+  - id: Q4
+    category: mechanism
+    question: For P0-P3, which lock scope and duration would exclude each pattern in a single-version
+      scheduler?
+  - id: Q5
+    category: invariants
+    question: Why does Dirty Write matter simultaneously to database constraints and to rollback/recovery
+      semantics?
+  - id: Q6
+    category: mechanism
+    question: What additional protection does Cursor Stability add to READ COMMITTED, and where does that
+      protection stop?
+  - id: Q7
+    category: mechanism
+    question: Which two independent rules define Snapshot Isolation's read visibility and commit eligibility?
+  - id: Q8
+    category: failures
+    question: Can you derive the dependency cycle in H5 without relying on the label Write Skew?
+  - id: Q9
+    category: failures
+    question: Which counterexamples are needed to show that Snapshot Isolation and locking REPEATABLE
+      READ are incomparable?
+  - id: Q10
+    category: evaluation
+    question: Which claims are supported by constructed histories, equivalence arguments, or cited proofs,
+      and which are merely implementation observations?
+  - id: Q11
+    category: YDB mapping
+    question: Which YDB guarantees would need to be expressed as visibility, conflict, and commit-order
+      rules before comparing them with this paper's levels?
+  - id: Q12
+    category: YDB mapping
+    question: Across multiple DataShard participants, where would read-set, write-set, and predicate dependencies
+      have to be detected or conservatively represented?
+  comparison_targets:
+  - target: SQL-92 strict A1-A3 versus broad P1-P3
+    purpose: Separate observed symptoms from prohibited execution patterns.
+  - target: locking REPEATABLE READ versus Snapshot Isolation
+    purpose: Practice partial-order reasoning rather than a linear strength ranking.
+  - target: Cursor Stability versus READ COMMITTED
+    purpose: Identify a mechanism-specific intermediate guarantee.
+  - target: PostgreSQL REPEATABLE READ and SERIALIZABLE
+    purpose: Use existing PostgreSQL knowledge as a later verification target; do not import its semantics
+      into the 1995 definitions.
+  - target: Adya's generalized isolation model
+    purpose: Follow-up reading for a more general dependency taxonomy.
+  ydb_mapping_hypotheses:
+  - evidence: HYPOTHESIS
+    text: The paper's dependency-graph questions can be reused to specify cross-DataShard anomalies, but
+      YDB's actual graph edges and validation points must be verified from authoritative YDB sources.
+  - evidence: HYPOTHESIS
+    text: Snapshot Isolation's first-committer-wins rule may be a useful comparison target for YDB optimistic-lock
+      or write-conflict handling; equivalence must not be assumed.
+  - evidence: HYPOTHESIS
+    text: P3 highlights the need to reason about predicate or range reads whose conflicting writes may
+      occur on different shards.
+  - evidence: HYPOTHESIS
+    text: The Start-Timestamp/Commit-Timestamp split may prepare later analysis of YDB logical time, PlanStep,
+      and visibility, but this paper alone does not establish that mapping.
+verification:
+  metadata_conflicts:
+  - evidence: CONFIRMED
+    field: DOI
+    details: 'ACM exposes two records for the same title and pages: 10.1145/223784.223785 for the SIGMOD
+      ''95 proceedings and 10.1145/568271.223785 for ACM SIGMOD Record 24(2).'
+    resolution: Use the DOI supplied by the user as canonical; preserve the SIGMOD Record DOI as an alternate
+      identifier.
+  - evidence: CONFIRMED
+    field: publication year/date
+    details: ResearchGate labels the supplied page January 2007, while ACM and the article identify the
+      work as a 1995 publication; arXiv records a 2007 deposit.
+    resolution: Treat 1995 as the publication year and 2007 as repository/mirror metadata, not a new canonical
+      publication.
+  - evidence: CONFIRMED
+    field: pagination
+    details: 'Canonical publication metadata says pages 1-10, while the uploaded PDF has 12 physical pages:
+      a report cover plus article pages whose footer runs through -11.'
+    resolution: Preserve canonical citation pages and record PDF page count separately.
+  - evidence: CONFIRMED
+    field: Jim Gray affiliation
+    details: The technical-report cover lists Microsoft Corp.; the article body lists U.C. Berkeley.
+    resolution: Preserve both source-specific affiliations.
+  unresolved_questions:
+  - evidence: HYPOTHESIS
+    question: Is the uploaded PDF byte-identical to the current Microsoft Research download or the arXiv
+      PDF?
+    status: Not established; the local file was hashed, but remote bytes were not downloaded for comparison.
+  - evidence: HYPOTHESIS
+    question: Does the longer OOBBGM version contain proofs or definitions materially different from this
+      1995 text?
+    status: Deferred to follow-up bibliographic resolution.
+  confidence: high
+  validated_at: '2026-07-26T16:08:48+00:00'
+  schema_valid: true
+  validation_details:
+    json_schema: passed
+    yaml_json_semantic_equality: true
+    curriculum_stage_exists: true
+    selected_version_explicit: true
+    authoritative_source_present: true
+    metadata_conflicts_preserved: true
+    questions_do_not_embed_full_answers: true
+    pdf_sha256_calculated: true
+    github_updated: true
+    duckdb_updated: false
+    github_repository: likern/research
+    github_branch: ydmp/berenson-1995-prepare
+  recommended_repository_path: ydmp/papers/berenson-1995-ansi-sql-isolation-levels/
