@@ -1,0 +1,140 @@
+version: 1
+paper_id: berenson-1995-ansi-sql-isolation-levels
+updated_at: '2026-07-28'
+
+card_policy:
+  core_cards_only: true
+  full_dialogue_replay: false
+  expected_elements_not_essay: true
+
+cards:
+  - id: ansi-strict-versus-broad
+    prompt: What is the general difference between strict anomaly definitions A1-A3 and broad phenomena P1-P3?
+    expected_elements:
+      - strict definitions require a particular completed outcome or repeated observation
+      - broad phenomena forbid the dangerous interleaving before the final outcome is known
+      - broad definitions exclude histories missed by the strict reading
+    source_scope: focal-paper
+    difficulty: medium
+
+  - id: a1-versus-p1
+    prompt: Why is A1 Dirty Read too narrow compared with P1?
+    expected_elements:
+      - A1 requires the writer to abort
+      - dirty exposure exists before commit or abort is known
+      - P1 forbids reading an uncommitted write regardless of the writer's later outcome
+    source_scope: focal-paper
+    difficulty: easy
+
+  - id: p0-versus-p4
+    prompt: Distinguish P0 Dirty Write from P4 Lost Update.
+    expected_elements:
+      - P0 needs two writes to the same item before the first writer completes
+      - P0 does not require a read
+      - P4 uses a stale value read earlier and may overwrite an already committed update
+    source_scope: focal-paper
+    difficulty: medium
+
+  - id: dirty-write-recovery
+    prompt: Give the two independent reasons the paper treats Dirty Write as unacceptable at every isolation level.
+    expected_elements:
+      - interleaved writes can combine fragments of transactions and violate an invariant
+      - undo becomes ambiguous and can erase another transaction or resurrect aborted data
+    source_scope: focal-paper
+    difficulty: hard
+
+  - id: cursor-stability
+    prompt: What extra protection does Cursor Stability add to locking Read Committed, and what does it still not protect?
+    expected_elements:
+      - hold the read lock on the current cursor row until cursor movement or update
+      - prevents cursor lost update P4C
+      - does not protect all previously read rows or the whole predicate result
+      - remains weaker than locking Repeatable Read
+    source_scope: focal-paper
+    difficulty: hard
+
+  - id: si-two-rules
+    prompt: State the two independent rules of Snapshot Isolation.
+    expected_elements:
+      - read from one fixed snapshot containing versions committed before the transaction start point
+      - First-Committer-Wins rejects overlapping concurrent logical write sets
+    source_scope: focal-paper
+    difficulty: medium
+
+  - id: fcw-lost-update-write-skew
+    prompt: Why does First-Committer-Wins prevent Lost Update but allow Write Skew?
+    expected_elements:
+      - Lost Update has the same logical item in both write sets
+      - Write Skew can write different items
+      - crossing read-write dependencies are not detected by write-set intersection
+    source_scope: focal-paper
+    difficulty: medium
+
+  - id: a5a-versus-a5b
+    prompt: Contrast A5A Read Skew with A5B Write Skew.
+    expected_elements:
+      - A5A combines observations from different committed states
+      - the database itself may remain invariant-preserving in A5A
+      - A5B transactions read consistent snapshots but commit disjoint writes
+      - the final database state may violate an invariant in A5B
+    source_scope: focal-paper
+    difficulty: medium
+
+  - id: locking-rr-versus-si
+    prompt: Give one witness in each direction showing that locking Repeatable Read and Snapshot Isolation are incomparable.
+    expected_elements:
+      - locking RR may allow a phantom without long predicate locks while SI gives a stable snapshot
+      - SI may allow Write Skew while long read locks under locking RR force blocking or abort
+    source_scope: focal-paper
+    difficulty: hard
+
+  - id: strict-a3-versus-broad-p3-under-si
+    prompt: Why can Snapshot Isolation prevent strict A3 while still allowing some broad P3 histories?
+    expected_elements:
+      - repeated predicate reads use the same snapshot, so the observed set is stable
+      - two transactions may read the same predicate and write different witness rows
+      - disjoint write sets pass First-Committer-Wins
+      - the predicate invariant can still be violated
+    source_scope: focal-paper
+    difficulty: hard
+
+  - id: ri-xj
+    prompt: What does r_i[x_j] mean in a multiversion history?
+    expected_elements:
+      - transaction T_i reads version x_j
+      - x_j was created by transaction T_j
+      - this determines a reads-from relation T_j to T_i
+    source_scope: article-adjacent
+    difficulty: easy
+
+  - id: one-copy-serializability
+    prompt: Define one-copy serializability without referring to graph identity.
+    expected_elements:
+      - a multiversion history is observationally equivalent to some serial single-copy history
+      - reads obtain values from the same logical writers
+      - final logical writers or final state are preserved
+    source_scope: article-adjacent
+    difficulty: medium
+
+  - id: version-order-last-writer
+    prompt: Why is the edge T_j to T_i alone insufficient for a read r_i[x_j]?
+    expected_elements:
+      - another writer of x cannot be placed between T_j and T_i
+      - otherwise T_i would read that writer's value in a single-copy serial execution
+      - version-order-derived edges force the other writer before T_j or after T_i
+    source_scope: article-adjacent
+    difficulty: hard
+
+  - id: write-skew-mvsg
+    prompt: Why does canonical Write Skew form a cycle of two rw anti-dependencies and no wr or ww edge between the two transactions?
+    expected_elements:
+      - neither transaction reads the other's new version, so no mutual wr
+      - they write different logical items, so no mutual ww
+      - each reads an older version later replaced by the other transaction
+      - the two reader-to-writer edges point in opposite directions
+    source_scope: article-adjacent
+    difficulty: hard
+
+deferred_cards:
+  - id: predicate-aware-mvsg
+    reason: Requires a dedicated primary-source module and exceeds first-pass mastery of the focal paper.
