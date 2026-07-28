@@ -1,0 +1,103 @@
+version: 1
+paper_id: berenson-1995-ansi-sql-isolation-levels
+updated_at: '2026-07-28'
+current_stage: capture-complete
+
+lifecycle:
+  prepare:
+    status: completed
+    evidence:
+      - prepare.yaml and prepare.json validated
+      - bibliographic identity and selected version resolved
+  read_1:
+    status: completed
+    learner_report: >
+      The whole article was read as a slow coverage pass. Many deductions,
+      the final table, and several formal details were not retained.
+  closed_book_recall:
+    status: completed
+    session_id: closed-book-recall-001
+    core_rounds: 12
+    total_rounds: 20
+    note: >
+      Diagnostic value was reached after roughly 10-12 rounds. Later rounds
+      expanded into multiversion serializability and predicate-dependency theory.
+  capture:
+    status: completed
+    artifacts:
+      - sessions/closed-book-recall-001.md
+      - model.md
+      - verification.md
+      - gaps.yaml
+      - recall-cards.yaml
+  model:
+    status: partial
+    completed_topics:
+      - critique of ANSI English definitions
+      - strict anomaly A versus broad phenomenon P distinction
+      - P0 dirty write and P4 lost update
+      - Snapshot Isolation read rule and First-Committer-Wins
+      - A5A read skew and A5B write skew
+      - incomparability of locking Repeatable Read and Snapshot Isolation
+    deferred_topics:
+      - line-by-line derivation of H1-H5
+      - independent reconstruction of Figure 2
+      - independent reconstruction of Table 4
+      - formal predicate-aware multiversion graph theory
+  verify:
+    status: partial
+    verified_scopes:
+      - focal paper definitions and examples used in the recall
+      - separation of article claims from external MVSG background
+    unresolved_scopes:
+      - full formal source for predicate-aware MVSG construction
+      - exact minimal formalism intended by the short SIGMOD paper
+  ydb_map:
+    status: not_started
+  transfer:
+    status: not_started
+  implement:
+    status: not_applicable
+  spaced_recall:
+    status: ready
+    card_file: recall-cards.yaml
+
+session_policy:
+  learner_answers_verbatim: true
+  assistant_explanations_normalized: true
+  irrelevant_dialogue_removed: true
+  historical_session_append_only: true
+  canonical_model_separate: true
+
+mastery_snapshot:
+  understood:
+    - central critique of ANSI isolation-level definitions
+    - A1 versus P1 motivation
+    - P0 versus P4 distinction
+    - First-Committer-Wins detects overlapping logical write sets
+    - Write Skew uses disjoint write sets and crossing rw anti-dependencies
+    - r_i[x_j] reads a version created by T_j
+    - one-copy serializability intuition
+  partial:
+    - A2 versus P2
+    - A3 versus P3
+    - Cursor Stability
+    - complete SI row in the final table
+    - precise version-order edge construction in MVSG
+  not_recalled_without_help:
+    - locking Repeatable Read versus Snapshot Isolation incomparability
+    - exact Table 4 classifications
+    - detailed rollback argument for P0
+  deferred:
+    - general one-copy-serializability recognition algorithms
+    - predicate-aware MVSG and absent-version formalism
+
+next_actions:
+  - id: deep-read-core-histories
+    action: Re-read and independently derive H1-H5 without consulting the session explanations.
+  - id: reproduce-summary-structures
+    action: Reconstruct Figure 2 and Table 4 from definitions, then compare with the paper.
+  - id: verify-multiversion-theory
+    action: Study MVSG and one-copy serializability from a dedicated primary source.
+  - id: spaced-recall-pass-001
+    action: Run only the core cards after a delay; do not repeat all twenty dialogue rounds.
