@@ -2,14 +2,42 @@
 
 This repository stores the modular **YDB Deep Mastery Protocol (YDMP)**.
 
-The first command is `PREPARE`. It accepts a DOI, URL, title, BibTeX record,
-or uploaded PDF and generates:
+## Lifecycle
+
+```text
+PREPARE -> READ -> CLOSED-BOOK RECALL -> CAPTURE -> MODEL -> VERIFY
+        -> YDB MAP -> TRANSFER -> IMPLEMENT -> SPACED RECALL
+```
+
+## PREPARE
+
+`PREPARE` accepts a DOI, URL, title, BibTeX record, or uploaded PDF and
+generates:
 
 - `prepare.yaml`
 - `prepare.json`
 - `prepare.md`
 - `prepare.typ`
 - `references.bib`
+
+## CAPTURE
+
+`CAPTURE` persists a completed study or recall session. The assistant produces
+the artifacts; the learner is not expected to manually copy the conversation.
+
+```text
+ydmp/papers/<paper_id>/study/
+├── progress.yaml
+├── sessions/<session_id>.md
+├── model.md
+├── verification.md
+├── gaps.yaml
+└── recall-cards.yaml
+```
+
+The session record is technically complete but edited: learner answers remain
+verbatim while unrelated dialogue and duplicated navigation are removed. The
+corrected canonical model and the current learning state are stored separately.
 
 ## Custom GPT setup
 
