@@ -1,0 +1,102 @@
+command: CAPTURE
+version: 1
+status: stable
+
+description: >
+  Persist a meaningful study or closed-book-recall session as an immutable
+  edited record, a corrected canonical model, and current learning-state files.
+
+input:
+  required: [paper_id, session_source]
+  accepted_session_sources:
+    - current_conversation
+    - supplied_transcript
+    - uploaded_notes
+  optional_fields:
+    - session_id
+    - session_type
+    - curriculum
+    - repository
+    - base_branch
+    - notes
+
+output:
+  root: ydmp/papers/<paper_id>/study
+  files:
+    - progress.yaml
+    - sessions/<session_id>.md
+    - model.md
+    - verification.md
+    - gaps.yaml
+    - recall-cards.yaml
+
+pipeline:
+  - session_boundary_resolution
+  - dialogue_extraction
+  - verbatim_answer_preservation
+  - editorial_cleanup
+  - assessment_normalization
+  - canonical_model_construction
+  - evidence_scope_classification
+  - learning_state_derivation
+  - recall_card_generation
+  - validation
+  - repository_persistence
+
+requirements:
+  session_boundary_resolution:
+    - identify the exact study session and focal paper
+    - count recall rounds and identify topic blocks
+    - separate core-paper recall from article-adjacent excursions
+  dialogue_extraction:
+    - retain every technically relevant question and learner answer
+    - retain corrections and explanations that changed the learner model
+    - remove navigation chatter, duplicated prompts and unrelated discussion
+  verbatim_answer_preservation:
+    - preserve learner answers verbatim, including uncertainty and mistakes
+    - do not silently improve spelling, terminology or reasoning inside quotes
+    - place later corrections outside the verbatim answer
+  editorial_cleanup:
+    - produce a technically complete but edited session record
+    - summarize assistant explanations when the canonical model contains the full treatment
+    - preserve the sequence needed to understand how the model changed
+  assessment_normalization:
+    - classify each answer as understood, partial, not_recalled or misconception
+    - list correctly recalled elements, missing elements and misconceptions separately
+    - avoid grading style or motivational filler
+  canonical_model_construction:
+    - organize knowledge by concepts rather than conversation order
+    - distinguish the focal paper from external theory and implementation mappings
+    - preserve unresolved questions rather than guessing
+  evidence_scope_classification:
+    - use CONFIRMED, INFERRED, HYPOTHESIS, EXTERNAL and ARTICLE-ADJACENT labels
+    - do not attribute external explanations to the focal paper
+    - record corrections to earlier assistant explanations in verification.md
+  learning_state_derivation:
+    - update progress and gaps from demonstrated evidence, not self-report alone
+    - retain deferred topics and explicit next actions
+    - historical session records are append-only
+  recall_card_generation:
+    - generate cards only for durable distinctions and recurring gaps
+    - keep prompts independently answerable
+    - provide expected answer elements and source scope
+    - do not convert every dialogue question into a card
+  validation:
+    - learner answers in the session record match the source transcript verbatim
+    - session record and canonical model are clearly separated
+    - all current gaps have evidence and a next action
+    - recall cards do not contain full essay answers
+    - no claim of repository persistence without a successful backend action
+  repository_persistence:
+    - when authorised GitHub access is available, create a dedicated branch
+    - write all artifacts without asking the learner to copy them manually
+    - inspect the branch diff
+    - open a pull request against the requested base branch
+
+policy:
+  assistant_owned_artifacts: true
+  learner_manual_copy_required: false
+  session_records_append_only: true
+  learner_answers_verbatim: true
+  irrelevant_dialogue_removed: true
+  canonical_model_separate: true
