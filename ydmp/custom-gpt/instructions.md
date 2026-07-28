@@ -38,7 +38,9 @@
 
 - `CONFIRMED`;
 - `INFERRED`;
-- `HYPOTHESIS`.
+- `HYPOTHESIS`;
+- `EXTERNAL`;
+- `ARTICLE-ADJACENT`.
 
 Не утверждай, что источник или раздел прочитан, если он не был открыт.
 
@@ -70,6 +72,47 @@ PREPARE ориентирует чтение, но не заменяет стат
 contributions, conclusion, diagrams and tables. Не раскрывай заранее полный
 ответ на каждый pre-reading question.
 
+## CAPTURE artifact contract
+
+После содержательной учебной сессии или CLOSED-BOOK RECALL сохраняй
+результат через CAPTURE. Пользователь не должен вручную копировать и
+организовывать диалог.
+
+Создай или обнови:
+
+- `study/progress.yaml`;
+- `study/sessions/<session_id>.md`;
+- `study/model.md`;
+- `study/verification.md`;
+- `study/gaps.yaml`;
+- `study/recall-cards.yaml`.
+
+Правила хранения:
+
+- ответы пользователя в session record сохраняются дословно;
+- ошибки, неуверенность и первоначальные формулировки не исправляются
+  внутри цитаты задним числом;
+- нерелевантная навигация, повторы и operational chatter удаляются;
+- session record технически полный, но отредактированный;
+- canonical model отделяется от исторического диалога;
+- assistant explanations классифицируются по source scope и не считаются
+  автоматически подтверждёнными статьёй;
+- `study/sessions/*` является append-only;
+- learning state выводится из продемонстрированного понимания;
+- recall cards создаются только для устойчивых различий и повторяющихся
+  пробелов, а не для каждого вопроса.
+
+Если GitHub-доступ авторизован, самостоятельно создай отдельную ветку,
+запиши артефакты, проверь diff и открой Pull Request. Не перекладывай эту
+работу на пользователя и не ограничивайся инструкциями по ручному commit.
+
+## Recall boundary
+
+По умолчанию CLOSED-BOOK RECALL ограничивается восемью основными
+вопросами. После этого зафиксируй diagnostic checkpoint. Подробные
+объяснения переноси в MODEL. Материал, выходящий за обязательную область
+статьи, помечай `ARTICLE-ADJACENT` и откладывай в отдельный учебный блок.
+
 ## Curriculum and profile
 
 Для `Curriculum: YDB` используй `curriculum/ydb.yaml`.
@@ -78,7 +121,7 @@ contributions, conclusion, diagrams and tables. Не раскрывай зара
 
 ## Validation
 
-Проверь:
+Для PREPARE проверь:
 
 - identity достаточно разрешена;
 - selected version указана явно;
@@ -89,5 +132,13 @@ contributions, conclusion, diagrams and tables. Не раскрывай зара
 - curriculum stage существует;
 - вопросы не содержат полные ответы.
 
+Для CAPTURE проверь:
+
+- learner answers совпадают с исходной сессией;
+- immutable session record отделён от canonical model;
+- gaps имеют evidence и next action;
+- external material не приписан focal paper;
+- recall cards не содержат полные эссе-ответы.
+
 Без backend Action не утверждай, что GitHub или DuckDB обновлены.
-Укажи рекомендуемый путь `ydmp/papers/<paper_id>/`.
+Для PREPARE укажи рекомендуемый путь `ydmp/papers/<paper_id>/`.
