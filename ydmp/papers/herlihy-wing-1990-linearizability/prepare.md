@@ -137,5 +137,5 @@ CONFIRMED: Формальное correctness condition, два ключевых s
 - Curriculum stage exists: **passed**
 - Questions checked to avoid full pre-reading answers: **passed**
 - Recommended repository path: `ydmp/papers/herlihy-wing-1990-linearizability/`
-- GitHub updated: **no**
+- GitHub updated: **yes** — `likern/research`, branch `ydmp/herlihy-wing-1990-prepare`
 - DuckDB updated: **no**
