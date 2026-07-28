@@ -5,3 +5,8 @@ commands:
     aliases: [PAPER_PREPARE, INTAKE]
     status: stable
     description: Generate a canonical PreparationPacket and five artifacts.
+  CAPTURE:
+    specification: commands/capture.yaml
+    aliases: [CAPTURE_SESSION, STUDY_CAPTURE, CHECKPOINT]
+    status: stable
+    description: Persist an edited study session, canonical model, and learning state.

@@ -1,0 +1,132 @@
+version: 1
+paper_id: berenson-1995-ansi-sql-isolation-levels
+updated_at: '2026-07-28'
+
+status_values:
+  - understood
+  - partial
+  - not_recalled
+  - misconception_corrected
+  - deferred
+
+gaps:
+  - id: ansi-a-versus-p
+    topic: Strict anomaly A versus broad phenomenon P
+    status: partial
+    evidence:
+      - Learner understood that English ANSI definitions admit two readings.
+      - Learner independently recalled the abort-specific weakness of A1.
+      - A2/P2 and A3/P3 initially mixed different dimensions of the distinction.
+    next_action: Reconstruct A1-A3 and P1-P3 side by side from formal patterns.
+
+  - id: a2-versus-p2
+    topic: A2 Non-repeatable Read versus P2 Fuzzy Read
+    status: misconception_corrected
+    evidence:
+      - Learner initially described P2 primarily as cross-object read skew.
+      - The broader unfinished-transaction read/write pattern was not recalled.
+    next_action: Derive one A2 history and one P2 history where no second read occurs.
+
+  - id: h2-serialization-cycle
+    topic: Serialization contradiction in the H2 read-skew history
+    status: partial
+    evidence:
+      - Learner derived the order forced by reading old x and new y only after guidance.
+      - The role and direction of rw anti-dependency required reconstruction.
+    next_action: Draw both order constraints and the resulting cycle without notes.
+
+  - id: a3-versus-p3
+    topic: Strict Phantom A3 versus broad P3
+    status: misconception_corrected
+    evidence:
+      - Learner correctly recalled INSERT versus broader WRITE.
+      - Learner initially missed that A3 requires a repeated predicate read while P3 does not.
+      - A point-object write-skew example was initially presented as P3.
+    next_action: Build a predicate history with r1[P], a witness write, no repeated r1[P], and a serial-order contradiction.
+
+  - id: p0-recovery
+    topic: Why Dirty Write must be forbidden
+    status: not_recalled
+    evidence:
+      - Learner remembered only a general connection to Lost Update and recovery.
+      - The invariant-fragmentation and undo-ambiguity arguments were not retained.
+    next_action: Reconstruct the two independent arguments using one invariant example and one cascading-undo example.
+
+  - id: cursor-stability
+    topic: Cursor Stability and P4C
+    status: partial
+    evidence:
+      - Learner initially believed the cursor result set was frozen.
+      - Current-row lock lifetime and the difference from locking Repeatable Read were not recalled.
+    next_action: Explain current-row protection, cursor movement, and one general P4 history that CS still allows.
+
+  - id: si-two-rules
+    topic: Snapshot rule and First-Committer-Wins
+    status: partial
+    evidence:
+      - Learner recalled start timestamp and fixed snapshot.
+      - Commit eligibility was initially tied to transaction age rather than overlapping logical write sets.
+    next_action: State both rules formally and test them on overlapping and disjoint write sets.
+
+  - id: rr-si-incomparability
+    topic: Locking Repeatable Read versus Snapshot Isolation
+    status: not_recalled
+    evidence:
+      - Learner could not produce either witness history without explanation.
+    next_action: Reconstruct one phantom history allowed by locking RR and one write-skew history allowed by SI.
+
+  - id: a5a-versus-a5b
+    topic: Read Skew versus Write Skew
+    status: misconception_corrected
+    evidence:
+      - Learner correctly identified observation versus writing at a high level.
+      - Learner initially claimed canonical A5A also corrupts the committed database state.
+    next_action: Contrast a database that remains invariant-preserving with an inconsistent transaction-local view against a final-state invariant violation.
+
+  - id: si-summary-table
+    topic: Snapshot Isolation row in the final table
+    status: not_recalled
+    evidence:
+      - P1, stable snapshot behavior, and A5B were recalled.
+      - P0/P4 mechanisms, A5A, and the A3/P3 distinction required correction.
+    next_action: Reproduce the full SI row and attach each result to either snapshot visibility, First-Committer-Wins, or an uncovered rw/predicate dependency.
+
+  - id: multiversion-notation
+    topic: Reads-from and version order
+    status: partial
+    evidence:
+      - r_i[x_j] semantics were recalled accurately.
+      - The two required structures were initially replaced by an incomplete set of graph edges.
+    next_action: Define reads-from and per-object version order before constructing any MVSG.
+
+  - id: one-copy-serializability
+    topic: One-copy serializability
+    status: understood
+    evidence:
+      - Learner recovered the central single-logical-copy intuition.
+      - Equivalence versus graph identity needed terminology refinement.
+    next_action: Preserve reads-from and final-writer conditions in one worked example.
+
+  - id: mvsg-edge-alternatives
+    topic: Alternative MVSG edges induced by version order
+    status: partial
+    evidence:
+      - Learner correctly derived crossing rw edges for natural initial-version order.
+      - Learner initially expected reversing a version order to make the dependency disappear.
+    next_action: For r_k[x_j] and another writer T_i, derive both alternatives: writer-to-writer or reader-to-writer.
+
+  - id: predicate-aware-mvsg
+    topic: Predicate reads and writes in multiversion graphs
+    status: deferred
+    evidence:
+      - Learner explicitly reported that the construction was unclear.
+      - The discussion had moved beyond the focal paper into broader formal theory.
+    next_action: Study this as a separate primary-source module; do not treat it as required mastery of the SIGMOD paper.
+    scope: ARTICLE-ADJACENT
+
+  - id: recall-process-control
+    topic: Keeping CLOSED-BOOK RECALL bounded
+    status: misconception_corrected
+    evidence:
+      - The session grew to twenty rounds and mixed recall with teaching and theory extension.
+    next_action: Limit future first-pass recall to eight core questions, then run CAPTURE and move detailed work to MODEL.

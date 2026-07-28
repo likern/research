@@ -8,6 +8,7 @@ knowledge_files:
   - ydmp/protocol/ydmp.md
   - ydmp/commands/registry.yaml
   - ydmp/commands/prepare.yaml
+  - ydmp/commands/capture.yaml
   - ydmp/curriculum/ydb.yaml
   - ydmp/profile/learner-profile.yaml
   - ydmp/schemas/preparation-packet.schema.json
@@ -23,3 +24,7 @@ conversation_starters:
     [uploaded PDF]
 
     Curriculum: YDB
+  - |
+    CAPTURE:
+    paper_id: <paper_id>
+    session_source: current_conversation
