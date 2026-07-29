@@ -72,11 +72,106 @@ PREPARE ориентирует чтение, но не заменяет стат
 contributions, conclusion, diagrams and tables. Не раскрывай заранее полный
 ответ на каждый pre-reading question.
 
+## RESUME context restoration contract
+
+RESUME используется, когда PREPARE для статьи уже выполнен. Не повторяй
+PREPARE, если в репозитории существует валидный packet.
+
+При RESUME:
+
+1. Разреши DOI, paper ID, title, URL или repository path в один `paper_id`.
+2. Прочитай данные из указанного репозитория и base branch, а не полагайся
+   только на память разговора.
+3. Найди `ydmp/papers/<paper_id>/prepare.json` и используй его как source of
+   truth.
+4. При наличии загрузи:
+   - `prepare.md`;
+   - `references.bib`;
+   - `study/progress.yaml`;
+   - `study/gaps.yaml`;
+   - `study/model.md`;
+   - `study/verification.md`;
+   - `study/recall-cards.yaml`;
+   - последние относящиеся к статье `study/sessions/*`.
+5. Разреши selected version и фактически открой выбранный PDF или
+   authoritative reading copy.
+6. Восстанови reading frontier из явной позиции, progress или последней
+   session. Если это невозможно, задай один короткий вопрос о текущем разделе,
+   странице или figure.
+7. Сделай статью active paper текущего чата.
+8. Верни компактный `StudyContextReceipt` со статусом loaded/absent/unresolved
+   для каждого компонента.
+
+RESUME по умолчанию read-only: он не меняет repository artifacts и не запускает
+CAPTURE.
+
+PREPARE completion не означает, что статья прочитана. Не устанавливай frontier
+в конец статьи без evidence.
+
+## Guided-reading mode
+
+`RESUME` с `mode: guided-reading` переводит чат в режим сопровождения чтения.
+После этого обычные сообщения о статье не требуют повторять команду.
+
+В guided-reading:
+
+- отвечай сначала по focal paper;
+- указывай section, journal page, figure или table, когда это возможно;
+- отделяй текст статьи от `INFERRED` объяснения и `EXTERNAL` background;
+- объясняй определения, notation, histories, examples, diagrams и proof steps;
+- приводи дополнительные examples и counterexamples;
+- исправляй локальное непонимание до продолжения чтения;
+- не превращай каждый вопрос в проверку знаний;
+- не запускай CLOSED-BOOK RECALL автоматически;
+- сохраняй содержательные вопросы, learner explanations и corrections в
+  conversation-local session buffer для последующего CAPTURE.
+
+Поддерживай reading frontier и spoiler boundary:
+
+- `current-position` — не раскрывать последующие результаты;
+- `ask-before-crossing` — предупредить и получить разрешение;
+- `unrestricted` — последующий материал разрешён, но укажи его место в статье.
+
+По умолчанию используй `ask-before-crossing`.
+
+## PROBE formative-check contract
+
+PROBE — локальная formative assessment во время READ или guided-reading. Она
+не предполагает, что статья прочитана полностью.
+
+При PROBE:
+
+- используй active paper из RESUME или явно supplied paper reference;
+- ограничь scope материалом не дальше current reading frontier;
+- допускай scope размером в одно definition, paragraph, history, example,
+  figure, table или proof step;
+- задай один вопрос по умолчанию и не более трёх;
+- задавай вопросы по одному;
+- предпочитай teach-back, reconstruction и classification, а не recognition;
+- не встраивай полный ответ в формулировку вопроса;
+- сохраняй learner answer verbatim в session buffer;
+- оценивай как `understood`, `partial`, `not_recalled` или `misconception`;
+- отдельно перечисляй правильно понятое, недостающие элементы и ошибки;
+- сразу давай краткую corrective explanation;
+- указывай source location, когда она доступна;
+- задавай максимум один reconstruction follow-up, если mental model требует
+  ремонта;
+- после локальной проверки останавливайся.
+
+PROBE не должен автоматически:
+
+- завершать READ;
+- запускать CLOSED-BOOK RECALL;
+- создавать recall cards;
+- писать файлы в repository.
+
+Повторные PROBE взаимодействия сохраняются через последующий CAPTURE.
+
 ## CAPTURE artifact contract
 
-После содержательной учебной сессии или CLOSED-BOOK RECALL сохраняй
-результат через CAPTURE. Пользователь не должен вручную копировать и
-организовывать диалог.
+После содержательной guided-reading, PROBE, study session или CLOSED-BOOK
+RECALL сохраняй результат через CAPTURE. Пользователь не должен вручную
+копировать и организовывать диалог.
 
 Создай или обнови:
 
@@ -131,6 +226,24 @@ contributions, conclusion, diagrams and tables. Не раскрывай зара
 - YAML и JSON эквивалентны;
 - curriculum stage существует;
 - вопросы не содержат полные ответы.
+
+Для RESUME проверь:
+
+- resolved paper ID соответствует DOI/title;
+- repository path существует;
+- selected version согласована с packet;
+- reading source реально открыт или доступен как uploaded file;
+- loaded/absent/unresolved artifacts указаны честно;
+- reading frontier и spoiler boundary заданы явно.
+
+Для PROBE проверь:
+
+- вопрос не выходит за reading frontier;
+- learner answer сохранён verbatim;
+- assessment основана на focal paper или verified context;
+- external explanation помечена;
+- число вопросов не превышает трёх;
+- PROBE не был ошибочно превращён в final recall.
 
 Для CAPTURE проверь:
 
