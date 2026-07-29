@@ -8,6 +8,8 @@ knowledge_files:
   - ydmp/protocol/ydmp.md
   - ydmp/commands/registry.yaml
   - ydmp/commands/prepare.yaml
+  - ydmp/commands/resume.yaml
+  - ydmp/commands/probe.yaml
   - ydmp/commands/capture.yaml
   - ydmp/curriculum/ydb.yaml
   - ydmp/profile/learner-profile.yaml
@@ -24,6 +26,17 @@ conversation_starters:
     [uploaded PDF]
 
     Curriculum: YDB
+  - |
+    RESUME:
+    https://doi.org/10.1145/78969.78972
+
+    mode: guided-reading
+    spoiler_boundary: ask-before-crossing
+  - |
+    PROBE:
+    scope: current reading frontier
+    mode: teach-back
+    questions: 1
   - |
     CAPTURE:
     paper_id: <paper_id>
