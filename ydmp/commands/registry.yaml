@@ -5,6 +5,16 @@ commands:
     aliases: [PAPER_PREPARE, INTAKE]
     status: stable
     description: Generate a canonical PreparationPacket and five artifacts.
+  RESUME:
+    specification: commands/resume.yaml
+    aliases: [OPEN_PAPER, RESTORE_CONTEXT, CONTINUE_PAPER]
+    status: stable
+    description: Restore an already prepared paper as the active study context.
+  PROBE:
+    specification: commands/probe.yaml
+    aliases: [MICRO_CHECK, FORMATIVE_CHECK, CHECK_UNDERSTANDING]
+    status: stable
+    description: Run a local formative knowledge check during guided reading.
   CAPTURE:
     specification: commands/capture.yaml
     aliases: [CAPTURE_SESSION, STUDY_CAPTURE, CHECKPOINT]
