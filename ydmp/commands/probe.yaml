@@ -1,0 +1,141 @@
+command: PROBE
+version: 1
+status: stable
+
+description: >
+  Run a small formative knowledge check during guided reading. PROBE verifies
+  understanding of the material already reached, gives immediate corrective
+  feedback, and does not assume that the paper has been read completely.
+
+input:
+  context:
+    preferred: active_paper
+    accepted_fallbacks:
+      - paper_id
+      - doi
+      - repository_path
+  optional_fields:
+    - scope
+    - topic
+    - mode
+    - questions
+    - position
+    - reading_frontier
+    - spoiler_boundary
+    - notes
+  defaults:
+    mode: teach-back
+    questions: 1
+    maximum_questions: 3
+    ask_one_at_a_time: true
+    spoiler_boundary: active-context
+  supported_modes:
+    - teach-back
+    - closed-book-local
+    - explain-back
+    - history-reconstruction
+    - example-classification
+    - figure-reconstruction
+
+output:
+  assessment: FormativeAssessment
+  assessment_fields:
+    - question
+    - learner_answer_verbatim
+    - status
+    - correctly_understood
+    - missing_elements
+    - misconceptions
+    - correction
+    - source_scope
+    - next_action
+  status_values:
+    - understood
+    - partial
+    - not_recalled
+    - misconception
+
+pipeline:
+  - active_context_resolution
+  - local_scope_resolution
+  - spoiler_guard
+  - question_generation
+  - learner_answer_capture
+  - evidence_based_assessment
+  - immediate_feedback
+  - optional_reconstruction
+  - session_buffer_update
+
+requirements:
+  active_context_resolution:
+    - use the active paper established by RESUME when available
+    - otherwise resolve the supplied paper reference and load its prepared context
+    - do not probe an unspecified paper when multiple candidates are possible
+  local_scope_resolution:
+    - restrict questions to the explicit scope, topic, position or reading frontier
+    - when scope is omitted, use the current guided-reading frontier
+    - do not assume knowledge of sections beyond the frontier
+    - allow a scope as small as one definition, paragraph, history, figure or proof step
+  spoiler_guard:
+    - enforce the active spoiler boundary
+    - do not use later-paper concepts in the question or feedback unless the learner explicitly permits them
+    - when a correct explanation necessarily depends on later material, explain the dependency and ask before crossing it
+  question_generation:
+    - ask one question at a time by default
+    - generate between one and three questions only
+    - prefer prompts that expose the learner's mental model rather than recognition-only questions
+    - vary the task according to mode
+    - avoid embedding the answer in the wording
+  learner_answer_capture:
+    - preserve the learner answer verbatim in the current session buffer
+    - retain uncertainty, partial reasoning and mistakes
+    - do not silently rewrite the answer before assessment
+  evidence_based_assessment:
+    - compare the answer with the focal paper and already verified context
+    - classify as understood, partial, not_recalled or misconception
+    - separate correct elements, missing elements and misconceptions
+    - do not grade style, confidence or verbosity
+  immediate_feedback:
+    - give concise corrective feedback immediately after each answer
+    - explain the minimal missing step needed for continued reading
+    - cite or identify the relevant section, page, figure, table or definition when available
+    - label EXTERNAL material explicitly
+    - avoid a long lecture when a local correction is sufficient
+  optional_reconstruction:
+    - ask at most one follow-up reconstruction question when the learner model needs repair
+    - a reconstruction prompt asks the learner to restate, redraw or re-derive the corrected point
+    - do not start a new chain of unrelated questions
+  session_buffer_update:
+    - record the question, verbatim answer, assessment and correction in the active guided-reading session buffer
+    - do not write repository artifacts automatically
+    - persist the session only when CAPTURE is invoked or repository persistence is explicitly requested
+
+mode_contracts:
+  teach-back:
+    prompt_shape: Explain the concept in your own words and state its key condition.
+  closed-book-local:
+    prompt_shape: Reconstruct the selected local material without reopening the source.
+  explain-back:
+    prompt_shape: Restate the assistant's preceding explanation and identify the crucial inference.
+  history-reconstruction:
+    prompt_shape: Reconstruct or analyze a history, order relation or dependency step by step.
+  example-classification:
+    prompt_shape: Classify a new example or counterexample and justify the classification.
+  figure-reconstruction:
+    prompt_shape: Recreate the logic of the selected figure or table from memory.
+
+boundaries:
+  - PROBE is formative assessment during READ, not a final examination
+  - PROBE does not imply completion of READ
+  - PROBE does not automatically enter CLOSED-BOOK RECALL
+  - PROBE does not automatically generate spaced-recall cards
+  - PROBE does not automatically persist files
+  - repeated PROBE calls may later be consolidated by CAPTURE
+
+policy:
+  formative_not_summative: true
+  question_limit: 3
+  immediate_feedback: true
+  learner_answer_verbatim: true
+  respect_active_frontier: true
+  repository_write_on_probe: false
