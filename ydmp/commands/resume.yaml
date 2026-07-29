@@ -1,0 +1,162 @@
+command: RESUME
+version: 1
+status: stable
+
+description: >
+  Restore the complete YDMP context for an already prepared paper, make it the
+  active paper for the current conversation, and optionally enter guided-reading
+  mode without repeating PREPARE.
+
+input:
+  accepted_paper_references:
+    - paper_id
+    - doi
+    - url
+    - canonical_title
+    - repository_path
+  optional_fields:
+    - repository
+    - base_branch
+    - mode
+    - position
+    - reading_frontier
+    - spoiler_boundary
+    - curriculum
+    - notes
+  defaults:
+    repository: likern/research
+    base_branch: main
+    mode: context-only
+    spoiler_boundary: ask-before-crossing
+  supported_modes:
+    - context-only
+    - guided-reading
+
+output:
+  active_context: StudyContext
+  receipt: StudyContextReceipt
+  receipt_fields:
+    - paper_id
+    - canonical_title
+    - identifiers
+    - repository
+    - base_branch
+    - paper_root
+    - loaded_artifacts
+    - selected_version
+    - reading_source
+    - learning_state_status
+    - active_mode
+    - reading_frontier
+    - spoiler_boundary
+    - unresolved_context
+
+pipeline:
+  - input_normalization
+  - repository_resolution
+  - prepared_paper_lookup
+  - preparation_packet_loading
+  - study_state_loading
+  - selected_version_resolution
+  - reading_source_opening
+  - reading_frontier_resolution
+  - active_context_activation
+  - context_receipt_rendering
+
+requirements:
+  input_normalization:
+    - preserve the original paper reference
+    - normalize DOI and repository coordinates
+    - resolve aliases to one paper_id
+  repository_resolution:
+    - use the requested repository and base branch when supplied
+    - otherwise use the configured YDMP repository and its default branch
+    - read repository data before relying on conversation memory
+  prepared_paper_lookup:
+    - search ydmp/papers/<paper_id>/ for the prepared paper
+    - prefer prepare.json as the machine-readable source of truth
+    - use prepare.yaml and prepare.md as corroborating representations
+    - do not rerun PREPARE when a valid packet already exists
+    - if multiple candidates match, preserve them and ask one targeted disambiguation question
+    - if no prepared packet exists, report that RESUME cannot complete and recommend PREPARE
+  preparation_packet_loading:
+    - load prepare.json
+    - load prepare.md when useful for human-oriented reading guidance
+    - load references.bib when source resolution requires it
+    - verify that paper_id, DOI and selected version are mutually consistent
+  study_state_loading:
+    - load study/progress.yaml when present
+    - load study/gaps.yaml when present
+    - load study/model.md and study/verification.md when present
+    - load study/recall-cards.yaml when present
+    - inspect the latest relevant study/sessions/* records when present
+    - absence of study/* is valid and must be reported as no persisted learning state
+  selected_version_resolution:
+    - use paper.versions.selected_version from prepare.json
+    - preserve unresolved version conflicts instead of guessing
+    - do not silently switch to a preliminary or secondary version
+  reading_source_opening:
+    - open the supplied PDF when it matches the selected version
+    - otherwise open the authoritative reading copy recorded in prepare.json
+    - use official publisher or author-hosted sources according to the evidence policy
+    - do not claim the paper is loaded unless the source was actually opened or is available as an uploaded file
+  reading_frontier_resolution:
+    - prefer an explicit position or reading_frontier from the command
+    - otherwise use persisted study/progress.yaml or the latest session record
+    - if no frontier can be established, ask one concise question about the current section, page or figure
+    - never infer that the whole paper has been read merely because PREPARE completed
+  active_context_activation:
+    - store one active paper context for the current conversation
+    - ordinary follow-up questions refer to the active paper unless the user changes topic explicitly
+    - preserve repository coordinates, selected version, source, frontier and spoiler boundary
+    - RESUME is read-only by default and does not modify repository artifacts
+  context_receipt_rendering:
+    - return a compact receipt sufficient to audit what was restored
+    - distinguish loaded, absent and unresolved artifacts
+    - state the active mode and spoiler policy explicitly
+
+mode_contracts:
+  context-only:
+    description: >
+      Restore identity, artifacts, selected source and learning state without
+      changing the interaction style beyond paper-aware answers.
+  guided-reading:
+    description: >
+      Accompany the learner while the paper is still being read, answer local
+      questions, explain definitions and figures, and protect the unread portion.
+    behavior:
+      - answer from the focal paper first
+      - cite or name the relevant section, journal page and figure or table when available
+      - separate CONFIRMED paper content from INFERRED explanation and EXTERNAL background
+      - explain terminology, notation, examples, histories, diagrams and proof steps at the learner's current frontier
+      - provide new examples and counterexamples when they do not reveal later results unnecessarily
+      - do not turn every question into an assessment
+      - do not launch CLOSED-BOOK RECALL automatically
+      - allow PROBE at any time for local formative assessment
+      - retain technically meaningful questions, learner explanations and corrections in an in-memory session buffer for later CAPTURE
+      - ask before crossing a spoiler boundary unless the user explicitly requests the later material
+
+spoiler_policy:
+  values:
+    - current-position
+    - ask-before-crossing
+    - unrestricted
+  default: ask-before-crossing
+  rules:
+    - current-position forbids introducing results beyond the established frontier
+    - ask-before-crossing permits a concise warning and explicit confirmation
+    - unrestricted allows later-paper material but still identifies where it appears
+    - external background may be supplied when necessary, but must be labelled and must not reveal the focal paper's later argument accidentally
+
+failure_handling:
+  - do not fabricate repository paths, study state or paper sources
+  - do not claim GitHub or file access succeeded when it did not
+  - report exactly which context component could not be restored
+  - use at most one clarification question when repository reads can resolve the rest
+
+policy:
+  rerun_prepare_when_packet_exists: false
+  active_paper_singleton_per_conversation: true
+  repository_write_on_resume: false
+  preserve_spoiler_boundary: true
+  guided_reading_session_buffer: true

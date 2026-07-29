@@ -5,9 +5,13 @@ This repository stores the modular **YDB Deep Mastery Protocol (YDMP)**.
 ## Lifecycle
 
 ```text
-PREPARE -> READ -> CLOSED-BOOK RECALL -> CAPTURE -> MODEL -> VERIFY
-        -> YDB MAP -> TRANSFER -> IMPLEMENT -> SPACED RECALL
+PREPARE -> RESUME -> READ <-> PROBE -> CLOSED-BOOK RECALL -> CAPTURE
+        -> MODEL -> VERIFY -> YDB MAP -> TRANSFER -> IMPLEMENT
+        -> SPACED RECALL
 ```
+
+For an already prepared paper, start a new conversation with `RESUME`; do not
+repeat PREPARE.
 
 ## PREPARE
 
@@ -20,10 +24,65 @@ generates:
 - `prepare.typ`
 - `references.bib`
 
+## RESUME
+
+`RESUME` restores the complete YDMP context for a prepared paper from the
+repository, opens the selected reading version, loads any persisted learning
+state, establishes the current reading frontier, and makes the paper active in
+the current conversation.
+
+```text
+RESUME:
+https://doi.org/10.1145/78969.78972
+
+mode: guided-reading
+position: "Section 2, after Figure 1"
+spoiler_boundary: ask-before-crossing
+```
+
+A successful RESUME reports a `StudyContextReceipt` containing the resolved
+paper ID, repository path, selected version, reading source, loaded study files,
+reading frontier, active mode, and unresolved context.
+
+### Guided reading
+
+With `mode: guided-reading`, ordinary follow-up questions refer to the active
+paper. The tutor answers questions about definitions, notation, histories,
+figures, tables, examples and proof steps while respecting the unread part of
+the paper. Paper content, inferred explanations and external background remain
+source-scoped.
+
+The default spoiler policy is `ask-before-crossing`.
+
+## PROBE
+
+`PROBE` runs a local formative knowledge check during reading. It does not
+assume that the whole paper has been read and does not start the final
+CLOSED-BOOK RECALL stage.
+
+```text
+PROBE:
+scope: "Figure 1 and the definitions before it"
+mode: teach-back
+questions: 2
+```
+
+A PROBE:
+
+- stays at or before the current reading frontier;
+- asks one question at a time;
+- asks no more than three questions;
+- preserves the learner answer verbatim;
+- classifies understanding as `understood`, `partial`, `not_recalled`, or
+  `misconception`;
+- gives immediate local corrective feedback;
+- records the interaction in the current session buffer for later CAPTURE.
+
 ## CAPTURE
 
-`CAPTURE` persists a completed study or recall session. The assistant produces
-the artifacts; the learner is not expected to manually copy the conversation.
+`CAPTURE` persists a guided-reading, PROBE, study or recall session. The
+assistant produces the artifacts; the learner is not expected to manually copy
+the conversation.
 
 ```text
 ydmp/papers/<paper_id>/study/
