@@ -1,0 +1,30 @@
+// Candidate B: compact technical layout.
+// Retained as a comparison baseline even though it is currently ranked fourth.
+
+#let theme = (
+  id: "candidate-b",
+  label: "Candidate B",
+  page_margin: (top: 16mm, bottom: 18mm, left: 18mm, right: 18mm),
+  body_font: "Libertinus Sans",
+  heading_font: "Libertinus Sans",
+  body_size: 9.8pt,
+  body_weight: "regular",
+  title_size: 18pt,
+  subtitle_size: 10pt,
+  h1_size: 12.8pt,
+  h2_size: 10.8pt,
+  heading_weight: "bold",
+  leading: 0.58em,
+  paragraph_spacing: 0.35em,
+  section_above: 1.05em,
+  section_below: 0.45em,
+  panel_inset: 6pt,
+  panel_radius: 0pt,
+  accent: rgb("#303b46"),
+  text_fill: rgb("#1f252b"),
+  muted: rgb("#616a73"),
+  rule: rgb("#9fa8b0"),
+  panel_fill: rgb("#f0f2f4"),
+  metadata_fill: rgb("#f5f6f7"),
+  justify: false,
+)
