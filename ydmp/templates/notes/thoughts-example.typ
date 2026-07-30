@@ -143,6 +143,3 @@ linearizable.
    --input variant=candidate-c \
    --input show-thoughts=false
 ```
-
-Поскольку отключённый `my_thought` возвращает `none`, блоки удаляются полностью
-и не оставляют пустого места в layout.
