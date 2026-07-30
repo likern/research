@@ -106,7 +106,7 @@
     [*Authors*], [#author_line],
     [*DOI*], [#display_or_dash(doi)],
     [*YDMP stage*], [#display_or_dash(stage)],
-    [*Template*], [#t.label (`#t.id`)],
+    [*Template*], [#t.label (#t.id)],
   )
 
   v(12pt)
