@@ -24,9 +24,9 @@ candidate-a.typ    traditional academic profile
 candidate-b.typ    compact technical profile
 candidate-c.typ    balanced profile and current default
 candidate-d.typ    airy editorial profile
- template.typ       shared renderer and explicit variant selection
- default.typ        stable Candidate C import
- example.typ        minimal working example
+template.typ       shared renderer and explicit variant selection
+default.typ        stable Candidate C import
+example.typ        minimal working example
 ```
 
 ## Default use: Candidate C
