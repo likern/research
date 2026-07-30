@@ -162,3 +162,13 @@ export.
 8. merge only after the whole registered corpus compiles.
 
 Published "latest" versions are never accepted automatically.
+
+## Current validation baseline
+
+The initial workspace baseline is validated with Nushell `0.114.1` and Typst
+`0.15.1`. CI checks both script mode and module mode and compiles all seven
+currently registered PDF entrypoints:
+
+- two paper `prepare.typ` documents;
+- Candidate A, B, C, and D annotated previews;
+- Candidate C clean preview.
