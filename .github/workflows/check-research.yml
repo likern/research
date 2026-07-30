@@ -55,5 +55,8 @@ jobs:
       - name: Check toolchain
         run: nu research.nu doctor
 
+      - name: Smoke-test module interface
+        run: nu -c 'use ./research.nu; research list papers | length | print'
+
       - name: Compile every registered document
         run: nu research.nu check
