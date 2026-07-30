@@ -1,0 +1,30 @@
+// Candidate C: balanced default layout.
+// This is the current provisional winner and the repository default.
+
+#let theme = (
+  id: "candidate-c",
+  label: "Candidate C",
+  page_margin: (top: 19mm, bottom: 21mm, left: 20mm, right: 20mm),
+  body_font: "Libertinus Serif",
+  heading_font: "Libertinus Sans",
+  body_size: 10.6pt,
+  body_weight: "regular",
+  title_size: 20.5pt,
+  subtitle_size: 10.8pt,
+  h1_size: 14.2pt,
+  h2_size: 11.8pt,
+  heading_weight: "bold",
+  leading: 0.7em,
+  paragraph_spacing: 0.5em,
+  section_above: 1.3em,
+  section_below: 0.6em,
+  panel_inset: 8pt,
+  panel_radius: 3pt,
+  accent: rgb("#2f3f74"),
+  text_fill: rgb("#20232a"),
+  muted: rgb("#626978"),
+  rule: rgb("#aab3c9"),
+  panel_fill: rgb("#f3f5fb"),
+  metadata_fill: rgb("#f7f8fc"),
+  justify: true,
+)
