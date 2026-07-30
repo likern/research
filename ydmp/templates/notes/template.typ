@@ -119,22 +119,26 @@
     )[#it.body]
   ]
 
-  align(center, text(
-    font: t.heading_font,
-    size: t.title_size,
-    weight: "bold",
-    fill: t.accent,
-    title,
-  ))
+  align(center)[
+    #set par(justify: false)
+    #text(
+      font: t.heading_font,
+      size: t.title_size,
+      weight: "bold",
+      fill: t.accent,
+    )[#title]
+  ]
 
   if subtitle != none {
     v(3pt)
-    align(center, text(
-      font: t.heading_font,
-      size: t.subtitle_size,
-      fill: t.muted,
-      subtitle,
-    ))
+    align(center)[
+      #set par(justify: false)
+      #text(
+        font: t.heading_font,
+        size: t.subtitle_size,
+        fill: t.muted,
+      )[#subtitle]
+    ]
   }
 
   v(10pt)
