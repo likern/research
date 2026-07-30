@@ -15,6 +15,14 @@ knowledge_files:
   - ydmp/profile/learner-profile.yaml
   - ydmp/schemas/preparation-packet.schema.json
   - ydmp/templates/prepare.typ
+  - ydmp/templates/notes/registry.yaml
+  - ydmp/templates/notes/README.md
+  - ydmp/templates/notes/template.typ
+  - ydmp/templates/notes/default.typ
+  - ydmp/templates/notes/candidate-a.typ
+  - ydmp/templates/notes/candidate-b.typ
+  - ydmp/templates/notes/candidate-c.typ
+  - ydmp/templates/notes/candidate-d.typ
 conversation_starters:
   - |
     PREPARE:

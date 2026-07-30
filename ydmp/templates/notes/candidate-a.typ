@@ -1,0 +1,30 @@
+// Candidate A: traditional academic layout.
+// Kept as an independent theme so it can be selected without copying templates.
+
+#let theme = (
+  id: "candidate-a",
+  label: "Candidate A",
+  page_margin: (top: 20mm, bottom: 22mm, left: 22mm, right: 22mm),
+  body_font: "Libertinus Serif",
+  heading_font: "Libertinus Serif",
+  body_size: 10.5pt,
+  body_weight: "regular",
+  title_size: 20pt,
+  subtitle_size: 10.8pt,
+  h1_size: 14pt,
+  h2_size: 11.8pt,
+  heading_weight: "bold",
+  leading: 0.72em,
+  paragraph_spacing: 0.55em,
+  section_above: 1.35em,
+  section_below: 0.65em,
+  panel_inset: 8pt,
+  panel_radius: 2pt,
+  accent: rgb("#24384f"),
+  text_fill: rgb("#20242a"),
+  muted: rgb("#5f6873"),
+  rule: rgb("#aeb8c3"),
+  panel_fill: rgb("#f4f7fa"),
+  metadata_fill: rgb("#f8fafc"),
+  justify: true,
+)

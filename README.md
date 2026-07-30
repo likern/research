@@ -98,6 +98,51 @@ The session record is technically complete but edited: learner answers remain
 verbatim while unrelated dialogue and duplicated navigation are removed. The
 corrected canonical model and the current learning state are stored separately.
 
+## Switchable Typst note templates
+
+Four blind visual candidates are preserved under:
+
+```text
+ydmp/templates/notes/
+```
+
+The current provisional ranking is:
+
+1. Candidate C
+2. Candidate A
+3. Candidate D
+4. Candidate B
+
+Candidate C is the default when no variant is supplied. The ranking is not
+final; the candidates will be evaluated on real filled notes and study records.
+Candidate D is retained with its current light typographic character even though
+initial feedback says the font may be somewhat too thin.
+
+Default use:
+
+```typst
+#import "ydmp/templates/notes/default.typ": paper_notes, note_panel
+
+#show: paper_notes.with(
+  title: "My paper notes",
+  paper_id: "author-year-short-title",
+  stage: "MODEL",
+)
+```
+
+Explicit selection:
+
+```typst
+#import "ydmp/templates/notes/template.typ": paper_notes
+
+#show: paper_notes.with(
+  title: "My paper notes",
+  variant: "candidate-a",
+)
+```
+
+See `ydmp/templates/notes/README.md` and `example.typ` for details.
+
 ## Custom GPT setup
 
 1. Create a GPT named **YDMP Research Tutor**.

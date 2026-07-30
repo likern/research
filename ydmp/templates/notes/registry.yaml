@@ -1,0 +1,69 @@
+version: 1
+status: provisional
+
+purpose: >
+  Preserve all four blind Typst note-template candidates as switchable visual
+  profiles while evaluating them on real scientific-paper notes, recall records,
+  canonical models, and verification documents.
+
+default_variant: candidate-c
+fallback_variant: candidate-c
+
+selection:
+  explicit_field: template_variant
+  accepted_values:
+    - candidate-a
+    - candidate-b
+    - candidate-c
+    - candidate-d
+    - a
+    - b
+    - c
+    - d
+  behavior: >
+    Use candidate-c when no variant is explicitly requested. Never delete or
+    rewrite another candidate merely because its current ranking is lower.
+
+provisional_ranking:
+  recorded_at: '2026-07-30'
+  final: false
+  order:
+    - candidate-c
+    - candidate-a
+    - candidate-d
+    - candidate-b
+  feedback:
+    candidate-c: Current subjective first place and default.
+    candidate-a: Preferred to candidate-b; current second place.
+    candidate-d: Good overall, but the font appears somewhat too thin.
+    candidate-b: Current fourth place; retained as a comparison baseline.
+
+variants:
+  candidate-a:
+    file: candidate-a.typ
+    role: traditional-academic
+    status: available
+    notes: Conservative serif layout with clear hierarchy and moderate density.
+  candidate-b:
+    file: candidate-b.typ
+    role: compact-technical
+    status: available
+    notes: Dense technical layout optimized for fitting more material per page.
+  candidate-c:
+    file: candidate-c.typ
+    role: balanced-default
+    status: default
+    notes: Balanced hierarchy, density, whitespace, and panel contrast.
+  candidate-d:
+    file: candidate-d.typ
+    role: airy-editorial
+    status: available
+    notes: >
+      Airier editorial treatment. The deliberately light typographic character
+      is preserved for comparison; current feedback says it may be too thin.
+
+policy:
+  preserve_all_candidates: true
+  validate_on_real_notes: true
+  ranking_may_change: true
+  default_change_requires_explicit_decision: true
