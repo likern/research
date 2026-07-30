@@ -25,9 +25,9 @@
   выполнения ещё предстоит обосновать.
 ]
 
-Для process $P$ запись $H|P$ обозначает process subhistory — подпоследовательность
-всех событий $H$, относящихся к $P$. Аналогично, $H|x$ является projection
-истории на object $x$.
+Для process $P$ запись $"proj"_P(H)$ обозначает process subhistory —
+подпоследовательность всех событий $H$, относящихся к $P$. Аналогично,
+$"proj"_x(H)$ является projection истории на object $x$.
 
 #my_thought(kind: "formal-link", variant: variant)[
   Эта projection-нотация позже входит непосредственно в определение equivalence:
@@ -35,17 +35,17 @@
   собственную последовательность событий.
 
   Формально:
-  $ H equiv S iff forall P: H|P = S|P. $
+  $ H equiv S quad "iff" quad forall P: "proj"_P(H) = "proj"_P(S). $
 ]
 
 = 2. Определение linearizability
 
 *Черновой формальный перевод.* History $H$ является linearizable, если её можно
 расширить до некоторой history $H'$ добавлением response-событий к части pending
-invocations так, что $complete(H')$ эквивалентна некоторой legal sequential
+invocations так, что $"complete"(H')$ эквивалентна некоторой legal sequential
 history $S$, а real-time precedence в $H$ сохраняется в $S$.
 
-$ exists H', S: H subset.eq H' and complete(H') equiv S and <_H subset.eq <_S $
+$ exists H', S: H subset.eq H' and "complete"(H') equiv S and R_H subset.eq R_S $
 
 #my_thought(kind: "causal-chain", variant: variant)[
   Здесь есть три независимые обязанности:
@@ -66,13 +66,13 @@ $ exists H', S: H subset.eq H' and complete(H') equiv S and <_H subset.eq <_S $
 
 = 3. Свой пример
 
-Пусть register первоначально хранит $0$. Operation $write(1)$ завершилась до
-начала $read()$, а read вернула $0$. Такая история не может быть linearized:
+Пусть register первоначально хранит $0$. Operation $"write"(1)$ завершилась до
+начала $"read"()$, а read вернула $0$. Такая история не может быть linearized:
 real-time order требует поместить write раньше read, но sequential specification
 тогда требует вернуть $1$.
 
 #my_thought(kind: "example", variant: variant)[
-  Для перекрывающихся operations ситуация иная. Если $write(1)$ и $read()$
+  Для перекрывающихся operations ситуация иная. Если $"write"(1)$ и $"read"()$
   перекрываются, read может вернуть и $0$, и $1$, поскольку обе sequential
   интерпретации потенциально совместимы с real-time order.
 
@@ -82,15 +82,16 @@ real-time order требует поместить write раньше read, но 
     columns: (1fr, 1fr),
     inset: 0.35em,
     [*Return*], [*Candidate order*],
-    [$0$], [$read; write$],
-    [$1$], [$write; read$],
+    [$0$], [$"read" -> "write"$],
+    [$1$], [$"write" -> "read"$],
   )
 ]
 
 = 4. Теорема о locality
 
 *Формальный перевод.* History $H$ является linearizable тогда и только тогда,
-когда для каждого object $x$ object subhistory $H|x$ является linearizable.
+когда для каждого object $x$ object subhistory $"proj"_x(H)$ является
+linearizable.
 
 #my_thought(kind: "main-idea", variant: variant)[
   Практический смысл locality: proof можно декомпозировать по abstract objects,
@@ -118,7 +119,7 @@ real-time order требует поместить write раньше read, но 
   variant: variant,
 )[
   Рассмотрим directed relation
-  $ R = (union_x <_(S_x)) union (union_P <_(H|P)) union <_H. $
+  $ R = (union_x R_(S_x)) union (union_P R_("proj"_P(H))) union R_H. $
 
   Требуется показать, что $R$ acyclic, после чего взять topological extension.
 
