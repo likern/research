@@ -258,9 +258,12 @@ def compile-one [doc: record, format: string, out_root: path, typst: path, varia
   let selected_variant = if $variant == null { $cfg.typst.default_variant } else { $variant }
   let all_inputs = ({ variant: $selected_variant } | merge $doc.inputs)
   let input_args = ($all_inputs | transpose key value | each {|x| ["--input" $"($x.key)=($x.value)"] } | flatten)
-  mut args = ["compile" "--root" $ROOT]
-  if $format == "html" { $args = ($args | append ["--features" "html" "--format" "html"]) }
-  $args = ($args | append $input_args | append [$doc.source $output])
+  let base_args = if $format == "html" {
+    ["compile" "--root" $ROOT "--features" "html" "--format" "html"]
+  } else {
+    ["compile" "--root" $ROOT]
+  }
+  let args = ($base_args | append $input_args | append [$doc.source $output])
   let result = (do { ^$typst ...$args } | complete)
   {
     document_id: $doc.document_id
