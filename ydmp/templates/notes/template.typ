@@ -33,8 +33,8 @@
   if value == none {
     default
   } else {
-    let normalized = value.lower()
-    not normalized in ("0", "false", "no", "off", "hide", "hidden")
+    let normalized = lower(value)
+    not (normalized in ("0", "false", "no", "off", "hide", "hidden"))
   }
 }
 
