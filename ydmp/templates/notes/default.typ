@@ -7,5 +7,9 @@
 #let default_variant = "candidate-c"
 #let paper_notes = notes.paper_notes.with(variant: default_variant)
 #let note_panel = notes.note_panel.with(variant: default_variant)
+#let my_thought = notes.my_thought.with(variant: default_variant)
+#let thought = my_thought
 #let evidence = notes.evidence.with(variant: default_variant)
+#let thoughts_visible = notes.thoughts_visible
+#let thought_kind = notes.thought_kind
 #let resolve_theme = notes.resolve_theme

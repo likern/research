@@ -1,10 +1,11 @@
-version: 1
+version: 2
 status: provisional
 
 purpose: >
   Preserve all four blind Typst note-template candidates as switchable visual
   profiles while evaluating them on real scientific-paper notes, recall records,
-  canonical models, and verification documents.
+  formal translations, learner annotations, canonical models, and verification
+  documents.
 
 default_variant: candidate-c
 fallback_variant: candidate-c
@@ -23,6 +24,28 @@ selection:
   behavior: >
     Use candidate-c when no variant is explicitly requested. Never delete or
     rewrite another candidate merely because its current ranking is lower.
+
+learner_annotations:
+  function: my_thought
+  alias: thought
+  body_type: content
+  default_visible: true
+  compile_input: show-thoughts
+  false_values: [false, '0', 'no', off, hide, hidden]
+  hidden_layout_behavior: omit
+  supported_kinds:
+    default: Мои мысли
+    main-idea: Главная мысль
+    causal-chain: Причинная цепочка
+    formal-link: Связь с формальным определением
+    example: Свой пример
+    uncertainty: Неясность
+  design_rules:
+    - body inherits the active template font and paragraph settings
+    - any text-size adjustment is relative to the inherited size
+    - the block is breakable and accepts arbitrary Typst content
+    - disabled annotations return none and leave no layout gap
+    - the same annotation source can generate an annotated or clean document
 
 provisional_ranking:
   recorded_at: '2026-07-30'
@@ -61,6 +84,16 @@ variants:
     notes: >
       Airier editorial treatment. The deliberately light typographic character
       is preserved for comparison; current feedback says it may be too thin.
+
+validation:
+  example_source: thoughts-example.typ
+  ci_workflow: .github/workflows/compile-typst-notes.yml
+  expected_artifacts:
+    - candidate-a-thoughts.pdf
+    - candidate-b-thoughts.pdf
+    - candidate-c-thoughts.pdf
+    - candidate-d-thoughts.pdf
+    - candidate-c-clean.pdf
 
 policy:
   preserve_all_candidates: true

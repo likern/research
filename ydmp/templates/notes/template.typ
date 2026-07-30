@@ -26,6 +26,47 @@
   if value == none or value == "" { "—" } else { value }
 }
 
+// External compilation switch:
+//   typst compile file.typ --input show-thoughts=false
+// sys.inputs values are strings, so normalize a small set of false values.
+#let parse_bool_input(value, default: true) = {
+  if value == none {
+    default
+  } else {
+    let normalized = lower(value)
+    not (normalized in ("0", "false", "no", "off", "hide", "hidden"))
+  }
+}
+
+#let thoughts_visible(visible: auto) = {
+  if visible == auto {
+    parse_bool_input(
+      sys.inputs.at("show-thoughts", default: "true"),
+      default: true,
+    )
+  } else {
+    visible
+  }
+}
+
+#let thought_kind(kind: "default") = {
+  if kind == "main-idea" or kind == "main_idea" or kind == "idea" {
+    (id: "main-idea", label: "Главная мысль", marker: "◆")
+  } else if kind == "causal-chain" or kind == "causal_chain" or kind == "cause" {
+    (id: "causal-chain", label: "Причинная цепочка", marker: "→")
+  } else if kind == "formal-link" or kind == "formal_link" or kind == "definition" {
+    (id: "formal-link", label: "Связь с формальным определением", marker: "≡")
+  } else if kind == "example" or kind == "own-example" or kind == "own_example" {
+    (id: "example", label: "Свой пример", marker: "◇")
+  } else if kind == "uncertainty" or kind == "unclear" or kind == "question" {
+    (id: "uncertainty", label: "Неясность", marker: "?")
+  } else if kind == "default" or kind == "thought" or kind == "note" {
+    (id: "default", label: "Мои мысли", marker: "•")
+  } else {
+    panic("Unknown YDMP thought kind: " + kind)
+  }
+}
+
 #let paper_notes(
   title: "Untitled scientific-paper notes",
   subtitle: none,
@@ -78,22 +119,26 @@
     )[#it.body]
   ]
 
-  align(center, text(
-    font: t.heading_font,
-    size: t.title_size,
-    weight: "bold",
-    fill: t.accent,
-    title,
-  ))
+  align(center)[
+    #set par(justify: false)
+    #text(
+      font: t.heading_font,
+      size: t.title_size,
+      weight: "bold",
+      fill: t.accent,
+    )[#title]
+  ]
 
   if subtitle != none {
     v(3pt)
-    align(center, text(
-      font: t.heading_font,
-      size: t.subtitle_size,
-      fill: t.muted,
-      subtitle,
-    ))
+    align(center)[
+      #set par(justify: false)
+      #text(
+        font: t.heading_font,
+        size: t.subtitle_size,
+        fill: t.muted,
+      )[#subtitle]
+    ]
   }
 
   v(10pt)
@@ -148,6 +193,73 @@
     #body
   ]
 }
+
+// Learner-authored interpretation block.
+//
+// `body` is unrestricted Typst content: paragraphs, lists, display equations,
+// tables, code, diagrams, and nested blocks are all allowed. The body inherits
+// the surrounding document font and layout. Only a relative text-size change is
+// applied, so the component follows Candidate A/B/C/D instead of replacing it.
+//
+// `visible: auto` obeys `--input show-thoughts=false`. Passing an explicit bool
+// overrides the external switch for a single block or a pre-bound function.
+#let my_thought(
+  body,
+  kind: "default",
+  title: auto,
+  show_label: true,
+  visible: auto,
+  variant: default_variant,
+) = {
+  if not thoughts_visible(visible: visible) {
+    none
+  } else {
+    let t = resolve_theme(variant: variant)
+    let spec = thought_kind(kind: kind)
+    let rendered_title = if not show_label or title == none {
+      none
+    } else if title == auto {
+      spec.label
+    } else {
+      title
+    }
+
+    block(
+      width: 100%,
+      breakable: true,
+      above: 0.68em,
+      below: 0.72em,
+      inset: (
+        top: 0.62em,
+        bottom: 0.68em,
+        left: 0.82em,
+        right: 0.76em,
+      ),
+      radius: t.panel_radius,
+      fill: t.panel_fill,
+      stroke: (
+        left: (paint: t.accent, thickness: 0.16em),
+        top: (paint: t.rule, thickness: 0.035em),
+        right: (paint: t.rule, thickness: 0.035em),
+        bottom: (paint: t.rule, thickness: 0.035em),
+      ),
+    )[
+      #if rendered_title != none [
+        #text(
+          size: 0.88em,
+          weight: t.heading_weight,
+          fill: t.accent,
+        )[#spec.marker #h(0.32em) #rendered_title]
+        #v(0.32em)
+      ]
+      #set text(size: 0.96em)
+      #set par(spacing: 0.44em)
+      #body
+    ]
+  }
+}
+
+#let thought = my_thought
 
 #let evidence(label, body, variant: default_variant) = {
   let t = resolve_theme(variant: variant)

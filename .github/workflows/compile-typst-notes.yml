@@ -1,0 +1,57 @@
+name: Compile Typst note-template previews
+
+on:
+  push:
+    branches:
+      - "ydmp/**"
+    paths:
+      - "ydmp/templates/notes/**"
+      - ".github/workflows/compile-typst-notes.yml"
+  pull_request:
+    paths:
+      - "ydmp/templates/notes/**"
+      - ".github/workflows/compile-typst-notes.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Typst
+        uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "0.15.1"
+
+      - name: Compile all visual candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+
+          for short in a b c d; do
+            variant="candidate-${short}"
+            typst compile \
+              --input "variant=${variant}" \
+              --input "show-thoughts=true" \
+              ydmp/templates/notes/thoughts-example.typ \
+              "artifacts/${variant}-thoughts.pdf"
+          done
+
+          typst compile \
+            --input "variant=candidate-c" \
+            --input "show-thoughts=false" \
+            ydmp/templates/notes/thoughts-example.typ \
+            artifacts/candidate-c-clean.pdf
+
+      - name: Upload PDF previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: ydmp-typst-note-previews
+          path: artifacts/*.pdf
+          if-no-files-found: error
