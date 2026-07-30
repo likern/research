@@ -5,10 +5,12 @@ on:
     branches:
       - "ydmp/**"
     paths:
+      - ".typst-version"
       - "ydmp/templates/notes/**"
       - ".github/workflows/compile-typst-notes.yml"
   pull_request:
     paths:
+      - ".typst-version"
       - "ydmp/templates/notes/**"
       - ".github/workflows/compile-typst-notes.yml"
   workflow_dispatch:
@@ -23,10 +25,16 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Read pinned Typst version
+        id: versions
+        shell: bash
+        run: |
+          echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+
       - name: Install Typst
         uses: typst-community/setup-typst@v5
         with:
-          typst-version: "0.15.1"
+          typst-version: ${{ steps.versions.outputs.typst }}
 
       - name: Compile all visual candidates
         shell: bash
