@@ -1,0 +1,17 @@
+schema = 1
+
+[paper]
+metadata = "prepare.json"
+tags = [
+  "concurrency",
+  "linearizability",
+  "correctness-conditions",
+  "formal-methods",
+]
+
+[[documents]]
+id = "prepare"
+source = "prepare.typ"
+formats = ["pdf"]
+required = true
+categories = ["prepare"]

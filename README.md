@@ -143,6 +143,65 @@ Explicit selection:
 
 See `ydmp/templates/notes/README.md` and `example.typ` for details.
 
+## Nushell workspace
+
+The repository uses a Nushell-only build and inspection layer. There is no
+Cargo, Python, marimo, `just`, or language-specific package project.
+
+Pinned tool versions are stored in:
+
+```text
+.nushell-version
+.typst-version
+```
+
+The current supported toolchain is exact, not a version range. Check it before
+building:
+
+```bash
+nu research.nu doctor
+```
+
+Script mode:
+
+```bash
+nu research.nu list papers
+nu research.nu list documents
+nu research.nu list categories
+nu research.nu show paper herlihy-wing-1990-linearizability
+
+nu research.nu build paper herlihy-wing-1990-linearizability
+nu research.nu build document template-notes-candidate-c
+nu research.nu build category isolation-theory
+nu research.nu build all
+
+nu research.nu check
+nu research.nu watch template-notes-candidate-c
+nu research.nu clean
+```
+
+For native Nushell commands and custom completions, import the same file as a
+module:
+
+```nu
+use ./research.nu
+
+research doctor
+research build paper <TAB>
+research build document <TAB>
+research build category <TAB>
+```
+
+Generated files are written under `build/`, which is ignored by Git. `research
+check` compiles all registered Typst entrypoints into a temporary directory and
+removes it on completion. Use `research check --keep` only when diagnostics or
+compiled files must be retained under `build/check/`.
+
+Paper entrypoints are declared in `ydmp/papers/<paper_id>/paper.toml`.
+Workspace-level entrypoints, such as visual template previews, are declared in
+`research.toml`. See `docs/nushell-workspace.md` for the command and manifest
+contracts.
+
 ## Custom GPT setup
 
 1. Create a GPT named **YDMP Research Tutor**.
@@ -155,12 +214,3 @@ See `ydmp/templates/notes/README.md` and `example.typ` for details.
 
 Add `ydmp/commands/<command>.yaml` and register it in
 `ydmp/commands/registry.yaml`. The stable dispatcher does not need rewriting.
-
-## Notebook
-
-Use marimo with DuckDB:
-
-```bash
-uv sync
-uv run marimo edit ydmp/notebooks/ydmp_prepare.py
-```

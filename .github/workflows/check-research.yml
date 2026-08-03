@@ -1,0 +1,66 @@
+name: Check research workspace
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".nushell-version"
+      - ".typst-version"
+      - "research.nu"
+      - "research.toml"
+      - "README.md"
+      - "docs/nushell-workspace.md"
+      - "ydmp/**/*.typ"
+      - "ydmp/**/paper.toml"
+      - "ydmp/**/prepare.json"
+      - ".github/workflows/check-research.yml"
+  pull_request:
+    paths:
+      - ".nushell-version"
+      - ".typst-version"
+      - "research.nu"
+      - "research.toml"
+      - "README.md"
+      - "docs/nushell-workspace.md"
+      - "ydmp/**/*.typ"
+      - "ydmp/**/paper.toml"
+      - "ydmp/**/prepare.json"
+      - ".github/workflows/check-research.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read pinned versions
+        id: versions
+        shell: bash
+        run: |
+          echo "nushell=$(tr -d '[:space:]' < .nushell-version)" >> "$GITHUB_OUTPUT"
+          echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install pinned Nushell
+        uses: hustcer/setup-nu@v3
+        with:
+          version: ${{ steps.versions.outputs.nushell }}
+
+      - name: Install pinned Typst
+        uses: typst-community/setup-typst@v5
+        with:
+          typst-version: ${{ steps.versions.outputs.typst }}
+
+      - name: Check toolchain
+        run: nu research.nu doctor
+
+      - name: Smoke-test module interface
+        run: nu -c 'use ./research.nu; research list papers | length | print'
+
+      - name: Compile every registered document
+        run: nu research.nu check

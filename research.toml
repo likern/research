@@ -1,0 +1,54 @@
+schema = 1
+
+[toolchain]
+policy = "exact"
+nushell_version_file = ".nushell-version"
+typst_version_file = ".typst-version"
+typst_override_env = "RESEARCH_TYPST"
+local_tools_root = ".tools"
+
+[workspace]
+papers_root = "ydmp/papers"
+templates_root = "ydmp/templates"
+build_root = "build"
+
+[typst]
+default_format = "pdf"
+default_variant = "candidate-c"
+html_enabled = false
+variants = ["candidate-a", "candidate-b", "candidate-c", "candidate-d"]
+
+[[documents]]
+id = "template-notes-candidate-a"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes"]
+inputs = { variant = "candidate-a", show-thoughts = "true" }
+
+[[documents]]
+id = "template-notes-candidate-b"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes"]
+inputs = { variant = "candidate-b", show-thoughts = "true" }
+
+[[documents]]
+id = "template-notes-candidate-c"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes"]
+inputs = { variant = "candidate-c", show-thoughts = "true" }
+
+[[documents]]
+id = "template-notes-candidate-d"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes"]
+inputs = { variant = "candidate-d", show-thoughts = "true" }
+
+[[documents]]
+id = "template-notes-candidate-c-clean"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes", "clean"]
+inputs = { variant = "candidate-c", show-thoughts = "false" }
