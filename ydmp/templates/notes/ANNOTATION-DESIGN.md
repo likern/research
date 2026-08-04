@@ -18,7 +18,7 @@ The wrapper is intentionally structural rather than a footnote:
 - the block may break across pages;
 - raw Typst clearly separates formal translation from learner interpretation;
 - the same source generates annotated and clean documents;
-- Candidate A/B/C/D control the typography and colour system.
+- the selected candidate, including experimental Strata, controls the typography and colour system.
 
 ## Provenance layers
 

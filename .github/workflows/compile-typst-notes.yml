@@ -4,13 +4,16 @@ on:
   push:
     branches:
       - "ydmp/**"
+      - "agent/**"
     paths:
       - ".typst-version"
+      - "research.toml"
       - "ydmp/templates/notes/**"
       - ".github/workflows/compile-typst-notes.yml"
   pull_request:
     paths:
       - ".typst-version"
+      - "research.toml"
       - "ydmp/templates/notes/**"
       - ".github/workflows/compile-typst-notes.yml"
   workflow_dispatch:
@@ -36,30 +39,101 @@ jobs:
         with:
           typst-version: ${{ steps.versions.outputs.typst }}
 
-      - name: Compile all visual candidates
+      - name: Compile original visual candidates
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts
+          mkdir -p artifacts/previews
 
           for short in a b c d; do
             variant="candidate-${short}"
             typst compile \
+              --root . \
               --input "variant=${variant}" \
               --input "show-thoughts=true" \
               ydmp/templates/notes/thoughts-example.typ \
-              "artifacts/${variant}-thoughts.pdf"
+              "artifacts/previews/${variant}-thoughts.pdf"
           done
 
           typst compile \
+            --root . \
             --input "variant=candidate-c" \
             --input "show-thoughts=false" \
             ydmp/templates/notes/thoughts-example.typ \
-            artifacts/candidate-c-clean.pdf
+            artifacts/previews/candidate-c-clean.pdf
 
-      - name: Upload PDF previews
+      - name: Compile Candidate Strata previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/previews
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            --input "show-thoughts=true" \
+            ydmp/templates/notes/thoughts-example.typ \
+            artifacts/previews/candidate-strata-thoughts.pdf
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            --input "show-thoughts=false" \
+            ydmp/templates/notes/thoughts-example.typ \
+            artifacts/previews/candidate-strata-clean.pdf
+
+      - name: Compile Strata long-form validation corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/validation
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            --input "show-thoughts=true" \
+            ydmp/templates/notes/validation/strata-linearizability-notes.typ \
+            artifacts/validation/strata-linearizability-notes.pdf
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            --input "show-thoughts=false" \
+            ydmp/templates/notes/validation/strata-linearizability-notes.typ \
+            artifacts/validation/strata-linearizability-notes-clean.pdf
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            ydmp/templates/notes/validation/strata-session-berenson.typ \
+            artifacts/validation/strata-session-berenson.pdf
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            ydmp/templates/notes/validation/strata-model-berenson.typ \
+            artifacts/validation/strata-model-berenson.pdf
+
+          typst compile \
+            --root . \
+            --input "variant=candidate-strata" \
+            ydmp/templates/notes/validation/strata-verify-berenson.typ \
+            artifacts/validation/strata-verify-berenson.pdf
+
+      - name: Record artifact checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          find artifacts -type f -name '*.pdf' -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > artifacts/SHA256SUMS.txt
+
+      - name: Upload PDF previews and validation corpus
         uses: actions/upload-artifact@v4
         with:
           name: ydmp-typst-note-previews
-          path: artifacts/*.pdf
+          path: |
+            artifacts/**/*.pdf
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error

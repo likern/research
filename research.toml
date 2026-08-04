@@ -16,7 +16,13 @@ build_root = "build"
 default_format = "pdf"
 default_variant = "candidate-c"
 html_enabled = false
-variants = ["candidate-a", "candidate-b", "candidate-c", "candidate-d"]
+variants = [
+  "candidate-a",
+  "candidate-b",
+  "candidate-c",
+  "candidate-d",
+  "candidate-strata",
+]
 
 [[documents]]
 id = "template-notes-candidate-a"
@@ -47,8 +53,57 @@ categories = ["template-preview", "notes"]
 inputs = { variant = "candidate-d", show-thoughts = "true" }
 
 [[documents]]
+id = "template-notes-candidate-strata"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes", "strata"]
+inputs = { variant = "candidate-strata", show-thoughts = "true" }
+
+[[documents]]
 id = "template-notes-candidate-c-clean"
 source = "ydmp/templates/notes/thoughts-example.typ"
 formats = ["pdf"]
 categories = ["template-preview", "notes", "clean"]
 inputs = { variant = "candidate-c", show-thoughts = "false" }
+
+[[documents]]
+id = "template-notes-candidate-strata-clean"
+source = "ydmp/templates/notes/thoughts-example.typ"
+formats = ["pdf"]
+categories = ["template-preview", "notes", "clean", "strata"]
+inputs = { variant = "candidate-strata", show-thoughts = "false" }
+
+[[documents]]
+id = "strata-validation-notes"
+source = "ydmp/templates/notes/validation/strata-linearizability-notes.typ"
+formats = ["pdf"]
+categories = ["template-validation", "notes", "long-form", "strata"]
+inputs = { variant = "candidate-strata", show-thoughts = "true" }
+
+[[documents]]
+id = "strata-validation-notes-clean"
+source = "ydmp/templates/notes/validation/strata-linearizability-notes.typ"
+formats = ["pdf"]
+categories = ["template-validation", "notes", "long-form", "clean", "strata"]
+inputs = { variant = "candidate-strata", show-thoughts = "false" }
+
+[[documents]]
+id = "strata-validation-session"
+source = "ydmp/templates/notes/validation/strata-session-berenson.typ"
+formats = ["pdf"]
+categories = ["template-validation", "session", "long-form", "strata"]
+inputs = { variant = "candidate-strata" }
+
+[[documents]]
+id = "strata-validation-model"
+source = "ydmp/templates/notes/validation/strata-model-berenson.typ"
+formats = ["pdf"]
+categories = ["template-validation", "model", "long-form", "strata"]
+inputs = { variant = "candidate-strata" }
+
+[[documents]]
+id = "strata-validation-verify"
+source = "ydmp/templates/notes/validation/strata-verify-berenson.typ"
+formats = ["pdf"]
+categories = ["template-validation", "verify", "long-form", "strata"]
+inputs = { variant = "candidate-strata" }

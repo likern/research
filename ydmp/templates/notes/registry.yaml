@@ -1,11 +1,13 @@
-version: 2
+version: 3
 status: provisional
 
 purpose: >
-  Preserve all four blind Typst note-template candidates as switchable visual
-  profiles while evaluating them on real scientific-paper notes, recall records,
-  formal translations, learner annotations, canonical models, and verification
-  documents.
+  Preserve the four original blind Typst note-template candidates as switchable
+  visual profiles while evaluating them on real scientific-paper notes,
+  closed-book recall records, formal translations, learner annotations,
+  canonical models, and verification documents. Candidate Strata is added as an
+  experimental Pinega-integrated profile and does not replace or silently
+  rerank Candidates A-D.
 
 default_variant: candidate-c
 fallback_variant: candidate-c
@@ -17,13 +19,16 @@ selection:
     - candidate-b
     - candidate-c
     - candidate-d
+    - candidate-strata
     - a
     - b
     - c
     - d
+    - strata
   behavior: >
-    Use candidate-c when no variant is explicitly requested. Never delete or
-    rewrite another candidate merely because its current ranking is lower.
+    Use candidate-c when no variant is explicitly requested. Never delete,
+    rewrite, rerank, or replace another candidate merely because a new
+    experimental profile is available.
 
 learner_annotations:
   function: my_thought
@@ -50,16 +55,21 @@ learner_annotations:
 provisional_ranking:
   recorded_at: '2026-07-30'
   final: false
+  scope: original-blind-candidates
   order:
     - candidate-c
     - candidate-a
     - candidate-d
     - candidate-b
   feedback:
-    candidate-c: Current subjective first place and default.
+    candidate-c: Current subjective first place and repository default.
     candidate-a: Preferred to candidate-b; current second place.
     candidate-d: Good overall, but the font appears somewhat too thin.
     candidate-b: Current fourth place; retained as a comparison baseline.
+  note: >
+    Candidate Strata is intentionally unranked against A-D until it has been
+    evaluated on the registered long-form validation corpus and then on
+    additional real study artifacts.
 
 variants:
   candidate-a:
@@ -84,19 +94,54 @@ variants:
     notes: >
       Airier editorial treatment. The deliberately light typographic character
       is preserved for comparison; current feedback says it may be too thin.
+  candidate-strata:
+    file: candidate-strata.typ
+    role: pinega-brand-integrated-long-form
+    status: experimental
+    aliases: [strata]
+    notes: >
+      Warm paper, layered section rules, explicit provenance panels, and a
+      serif/sans/mono hierarchy derived from the Pinega Strata direction.
+      Candidate C remains the default.
+    boundaries:
+      - no HTML output is registered or evaluated
+      - compiled PDFs are CI artifacts and are not committed
+      - canonical MODEL, VERIFY, and session sources remain Markdown
+      - validation Typst files are source snapshots, not canonical replacements
 
 validation:
-  example_source: thoughts-example.typ
+  short_example_source: thoughts-example.typ
+  long_form_root: validation
   ci_workflow: .github/workflows/compile-typst-notes.yml
+  exact_typst_version_file: .typst-version
   expected_artifacts:
     - candidate-a-thoughts.pdf
     - candidate-b-thoughts.pdf
     - candidate-c-thoughts.pdf
     - candidate-d-thoughts.pdf
+    - candidate-strata-thoughts.pdf
     - candidate-c-clean.pdf
+    - candidate-strata-clean.pdf
+    - strata-linearizability-notes.pdf
+    - strata-linearizability-notes-clean.pdf
+    - strata-session-berenson.pdf
+    - strata-model-berenson.pdf
+    - strata-verify-berenson.pdf
+  source_snapshots:
+    - file: validation/strata-session-berenson.typ
+      canonical_source: ../../papers/berenson-1995-ansi-sql-isolation-levels/study/sessions/closed-book-recall-001.md
+      source_sha256: 49d5b258023ade2d5efffa5b73ca2f5fcbe86ce601a00a6ea1c6fff311c3300f
+    - file: validation/strata-model-berenson.typ
+      canonical_source: ../../papers/berenson-1995-ansi-sql-isolation-levels/study/model.md
+      source_sha256: 1769ea8e01973e35ef083fbba4757d45b7d81e08da59d44119171f21a417191d
+    - file: validation/strata-verify-berenson.typ
+      canonical_source: ../../papers/berenson-1995-ansi-sql-isolation-levels/study/verification.md
+      source_sha256: 6266bbfa380f5f0fdd6eb319b1e616f7c8664ff859bb13669c4d9c5a0d1ea107
 
 policy:
   preserve_all_candidates: true
   validate_on_real_notes: true
   ranking_may_change: true
   default_change_requires_explicit_decision: true
+  experimental_candidate_may_not_change_default: true
+  html_validation_enabled: false

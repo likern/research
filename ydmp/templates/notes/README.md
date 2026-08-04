@@ -1,9 +1,10 @@
 # Switchable Typst templates for YDMP notes
 
-This directory preserves four blind visual candidates as independent Typst
-profiles. They are intentionally kept switchable while they are evaluated on
-real scientific-paper notes, closed-book recall records, canonical models, and
-verification documents.
+This directory preserves four original blind visual candidates as independent
+Typst profiles and adds **Candidate Strata** as an experimental,
+Pinega-integrated long-form profile. All five remain switchable while they are
+evaluated on real scientific-paper notes, closed-book recall records, canonical
+models, and verification documents.
 
 ## Current provisional ranking
 
@@ -12,9 +13,11 @@ verification documents.
 3. Candidate D
 4. Candidate B
 
-This ranking is explicitly **temporary**. Candidate D is considered good, but
-its typography currently appears somewhat too thin. Candidate A is preferred to
-Candidate B. No candidate is deleted or treated as final.
+This ranking is explicitly **temporary** and applies only to the four original
+blind candidates. Candidate D is considered good, but its typography currently
+appears somewhat too thin. Candidate A is preferred to Candidate B. Candidate
+Strata is deliberately **unranked** until its long-form corpus has been
+evaluated. No candidate is deleted or treated as final.
 
 ## Files
 
@@ -24,10 +27,12 @@ candidate-a.typ       traditional academic profile
 candidate-b.typ       compact technical profile
 candidate-c.typ       balanced profile and current default
 candidate-d.typ       airy editorial profile
+candidate-strata.typ  experimental Pinega Strata long-form profile
 template.typ          shared renderer, notes, evidence, and my_thought
 default.typ           stable Candidate C import
 example.typ           minimal working example
 thoughts-example.typ  formal translation interleaved with learner annotations
+validation/           long notes, session, MODEL, and VERIFY stress corpus
 ```
 
 ## Default use: Candidate C
@@ -79,10 +84,50 @@ candidate-a | a
 candidate-b | b
 candidate-c | c
 candidate-d | d
+candidate-strata | strata
 ```
 
 Pass the same `variant` to helper components when using `template.typ`
 directly. When importing `default.typ`, helpers are already bound to Candidate C.
+
+
+## Experimental Candidate Strata
+
+Select Strata explicitly:
+
+```typst
+#import "ydmp/templates/notes/template.typ": \
+  paper_notes, my_thought, evidence
+
+#let variant = "candidate-strata"
+
+#show: paper_notes.with(
+  title: "My paper notes",
+  stage: "MODEL",
+  variant: variant,
+)
+
+#evidence("CONFIRMED", variant: variant)[
+  A source-scoped claim.
+]
+
+#my_thought(kind: "uncertainty", variant: variant)[
+  A learner-authored uncertainty that must not become canonical implicitly.
+]
+```
+
+Strata adds:
+
+- a warm paper background and layered section rule;
+- serif body text with technical sans and mono hierarchy;
+- explicit provenance panels;
+- running PDF navigation for long documents;
+- differentiated annotation and evidence strokes;
+- a PDF-only validation corpus under `validation/`.
+
+It does **not** change `default_variant`, replace Candidate C, or enable HTML
+export. The earlier standalone HTML prototypes are not part of the evidence for
+this candidate.
 
 ## Learner-authored annotations: `my_thought`
 
@@ -102,7 +147,8 @@ math, tables, code, diagrams, evidence blocks, and nested layout elements.
 ]
 ```
 
-The component inherits the current Candidate A/B/C/D font and paragraph style.
+The component inherits the current candidate's font and paragraph style,
+including Candidate Strata.
 It does not set an absolute body font size. The small visual reduction is
 relative (`0.96em`) to the surrounding text. Insets, spacing, and accent stroke
 are also expressed in relative units where practical.
@@ -174,6 +220,12 @@ for short in a b c d; do
     ydmp/templates/notes/thoughts-example.typ \
     "candidate-${short}-thoughts.pdf"
 done
+
+typst compile \
+  --input variant=candidate-strata \
+  --input show-thoughts=true \
+  ydmp/templates/notes/thoughts-example.typ \
+  candidate-strata-thoughts.pdf
 ```
 
 GitHub Actions performs this compilation for pull requests that modify the note
