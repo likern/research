@@ -72,6 +72,25 @@
   }
 }
 
+// Build a complete rounded frame with one emphasized side.
+//
+// A rounded block whose stroke dictionary defines only the left side leaves
+// that stroke with exposed endpoints at the top-left and bottom-left corners.
+// Defining the remaining sides as one continuous edge stroke lets Typst join
+// the four sides through the rounded corners. The edge paint may match the fill
+// when the frame should remain visually invisible, as for dark code blocks.
+#let accented_frame_stroke(
+  accent,
+  edge,
+  accent_thickness,
+  edge_thickness,
+) = (
+  left: (paint: accent, thickness: accent_thickness),
+  top: (paint: edge, thickness: edge_thickness),
+  right: (paint: edge, thickness: edge_thickness),
+  bottom: (paint: edge, thickness: edge_thickness),
+)
+
 // External compilation switch:
 //   typst compile file.typ --input show-thoughts=false
 // sys.inputs values are strings, so normalize a small set of false values.
@@ -270,11 +289,11 @@
         inset: 8pt,
         radius: t.panel_radius,
         fill: t.text_fill,
-        stroke: (
-          left: (
-            paint: theme_value(t, "accent_secondary", t.accent),
-            thickness: 2.4pt,
-          ),
+        stroke: accented_frame_stroke(
+          theme_value(t, "accent_secondary", t.accent),
+          t.text_fill,
+          2.4pt,
+          0.4pt,
         ),
       )[
         #set text(
@@ -382,14 +401,11 @@
       inset: t.panel_inset,
       radius: t.panel_radius,
       fill: t.panel_fill,
-      stroke: (
-        left: (
-          paint: theme_value(t, "accent_tertiary", t.accent),
-          thickness: 2.4pt,
-        ),
-        top: (paint: t.rule, thickness: 0.4pt),
-        right: (paint: t.rule, thickness: 0.4pt),
-        bottom: (paint: t.rule, thickness: 0.4pt),
+      stroke: accented_frame_stroke(
+        theme_value(t, "accent_tertiary", t.accent),
+        t.rule,
+        2.4pt,
+        0.4pt,
       ),
     )[
       #text(
@@ -465,14 +481,11 @@
         ),
         radius: t.panel_radius,
         fill: theme_value(t, "page_fill", t.panel_fill),
-        stroke: (
-          left: (
-            paint: theme_value(t, "accent_secondary", t.accent),
-            thickness: 0.18em,
-          ),
-          top: (paint: t.rule, thickness: 0.035em),
-          right: (paint: t.rule, thickness: 0.035em),
-          bottom: (paint: t.rule, thickness: 0.035em),
+        stroke: accented_frame_stroke(
+          theme_value(t, "accent_secondary", t.accent),
+          t.rule,
+          0.18em,
+          0.035em,
         ),
       )[
         #if rendered_title != none [
@@ -544,11 +557,11 @@
       ),
       radius: t.panel_radius,
       fill: t.metadata_fill,
-      stroke: (
-        left: (paint: paint, thickness: 0.16em),
-        top: (paint: t.rule, thickness: 0.035em),
-        right: (paint: t.rule, thickness: 0.035em),
-        bottom: (paint: t.rule, thickness: 0.035em),
+      stroke: accented_frame_stroke(
+        paint,
+        t.rule,
+        0.16em,
+        0.035em,
       ),
     )[
       #text(
