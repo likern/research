@@ -100,7 +100,8 @@ corrected canonical model and the current learning state are stored separately.
 
 ## Switchable Typst note templates
 
-Four blind visual candidates are preserved under:
+Four original blind visual candidates and one experimental Pinega Strata
+candidate are preserved under:
 
 ```text
 ydmp/templates/notes/
@@ -113,10 +114,13 @@ The current provisional ranking is:
 3. Candidate D
 4. Candidate B
 
-Candidate C is the default when no variant is supplied. The ranking is not
-final; the candidates will be evaluated on real filled notes and study records.
-Candidate D is retained with its current light typographic character even though
-initial feedback says the font may be somewhat too thin.
+Candidate C remains the default when no variant is supplied. The ranking is
+not final and applies to the original A-D comparison. Candidate Strata is
+available only by explicit selection and is evaluated through a PDF-only
+long-form corpus containing guided-reading notes, a captured session, a
+canonical MODEL snapshot, and a VERIFY snapshot. Candidate D is retained with
+its current light typographic character even though initial feedback says the
+font may be somewhat too thin.
 
 Default use:
 
@@ -141,7 +145,17 @@ Explicit selection:
 )
 ```
 
-See `ydmp/templates/notes/README.md` and `example.typ` for details.
+Experimental Strata selection:
+
+```typst
+#show: paper_notes.with(
+  title: "My paper notes",
+  variant: "candidate-strata",
+)
+```
+
+See `ydmp/templates/notes/README.md`, `example.typ`, and
+`ydmp/templates/notes/validation/README.md` for details.
 
 ## Nushell workspace
 

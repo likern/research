@@ -23,6 +23,8 @@ knowledge_files:
   - ydmp/templates/notes/candidate-b.typ
   - ydmp/templates/notes/candidate-c.typ
   - ydmp/templates/notes/candidate-d.typ
+  - ydmp/templates/notes/candidate-strata.typ
+  - ydmp/templates/notes/validation/README.md
 conversation_starters:
   - |
     PREPARE:

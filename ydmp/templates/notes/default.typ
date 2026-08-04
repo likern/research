@@ -13,3 +13,5 @@
 #let thoughts_visible = notes.thoughts_visible
 #let thought_kind = notes.thought_kind
 #let resolve_theme = notes.resolve_theme
+#let research_kicker = notes.research_kicker.with(variant: default_variant)
+#let state_panel = notes.state_panel.with(variant: default_variant)

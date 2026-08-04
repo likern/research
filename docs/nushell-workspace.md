@@ -165,10 +165,19 @@ Published "latest" versions are never accepted automatically.
 
 ## Current validation baseline
 
-The initial workspace baseline is validated with Nushell `0.114.1` and Typst
-`0.15.1`. CI checks both script mode and module mode and compiles all seven
+The current workspace baseline is validated with Nushell `0.114.1` and Typst
+`0.15.1`. CI checks both script mode and module mode and compiles all fourteen
 currently registered PDF entrypoints:
 
 - two paper `prepare.typ` documents;
 - Candidate A, B, C, and D annotated previews;
-- Candidate C clean preview.
+- Candidate C clean preview;
+- Candidate Strata annotated and clean short previews;
+- Candidate Strata annotated and clean ten-page guided-reading notes;
+- one long captured-session snapshot;
+- one canonical MODEL snapshot;
+- one VERIFY snapshot.
+
+The Strata validation corpus is PDF-only. HTML remains disabled until the paged
+templates are deliberately adapted and validated against Typst's experimental
+HTML export.
