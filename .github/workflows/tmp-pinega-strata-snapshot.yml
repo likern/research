@@ -1,0 +1,33 @@
+name: Temporary Pinega Strata repository snapshot
+
+on:
+  push:
+    branches:
+      - "tmp/pinega-strata-snapshot"
+    paths:
+      - ".github/workflows/tmp-pinega-strata-snapshot.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/tmp-pinega-strata-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package repository snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip -qr research-main-snapshot.zip . \
+            -x '.git/*' \
+            -x 'research-main-snapshot.zip'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: research-main-snapshot
+          path: research-main-snapshot.zip
+          if-no-files-found: error
