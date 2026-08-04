@@ -6,6 +6,9 @@ on:
       - "agent/diagram-implementation-gate"
     paths:
       - ".github/workflows/tmp-apply-diagram-gate.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/tmp-apply-diagram-gate.yml"
   workflow_dispatch:
 
 permissions:
