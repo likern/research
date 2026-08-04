@@ -6,6 +6,9 @@ on:
       - "tmp/pinega-brand-render"
     paths:
       - ".github/workflows/tmp-pinega-typst-binary.yml"
+  pull_request:
+    paths:
+      - ".github/workflows/tmp-pinega-typst-binary.yml"
   workflow_dispatch:
 
 permissions:
