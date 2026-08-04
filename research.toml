@@ -107,3 +107,10 @@ source = "ydmp/templates/notes/validation/strata-verify-berenson.typ"
 formats = ["pdf"]
 categories = ["template-validation", "verify", "long-form", "strata"]
 inputs = { variant = "candidate-strata" }
+
+[[documents]]
+id = "strata-diagram-implementation-gate"
+source = "ydmp/templates/diagrams/specimens/implementation-gate.typ"
+formats = ["pdf"]
+categories = ["diagram-validation", "strata", "concurrency", "taomp"]
+inputs = {}
