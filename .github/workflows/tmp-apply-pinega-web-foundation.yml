@@ -42,8 +42,13 @@ jobs:
         run: |
           set -euo pipefail
           tar -xzf /tmp/pinega-web-foundation-v0.1.tar.gz
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('web/src/vendor/webawesome/pinega.palette.css')
+          path.write_text(path.read_text().rstrip() + '\n')
+          PY
           git rm -rf .github/pinega-web-foundation-payload
-          git rm -f .github/pinega-web-foundation-payload.b64 || true
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add design web docs/web-foundation.md
