@@ -1,0 +1,64 @@
+name: Temporary apply semantic diagram gate
+
+on:
+  push:
+    branches:
+      - "agent/diagram-implementation-gate"
+    paths:
+      - ".github/workflows/tmp-apply-diagram-gate.yml"
+      - ".github/diagram-gate-payload/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/diagram-implementation-gate
+          fetch-depth: 0
+
+      - name: Decode and verify payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/diagram-gate-payload/part-*.b64 \
+            > /tmp/diagram-gate.tar.gz.b64
+          base64 --decode /tmp/diagram-gate.tar.gz.b64 \
+            > /tmp/diagram-gate.tar.gz
+          printf '%s  %s\n' \
+            'bd7d7fae1c64b83d6e711da322f626618ebabef2771d9d29a77296e6853f698d' \
+            '/tmp/diagram-gate.tar.gz' \
+            | sha256sum --check
+          tar -tzf /tmp/diagram-gate.tar.gz > /dev/null
+
+      - name: Extract semantic diagram sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/diagram-gate.tar.gz
+          # The workflow file is applied later through the GitHub connector.
+          # Avoid a workflow-token permission boundary in this temporary helper.
+          git checkout -- .github/workflows/compile-typst-notes.yml
+          git diff --check
+
+      - name: Commit semantic diagram sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add research.toml ydmp/templates/diagrams
+          git diff --cached --check
+
+          if git diff --cached --quiet; then
+            echo 'Semantic diagram gate is already present.'
+            exit 0
+          fi
+
+          git commit -m 'Add semantic concurrency diagram gate'
+          git push origin HEAD:agent/diagram-implementation-gate
