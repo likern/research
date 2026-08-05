@@ -150,7 +150,7 @@
                 <wa-copy-button></wa-copy-button>
               </div>
             </header>
-            <pre><code>fn pin_candidate(handle: Handle) -&gt; Result&lt;PinnedFrame, Retry&gt; {
+            <pre tabindex="0"><code>fn pin_candidate(handle: Handle) -&gt; Result&lt;PinnedFrame, Retry&gt; {
     let generation = handle.generation();
     let guard = hazard_domain.protect(handle.slot());
 
