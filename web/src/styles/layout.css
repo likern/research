@@ -2,18 +2,19 @@
   .pinega-page {
     display: grid;
     grid-template-columns:
-      minmax(var(--pinega-ref-space-m), 1fr)
-      minmax(0, var(--pinega-sys-measure-wide))
-      minmax(var(--pinega-ref-space-m), 1fr);
+      [full-start] minmax(var(--pinega-ref-space-m), 1fr)
+      [content-start] min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide))
+      [content-end] minmax(var(--pinega-ref-space-m), 1fr)
+      [full-end];
     min-block-size: 100dvb;
   }
 
   .pinega-page > * {
-    grid-column: 2;
+    grid-column: content;
   }
 
   .pinega-full-bleed {
-    grid-column: 1 / -1 !important;
+    grid-column: full !important;
   }
 
   .pinega-section {
@@ -57,12 +58,4 @@
     padding: clamp(1.25rem, 1rem + 1.2vi, 2.25rem);
   }
 
-  @media (width <= 42rem) {
-    .pinega-page {
-      grid-template-columns:
-        minmax(var(--pinega-ref-space-m), 1fr)
-        minmax(0, 1fr)
-        minmax(var(--pinega-ref-space-m), 1fr);
-    }
-  }
 }
