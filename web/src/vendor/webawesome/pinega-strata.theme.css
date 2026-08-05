@@ -43,6 +43,10 @@
     --wa-color-text-link: var(--pinega-sys-color-text-link);
     --wa-color-focus: var(--pinega-sys-color-focus);
 
+    --wa-color-warning-fill-loud: var(--pinega-ref-color-ochre-30);
+    --wa-color-warning-border-loud: var(--pinega-ref-color-ochre-30);
+    --wa-color-warning-on-loud: var(--pinega-ref-color-neutral-95);
+
     --wa-focus-ring-style: solid;
     --wa-focus-ring-width: 0.1875rem;
     --wa-focus-ring-offset: 0.125rem;
