@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Production Web Components foundation for the Pinega Strata design system.",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=26.0.0"
   },
   "scripts": {
     "tokens": "node ../design/scripts/build-tokens.mjs",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
-    "@types/node": "22.10.2",
+    "@types/node": "26.1.2",
     "axe-core": "4.13.0",
     "esbuild": "0.28.1",
     "typescript": "7.0.2"
