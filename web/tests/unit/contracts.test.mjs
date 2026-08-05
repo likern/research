@@ -11,6 +11,7 @@ test('the component lab keeps semantic HTML as the durable source', async () => 
   const html = await read('component-lab/index.html');
   assert.match(html, /<main id="main-content"/u);
   assert.match(html, /<nav data-primary-navigation aria-label="Primary navigation">/u);
+  assert.match(html, /<pre tabindex="0"><code>/u);
   assert.match(html, /<table>/u);
   assert.match(html, /<caption class="pinega-visually-hidden">/u);
   assert.doesNotMatch(html, /innerHTML=/u);
