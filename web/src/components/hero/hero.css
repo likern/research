@@ -1,0 +1,185 @@
+@layer pinega.components {
+  pinega-hero {
+    display: block;
+    container: pinega-hero / inline-size;
+    padding-block: clamp(4.5rem, 3rem + 7vi, 10rem);
+  }
+
+  pinega-hero > section {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+    align-items: center;
+    gap: clamp(2.5rem, 2rem + 5cqi, 7rem);
+  }
+
+  .pinega-hero-copy {
+    display: grid;
+    gap: var(--pinega-ref-space-xl);
+  }
+
+  .pinega-hero-copy > p:not(.pinega-eyebrow) {
+    color: var(--pinega-sys-color-text-secondary);
+    font-family: var(--pinega-sys-font-family-reading);
+    font-size: clamp(1.1rem, 1rem + 0.45cqi, 1.4rem);
+    line-height: 1.65;
+  }
+
+  .pinega-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pinega-ref-space-s);
+  }
+
+
+  .pinega-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 3rem;
+    border: 1px solid transparent;
+    border-radius: var(--pinega-sys-radius-control);
+    padding-inline: var(--pinega-ref-space-l);
+    font-weight: var(--pinega-sys-font-weight-action);
+    line-height: 1;
+    text-decoration: none;
+    transition:
+      translate var(--pinega-sys-motion-duration-fast) var(--pinega-sys-motion-easing-standard),
+      background-color var(--pinega-sys-motion-duration-fast) var(--pinega-sys-motion-easing-standard),
+      border-color var(--pinega-sys-motion-duration-fast) var(--pinega-sys-motion-easing-standard);
+  }
+
+  .pinega-action:hover {
+    translate: 0 -0.0625rem;
+  }
+
+  .pinega-action:active {
+    translate: 0;
+  }
+
+  .pinega-action-primary {
+    background: var(--pinega-sys-color-action-primary);
+    color: var(--pinega-sys-color-action-on-primary);
+  }
+
+  .pinega-action-primary:hover {
+    background: var(--pinega-sys-color-action-primary-hover);
+  }
+
+  .pinega-action-secondary {
+    border-color: var(--pinega-sys-color-border-normal);
+    background: var(--pinega-sys-color-surface-raised);
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-action-secondary:hover {
+    border-color: var(--pinega-sys-color-border-strong);
+  }
+
+  .pinega-hero-stack {
+    position: relative;
+    min-block-size: 27rem;
+    perspective: 60rem;
+  }
+
+  .pinega-hero-layer {
+    position: absolute;
+    inset-inline: 0;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-feature);
+    background: var(--pinega-sys-color-surface-raised);
+    box-shadow: 0 1.2rem 4rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 12%, transparent);
+    padding: var(--pinega-ref-space-l);
+    transform-origin: center bottom;
+  }
+
+  .pinega-hero-layer:nth-child(1) {
+    inset-block-start: 1rem;
+    transform: rotate(-4deg) translateX(-1.4rem) scale(0.92);
+  }
+
+  .pinega-hero-layer:nth-child(2) {
+    inset-block-start: 4.7rem;
+    transform: rotate(2.5deg) translateX(1rem) scale(0.96);
+  }
+
+  .pinega-hero-layer:nth-child(3) {
+    inset-block-start: 8.5rem;
+  }
+
+  .pinega-hero-layer-header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--pinega-ref-space-m);
+    margin-block-end: var(--pinega-ref-space-l);
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pinega-hero-trace {
+    display: grid;
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-hero-trace-row {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-hero-trace-row > span:first-child {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.75rem;
+  }
+
+  .pinega-hero-trace-line {
+    position: relative;
+    block-size: 0.55rem;
+    border-radius: var(--pinega-ref-radius-pill);
+    background: var(--pinega-sys-color-surface-lowered);
+    overflow: hidden;
+  }
+
+  .pinega-hero-trace-line::before {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--start, 0%);
+    inline-size: var(--length, 60%);
+    border-radius: inherit;
+    background: var(--tone, var(--pinega-sys-color-action-primary));
+  }
+
+  @container pinega-hero (inline-size < 54rem) {
+    pinega-hero > section {
+      grid-template-columns: 1fr;
+    }
+
+    .pinega-hero-stack {
+      min-block-size: 24rem;
+      max-inline-size: 36rem;
+      inline-size: 100%;
+      justify-self: center;
+    }
+  }
+
+  @container pinega-hero (inline-size < 34rem) {
+    .pinega-hero-actions {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .pinega-hero-actions .pinega-action {
+      inline-size: 100%;
+    }
+
+    .pinega-hero-stack {
+      min-block-size: 20rem;
+    }
+  }
+}

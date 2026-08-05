@@ -1,0 +1,64 @@
+@layer pinega.webawesome {
+  .wa-palette-pinega {
+    --wa-color-brand-95: var(--pinega-ref-color-river-95);
+    --wa-color-brand-90: var(--pinega-ref-color-river-90);
+    --wa-color-brand-80: var(--pinega-ref-color-river-80);
+    --wa-color-brand-70: var(--pinega-ref-color-river-70);
+    --wa-color-brand-60: var(--pinega-ref-color-river-60);
+    --wa-color-brand-50: var(--pinega-ref-color-river-50);
+    --wa-color-brand-40: var(--pinega-ref-color-river-40);
+    --wa-color-brand-30: var(--pinega-ref-color-river-30);
+    --wa-color-brand-20: var(--pinega-ref-color-river-20);
+    --wa-color-brand-10: var(--pinega-ref-color-river-10);
+    --wa-color-brand-05: var(--pinega-ref-color-river-05);
+
+    --wa-color-neutral-95: var(--pinega-ref-color-neutral-95);
+    --wa-color-neutral-90: var(--pinega-ref-color-neutral-90);
+    --wa-color-neutral-80: var(--pinega-ref-color-neutral-80);
+    --wa-color-neutral-70: var(--pinega-ref-color-neutral-70);
+    --wa-color-neutral-60: var(--pinega-ref-color-neutral-60);
+    --wa-color-neutral-50: var(--pinega-ref-color-neutral-50);
+    --wa-color-neutral-40: var(--pinega-ref-color-neutral-40);
+    --wa-color-neutral-30: var(--pinega-ref-color-neutral-30);
+    --wa-color-neutral-20: var(--pinega-ref-color-neutral-20);
+    --wa-color-neutral-10: var(--pinega-ref-color-neutral-10);
+    --wa-color-neutral-05: var(--pinega-ref-color-neutral-05);
+
+    --wa-color-success-95: var(--pinega-ref-color-moss-95);
+    --wa-color-success-90: var(--pinega-ref-color-moss-90);
+    --wa-color-success-80: var(--pinega-ref-color-moss-80);
+    --wa-color-success-70: var(--pinega-ref-color-moss-70);
+    --wa-color-success-60: var(--pinega-ref-color-moss-60);
+    --wa-color-success-50: var(--pinega-ref-color-moss-50);
+    --wa-color-success-40: var(--pinega-ref-color-moss-40);
+    --wa-color-success-30: var(--pinega-ref-color-moss-30);
+    --wa-color-success-20: var(--pinega-ref-color-moss-20);
+    --wa-color-success-10: var(--pinega-ref-color-moss-10);
+    --wa-color-success-05: var(--pinega-ref-color-moss-05);
+
+    --wa-color-warning-95: var(--pinega-ref-color-ochre-95);
+    --wa-color-warning-90: var(--pinega-ref-color-ochre-90);
+    --wa-color-warning-80: var(--pinega-ref-color-ochre-80);
+    --wa-color-warning-70: var(--pinega-ref-color-ochre-70);
+    --wa-color-warning-60: var(--pinega-ref-color-ochre-60);
+    --wa-color-warning-50: var(--pinega-ref-color-ochre-50);
+    --wa-color-warning-40: var(--pinega-ref-color-ochre-40);
+    --wa-color-warning-30: var(--pinega-ref-color-ochre-30);
+    --wa-color-warning-20: var(--pinega-ref-color-ochre-20);
+    --wa-color-warning-10: var(--pinega-ref-color-ochre-10);
+    --wa-color-warning-05: var(--pinega-ref-color-ochre-05);
+
+    --wa-color-danger-95: var(--pinega-ref-color-danger-95);
+    --wa-color-danger-90: var(--pinega-ref-color-danger-90);
+    --wa-color-danger-80: var(--pinega-ref-color-danger-80);
+    --wa-color-danger-70: var(--pinega-ref-color-danger-70);
+    --wa-color-danger-60: var(--pinega-ref-color-danger-60);
+    --wa-color-danger-50: var(--pinega-ref-color-danger-50);
+    --wa-color-danger-40: var(--pinega-ref-color-danger-40);
+    --wa-color-danger-30: var(--pinega-ref-color-danger-30);
+    --wa-color-danger-20: var(--pinega-ref-color-danger-20);
+    --wa-color-danger-10: var(--pinega-ref-color-danger-10);
+    --wa-color-danger-05: var(--pinega-ref-color-danger-05);
+
+  }
+}

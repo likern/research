@@ -1,0 +1,92 @@
+@layer pinega.components {
+  pinega-evidence {
+    --_evidence-color: var(--pinega-research-color-confirmed);
+    --_evidence-surface: var(--pinega-research-color-confirmed-surface);
+
+    display: grid;
+    grid-template-columns: var(--pinega-component-evidence-rail-width) minmax(0, 1fr);
+    gap: var(--pinega-ref-space-l);
+    container: pinega-evidence / inline-size;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: color-mix(in oklab, var(--_evidence-surface) 60%, var(--pinega-sys-color-surface-raised));
+    box-shadow: 0 0.75rem 2.25rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 5%, transparent);
+    padding: var(--pinega-component-evidence-padding);
+    overflow: clip;
+  }
+
+  pinega-evidence::before {
+    content: '';
+    align-self: stretch;
+    inline-size: var(--pinega-component-evidence-rail-width);
+    border-radius: var(--pinega-ref-radius-pill);
+    background: var(--_evidence-color);
+  }
+
+  pinega-evidence > * {
+    grid-column: 2;
+  }
+
+  pinega-evidence [data-evidence-label] {
+    align-self: start;
+    color: var(--_evidence-color);
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  pinega-evidence > :not([data-evidence-label]) {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  pinega-evidence[kind='inferred'] {
+    --_evidence-color: var(--pinega-research-color-inferred);
+    --_evidence-surface: var(--pinega-research-color-inferred-surface);
+  }
+
+  pinega-evidence[kind='hypothesis'] {
+    --_evidence-color: var(--pinega-research-color-hypothesis);
+    --_evidence-surface: var(--pinega-research-color-hypothesis-surface);
+  }
+
+  pinega-evidence[kind='external'] {
+    --_evidence-color: var(--pinega-research-color-external);
+    --_evidence-surface: var(--pinega-research-color-external-surface);
+  }
+
+  pinega-evidence[kind='contradicted'] {
+    --_evidence-color: var(--pinega-research-color-contradicted);
+    --_evidence-surface: var(--pinega-research-color-contradicted-surface);
+  }
+
+
+  @supports selector(:state(confirmed)) {
+    pinega-evidence:state(inferred) {
+      --_evidence-color: var(--pinega-research-color-inferred);
+      --_evidence-surface: var(--pinega-research-color-inferred-surface);
+    }
+
+    pinega-evidence:state(hypothesis) {
+      --_evidence-color: var(--pinega-research-color-hypothesis);
+      --_evidence-surface: var(--pinega-research-color-hypothesis-surface);
+    }
+
+    pinega-evidence:state(external) {
+      --_evidence-color: var(--pinega-research-color-external);
+      --_evidence-surface: var(--pinega-research-color-external-surface);
+    }
+
+    pinega-evidence:state(contradicted) {
+      --_evidence-color: var(--pinega-research-color-contradicted);
+      --_evidence-surface: var(--pinega-research-color-contradicted-surface);
+    }
+  }
+
+  @container pinega-evidence (inline-size < 25rem) {
+    pinega-evidence {
+      gap: var(--pinega-ref-space-m);
+      padding: var(--pinega-ref-space-m);
+    }
+  }
+}

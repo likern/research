@@ -1,0 +1,1392 @@
+{
+  "$description": "Canonical Pinega Strata design tokens. DTCG 2025.10 format; generated platform files must not be edited by hand.",
+  "$extensions": {
+    "dev.pinega.strata": {
+      "formatVersion": "2025.10",
+      "typstRemBasePt": 10,
+      "cssPrefix": "pinega"
+    }
+  },
+  "reference": {
+    "$description": "Raw palette, size, type, radius, shadow, and motion values.",
+    "color": {
+      "paper": {
+        "$type": "color",
+        "050": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.985,
+              0.009,
+              84
+            ],
+            "alpha": 1
+          }
+        },
+        "100": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.965,
+              0.014,
+              84
+            ],
+            "alpha": 1
+          }
+        },
+        "200": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.93,
+              0.021,
+              82
+            ],
+            "alpha": 1
+          }
+        },
+        "300": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.875,
+              0.028,
+              80
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "neutral": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.97,
+              0.009,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.925,
+              0.011,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.845,
+              0.014,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.745,
+              0.017,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.64,
+              0.019,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.535,
+              0.02,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.435,
+              0.02,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.345,
+              0.019,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.265,
+              0.017,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.195,
+              0.014,
+              245
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.14,
+              0.011,
+              245
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "river": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.965,
+              0.018,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.915,
+              0.032,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.825,
+              0.052,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.715,
+              0.07,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.605,
+              0.082,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.505,
+              0.088,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.42,
+              0.082,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.345,
+              0.071,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.27,
+              0.055,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.205,
+              0.039,
+              225
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.15,
+              0.027,
+              225
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "moss": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.965,
+              0.02,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.915,
+              0.038,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.825,
+              0.06,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.715,
+              0.075,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.61,
+              0.08,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.515,
+              0.078,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.43,
+              0.07,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.35,
+              0.06,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.275,
+              0.045,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.21,
+              0.032,
+              135
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.155,
+              0.023,
+              135
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "rust": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.97,
+              0.018,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.92,
+              0.038,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.83,
+              0.075,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.72,
+              0.105,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.62,
+              0.125,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.535,
+              0.13,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.45,
+              0.12,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.37,
+              0.1,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.29,
+              0.075,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.22,
+              0.052,
+              45
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.16,
+              0.035,
+              45
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "ochre": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.975,
+              0.02,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.93,
+              0.045,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.85,
+              0.085,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.76,
+              0.115,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.67,
+              0.13,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.585,
+              0.13,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.5,
+              0.115,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.415,
+              0.09,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.325,
+              0.065,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.24,
+              0.043,
+              85
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.17,
+              0.028,
+              85
+            ],
+            "alpha": 1
+          }
+        }
+      },
+      "danger": {
+        "$type": "color",
+        "95": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.97,
+              0.018,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "90": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.92,
+              0.042,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "80": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.83,
+              0.085,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "70": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.72,
+              0.135,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "60": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.62,
+              0.17,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "50": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.54,
+              0.18,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "40": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.455,
+              0.16,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "30": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.37,
+              0.13,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "20": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.29,
+              0.095,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "10": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.22,
+              0.065,
+              25
+            ],
+            "alpha": 1
+          }
+        },
+        "05": {
+          "$value": {
+            "colorSpace": "oklch",
+            "components": [
+              0.16,
+              0.043,
+              25
+            ],
+            "alpha": 1
+          }
+        }
+      }
+    },
+    "space": {
+      "$type": "dimension",
+      "3xs": {
+        "$value": {
+          "value": 0.125,
+          "unit": "rem"
+        }
+      },
+      "2xs": {
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "xs": {
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        }
+      },
+      "s": {
+        "$value": {
+          "value": 0.75,
+          "unit": "rem"
+        }
+      },
+      "m": {
+        "$value": {
+          "value": 1,
+          "unit": "rem"
+        }
+      },
+      "l": {
+        "$value": {
+          "value": 1.5,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 2,
+          "unit": "rem"
+        }
+      },
+      "2xl": {
+        "$value": {
+          "value": 3,
+          "unit": "rem"
+        }
+      },
+      "3xl": {
+        "$value": {
+          "value": 4.5,
+          "unit": "rem"
+        }
+      },
+      "4xl": {
+        "$value": {
+          "value": 6.5,
+          "unit": "rem"
+        }
+      }
+    },
+    "radius": {
+      "$type": "dimension",
+      "s": {
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "m": {
+        "$value": {
+          "value": 0.5,
+          "unit": "rem"
+        }
+      },
+      "l": {
+        "$value": {
+          "value": 0.875,
+          "unit": "rem"
+        }
+      },
+      "xl": {
+        "$value": {
+          "value": 1.25,
+          "unit": "rem"
+        }
+      },
+      "pill": {
+        "$value": {
+          "value": 9999,
+          "unit": "px"
+        }
+      }
+    },
+    "font": {
+      "family": {
+        "$type": "fontFamily",
+        "ui": {
+          "$value": [
+            "Inter",
+            "system-ui",
+            "sans-serif"
+          ]
+        },
+        "reading": {
+          "$value": [
+            "Libertinus Serif",
+            "Georgia",
+            "serif"
+          ]
+        },
+        "code": {
+          "$value": [
+            "Noto Sans Mono",
+            "ui-monospace",
+            "monospace"
+          ]
+        }
+      },
+      "weight": {
+        "$type": "fontWeight",
+        "normal": {
+          "$value": 400
+        },
+        "medium": {
+          "$value": 500
+        },
+        "semibold": {
+          "$value": 600
+        },
+        "bold": {
+          "$value": 700
+        }
+      },
+      "lineHeight": {
+        "$type": "number",
+        "condensed": {
+          "$value": 1.25
+        },
+        "normal": {
+          "$value": 1.6
+        },
+        "expanded": {
+          "$value": 1.85
+        }
+      }
+    },
+    "motion": {
+      "duration": {
+        "$type": "duration",
+        "fast": {
+          "$value": {
+            "value": 75,
+            "unit": "ms"
+          }
+        },
+        "normal": {
+          "$value": {
+            "value": 150,
+            "unit": "ms"
+          }
+        },
+        "slow": {
+          "$value": {
+            "value": 300,
+            "unit": "ms"
+          }
+        }
+      },
+      "easing": {
+        "$type": "cubicBezier",
+        "standard": {
+          "$value": [
+            0.2,
+            0,
+            0,
+            1
+          ]
+        },
+        "emphasized": {
+          "$value": [
+            0.2,
+            0.8,
+            0.2,
+            1
+          ]
+        }
+      }
+    },
+    "measure": {
+      "$type": "number",
+      "prose": {
+        "$value": 68
+      },
+      "wide": {
+        "$value": {
+          "value": 78,
+          "unit": "rem"
+        },
+        "$type": "dimension"
+      }
+    }
+  },
+  "system": {
+    "$description": "Mode-dependent semantic tokens. Light and dark paths emit identical CSS variable names under different selectors.",
+    "light": {
+      "color": {
+        "$type": "color",
+        "surface": {
+          "canvas": {
+            "$value": "{reference.color.paper.050}"
+          },
+          "default": {
+            "$value": "{reference.color.paper.100}"
+          },
+          "raised": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "lowered": {
+            "$value": "{reference.color.paper.200}"
+          },
+          "inverse": {
+            "$value": "{reference.color.neutral.10}"
+          }
+        },
+        "text": {
+          "primary": {
+            "$value": "{reference.color.neutral.10}"
+          },
+          "secondary": {
+            "$value": "{reference.color.neutral.30}"
+          },
+          "quiet": {
+            "$value": "{reference.color.neutral.40}"
+          },
+          "inverse": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "link": {
+            "$value": "{reference.color.river.30}"
+          }
+        },
+        "border": {
+          "subtle": {
+            "$value": "{reference.color.neutral.80}"
+          },
+          "normal": {
+            "$value": "{reference.color.neutral.70}"
+          },
+          "strong": {
+            "$value": "{reference.color.neutral.50}"
+          }
+        },
+        "action": {
+          "primary": {
+            "$value": "{reference.color.river.40}"
+          },
+          "primaryHover": {
+            "$value": "{reference.color.river.30}"
+          },
+          "primaryActive": {
+            "$value": "{reference.color.river.20}"
+          },
+          "onPrimary": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "quiet": {
+            "$value": "{reference.color.river.90}"
+          },
+          "onQuiet": {
+            "$value": "{reference.color.river.30}"
+          }
+        },
+        "focus": {
+          "$value": "{reference.color.rust.50}"
+        },
+        "code": {
+          "surface": {
+            "$value": "{reference.color.neutral.10}"
+          },
+          "text": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "muted": {
+            "$value": "{reference.color.neutral.70}"
+          }
+        }
+      }
+    },
+    "dark": {
+      "color": {
+        "$type": "color",
+        "surface": {
+          "canvas": {
+            "$value": "{reference.color.neutral.05}"
+          },
+          "default": {
+            "$value": "{reference.color.neutral.10}"
+          },
+          "raised": {
+            "$value": "{reference.color.neutral.20}"
+          },
+          "lowered": {
+            "$value": "{reference.color.neutral.05}"
+          },
+          "inverse": {
+            "$value": "{reference.color.paper.100}"
+          }
+        },
+        "text": {
+          "primary": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "secondary": {
+            "$value": "{reference.color.neutral.80}"
+          },
+          "quiet": {
+            "$value": "{reference.color.neutral.70}"
+          },
+          "inverse": {
+            "$value": "{reference.color.neutral.10}"
+          },
+          "link": {
+            "$value": "{reference.color.river.70}"
+          }
+        },
+        "border": {
+          "subtle": {
+            "$value": "{reference.color.neutral.20}"
+          },
+          "normal": {
+            "$value": "{reference.color.neutral.30}"
+          },
+          "strong": {
+            "$value": "{reference.color.neutral.50}"
+          }
+        },
+        "action": {
+          "primary": {
+            "$value": "{reference.color.river.60}"
+          },
+          "primaryHover": {
+            "$value": "{reference.color.river.70}"
+          },
+          "primaryActive": {
+            "$value": "{reference.color.river.80}"
+          },
+          "onPrimary": {
+            "$value": "{reference.color.neutral.05}"
+          },
+          "quiet": {
+            "$value": "{reference.color.river.20}"
+          },
+          "onQuiet": {
+            "$value": "{reference.color.river.70}"
+          }
+        },
+        "focus": {
+          "$value": "{reference.color.rust.60}"
+        },
+        "code": {
+          "surface": {
+            "$value": "{reference.color.neutral.05}"
+          },
+          "text": {
+            "$value": "{reference.color.neutral.95}"
+          },
+          "muted": {
+            "$value": "{reference.color.neutral.60}"
+          }
+        }
+      }
+    },
+    "space": {
+      "$type": "dimension",
+      "page": {
+        "$value": "{reference.space.l}"
+      },
+      "section": {
+        "$value": "{reference.space.3xl}"
+      },
+      "component": {
+        "$value": "{reference.space.l}"
+      },
+      "cluster": {
+        "$value": "{reference.space.s}"
+      }
+    },
+    "radius": {
+      "$type": "dimension",
+      "control": {
+        "$value": "{reference.radius.m}"
+      },
+      "panel": {
+        "$value": "{reference.radius.l}"
+      },
+      "feature": {
+        "$value": "{reference.radius.xl}"
+      }
+    },
+    "font": {
+      "family": {
+        "$type": "fontFamily",
+        "ui": {
+          "$value": "{reference.font.family.ui}"
+        },
+        "reading": {
+          "$value": "{reference.font.family.reading}"
+        },
+        "code": {
+          "$value": "{reference.font.family.code}"
+        }
+      },
+      "weight": {
+        "$type": "fontWeight",
+        "body": {
+          "$value": "{reference.font.weight.normal}"
+        },
+        "action": {
+          "$value": "{reference.font.weight.semibold}"
+        },
+        "heading": {
+          "$value": "{reference.font.weight.bold}"
+        }
+      },
+      "lineHeight": {
+        "$type": "number",
+        "body": {
+          "$value": "{reference.font.lineHeight.normal}"
+        },
+        "heading": {
+          "$value": "{reference.font.lineHeight.condensed}"
+        },
+        "reading": {
+          "$value": "{reference.font.lineHeight.normal}"
+        }
+      }
+    },
+    "motion": {
+      "duration": {
+        "$type": "duration",
+        "fast": {
+          "$value": "{reference.motion.duration.fast}"
+        },
+        "normal": {
+          "$value": "{reference.motion.duration.normal}"
+        },
+        "slow": {
+          "$value": "{reference.motion.duration.slow}"
+        }
+      },
+      "easing": {
+        "$type": "cubicBezier",
+        "standard": {
+          "$value": "{reference.motion.easing.standard}"
+        },
+        "emphasized": {
+          "$value": "{reference.motion.easing.emphasized}"
+        }
+      }
+    },
+    "measure": {
+      "$type": "number",
+      "prose": {
+        "$value": "{reference.measure.prose}"
+      },
+      "wide": {
+        "$value": "{reference.measure.wide}",
+        "$type": "dimension"
+      }
+    }
+  },
+  "research": {
+    "$description": "Pinega/YDMP provenance roles. These are domain semantics, not generic UI success/warning states.",
+    "light": {
+      "color": {
+        "$type": "color",
+        "confirmed": {
+          "$value": "{reference.color.moss.40}"
+        },
+        "confirmedSurface": {
+          "$value": "{reference.color.moss.95}"
+        },
+        "inferred": {
+          "$value": "{reference.color.river.40}"
+        },
+        "inferredSurface": {
+          "$value": "{reference.color.river.95}"
+        },
+        "hypothesis": {
+          "$value": "{reference.color.ochre.40}"
+        },
+        "hypothesisSurface": {
+          "$value": "{reference.color.ochre.95}"
+        },
+        "external": {
+          "$value": "{reference.color.neutral.40}"
+        },
+        "externalSurface": {
+          "$value": "{reference.color.neutral.95}"
+        },
+        "contradicted": {
+          "$value": "{reference.color.danger.40}"
+        },
+        "contradictedSurface": {
+          "$value": "{reference.color.danger.95}"
+        }
+      }
+    },
+    "dark": {
+      "color": {
+        "$type": "color",
+        "confirmed": {
+          "$value": "{reference.color.moss.70}"
+        },
+        "confirmedSurface": {
+          "$value": "{reference.color.moss.10}"
+        },
+        "inferred": {
+          "$value": "{reference.color.river.70}"
+        },
+        "inferredSurface": {
+          "$value": "{reference.color.river.10}"
+        },
+        "hypothesis": {
+          "$value": "{reference.color.ochre.70}"
+        },
+        "hypothesisSurface": {
+          "$value": "{reference.color.ochre.10}"
+        },
+        "external": {
+          "$value": "{reference.color.neutral.70}"
+        },
+        "externalSurface": {
+          "$value": "{reference.color.neutral.10}"
+        },
+        "contradicted": {
+          "$value": "{reference.color.danger.70}"
+        },
+        "contradictedSurface": {
+          "$value": "{reference.color.danger.10}"
+        }
+      }
+    }
+  },
+  "component": {
+    "$description": "Stable component-level defaults. Component implementations may expose narrower public properties that alias these values.",
+    "header": {
+      "height": {
+        "$type": "dimension",
+        "$value": {
+          "value": 4.5,
+          "unit": "rem"
+        }
+      }
+    },
+    "evidence": {
+      "railWidth": {
+        "$type": "dimension",
+        "$value": {
+          "value": 0.25,
+          "unit": "rem"
+        }
+      },
+      "padding": {
+        "$type": "dimension",
+        "$value": "{reference.space.l}"
+      }
+    },
+    "code": {
+      "padding": {
+        "$type": "dimension",
+        "$value": "{reference.space.l}"
+      }
+    },
+    "benchmark": {
+      "chartHeight": {
+        "$type": "dimension",
+        "$value": {
+          "value": 18,
+          "unit": "rem"
+        }
+      }
+    }
+  }
+}

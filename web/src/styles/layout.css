@@ -1,0 +1,61 @@
+@layer pinega.layout {
+  .pinega-page {
+    display: grid;
+    grid-template-columns:
+      [full-start] minmax(var(--pinega-ref-space-m), 1fr)
+      [content-start] min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide))
+      [content-end] minmax(var(--pinega-ref-space-m), 1fr)
+      [full-end];
+    min-block-size: 100dvb;
+  }
+
+  .pinega-page > * {
+    grid-column: content;
+  }
+
+  .pinega-full-bleed {
+    grid-column: full !important;
+  }
+
+  .pinega-section {
+    padding-block: clamp(4rem, 3rem + 5vi, 8rem);
+  }
+
+  .pinega-section-heading {
+    display: grid;
+    gap: var(--pinega-ref-space-m);
+    margin-block-end: var(--pinega-ref-space-2xl);
+  }
+
+  .pinega-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-component-lab {
+    padding-block-end: var(--pinega-ref-space-4xl);
+  }
+
+  .pinega-lab-panel {
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: color-mix(in oklab, var(--pinega-sys-color-surface-raised) 88%, transparent);
+    box-shadow: 0 1rem 3rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 8%, transparent);
+    padding: clamp(1.25rem, 1rem + 1.2vi, 2.25rem);
+  }
+
+}

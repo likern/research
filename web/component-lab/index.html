@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Pinega Strata Web Foundation component laboratory.">
+    <meta name="color-scheme" content="light dark">
+    <!-- PINEGA_PROJECT_META -->
+    <title>Pinega Web Foundation v0.1</title>
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page pinega-component-lab">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="#top" aria-label="Pinega home">
+            <span class="pinega-brand-mark" aria-hidden="true">P</span>
+            <span>Pinega</span>
+          </a>
+
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="#foundation">Foundation</a></li>
+              <li><a href="#evidence">Evidence</a></li>
+              <li><a href="#code">Code</a></li>
+              <li><a href="#benchmark">Benchmarks</a></li>
+            </ul>
+          </nav>
+
+          <div class="pinega-cluster">
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1">
+        <pinega-hero id="top">
+          <section>
+            <div class="pinega-hero-copy">
+              <div class="pinega-cluster">
+                <wa-badge variant="brand" appearance="filled-outlined" pill>Strata v0.1</wa-badge>
+                <span class="pinega-eyebrow" data-runtime-source>Pinned Web Awesome Core 3.10.0</span>
+              </div>
+
+              <h1>Systems research, made operational.</h1>
+              <p>
+                Pinega turns explicit invariants, observable histories, and reproducible measurements into a database
+                engineering workflow that can survive production scrutiny.
+              </p>
+
+              <div class="pinega-hero-actions">
+                <a class="pinega-action pinega-action-primary" href="#foundation">Explore the foundation</a>
+                <a class="pinega-action pinega-action-secondary" href="#benchmark">View benchmark specimen</a>
+              </div>
+            </div>
+
+            <div class="pinega-hero-stack" aria-hidden="true">
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>Storage strata</span><span>physical</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>L3</span><span class="pinega-hero-trace-line" style="--start: 18%; --length: 68%;"></span></div>
+                  <div class="pinega-hero-trace-row"><span>L2</span><span class="pinega-hero-trace-line" style="--start: 7%; --length: 53%;"></span></div>
+                </div>
+              </div>
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>Version strata</span><span>MVCC</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>v42</span><span class="pinega-hero-trace-line" style="--start: 8%; --length: 76%; --tone: var(--pinega-research-color-confirmed);"></span></div>
+                  <div class="pinega-hero-trace-row"><span>v41</span><span class="pinega-hero-trace-line" style="--start: 26%; --length: 58%; --tone: var(--pinega-research-color-hypothesis);"></span></div>
+                </div>
+              </div>
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>History H</span><span>linearizable</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>P</span><span class="pinega-hero-trace-line" style="--start: 4%; --length: 62%;"></span></div>
+                  <div class="pinega-hero-trace-row"><span>Q</span><span class="pinega-hero-trace-line" style="--start: 31%; --length: 54%; --tone: var(--pinega-research-color-confirmed);"></span></div>
+                  <div class="pinega-hero-trace-row"><span>R</span><span class="pinega-hero-trace-line" style="--start: 56%; --length: 35%; --tone: var(--pinega-research-color-hypothesis);"></span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </pinega-hero>
+
+        <section class="pinega-section" id="foundation" aria-labelledby="foundation-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Implementation gate</p>
+            <h2 id="foundation-title">A semantic foundation, not a theme skin.</h2>
+            <p class="pinega-muted">
+              Canonical design tokens generate CSS, TypeScript, and Typst. Web Awesome is the vendor interaction
+              kernel; Pinega components own domain semantics and composition.
+            </p>
+          </header>
+
+          <div class="pinega-grid">
+            <wa-card>
+              <h3>Canonical tokens</h3>
+              <p>Reference, system, research, and component decisions share one versioned source.</p>
+            </wa-card>
+            <wa-card>
+              <h3>Web Components</h3>
+              <p>Custom Elements expose semantic APIs while native HTML remains the document foundation.</p>
+            </wa-card>
+            <wa-card>
+              <h3>Progressive Pro</h3>
+              <p>Licensed Web Awesome Pro components enhance durable HTML fallbacks without leaking private assets.</p>
+            </wa-card>
+          </div>
+        </section>
+
+        <section class="pinega-section" id="evidence" aria-labelledby="evidence-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Domain components</p>
+            <h2 id="evidence-title">Evidence keeps its meaning across renderers.</h2>
+          </header>
+
+          <div class="pinega-grid">
+            <pinega-evidence kind="confirmed">
+              <p>The candidate handle was protected and revalidated before dereferencing the frame.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="inferred">
+              <p>The observed generation change implies that another process reused the slot.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="hypothesis">
+              <p>NUMA-local retirement batches may reduce ownership migration under high contention.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="external">
+              <p>This performance claim comes from an external paper and has not yet been reproduced.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="contradicted">
+              <p>The trace contradicts the assumption that publication always preceded pin acquisition.</p>
+            </pinega-evidence>
+          </div>
+        </section>
+
+        <section class="pinega-section" id="code" aria-labelledby="code-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Composition</p>
+            <h2 id="code-title">Code remains native, searchable, and copyable.</h2>
+          </header>
+
+          <pinega-code-example>
+            <header>
+              <span>Rust · protect and revalidate</span>
+              <div>
+                <button type="button" data-native-copy>Copy code</button>
+                <wa-copy-button></wa-copy-button>
+              </div>
+            </header>
+            <pre tabindex="0"><code>fn pin_candidate(handle: Handle) -&gt; Result&lt;PinnedFrame, Retry&gt; {
+    let generation = handle.generation();
+    let guard = hazard_domain.protect(handle.slot());
+
+    let current = directory.load(handle.slot(), Acquire);
+    if current.generation() != generation || current.frame() != handle.frame() {
+        return Err(Retry);
+    }
+
+    Ok(PinnedFrame::new(current.frame(), guard))
+}</code></pre>
+          </pinega-code-example>
+        </section>
+
+        <section class="pinega-section" id="benchmark" aria-labelledby="benchmark-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Pro integration boundary</p>
+            <h2 id="benchmark-title">The data table is canonical; the chart is an enhancement.</h2>
+          </header>
+
+          <pinega-benchmark
+            data-chart-title="Throughput by worker count"
+            data-chart-description="Pinega prototype throughput remains above the baseline as worker count grows. Illustrative data for the design-system gate, not a product performance claim."
+            data-x-label="Workers"
+            data-y-label="Transactions per second">
+            <header>
+              <div>
+                <h3>Illustrative scaling specimen</h3>
+                <p class="pinega-muted">Design-system validation data only.</p>
+              </div>
+              <wa-badge data-renderer-label variant="neutral" appearance="outlined" pill>Native SVG fallback</wa-badge>
+            </header>
+
+            <details>
+              <summary>View accessible source data</summary>
+              <table>
+                <caption class="pinega-visually-hidden">Illustrative throughput in transactions per second by worker count.</caption>
+                <thead>
+                  <tr><th scope="col">Workers</th><th scope="col">Baseline</th><th scope="col">Pinega</th></tr>
+                </thead>
+                <tbody>
+                  <tr><th scope="row">1</th><td>8200</td><td>8500</td></tr>
+                  <tr><th scope="row">2</th><td>15100</td><td>16200</td></tr>
+                  <tr><th scope="row">4</th><td>26700</td><td>30400</td></tr>
+                  <tr><th scope="row">8</th><td>38200</td><td>49600</td></tr>
+                  <tr><th scope="row">16</th><td>44100</td><td>67200</td></tr>
+                  <tr><th scope="row">32</th><td>42600</td><td>73100</td></tr>
+                </tbody>
+              </table>
+            </details>
+          </pinega-benchmark>
+        </section>
+
+        <section class="pinega-section" aria-labelledby="vendor-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Vendor component laboratory</p>
+            <h2 id="vendor-title">Web Awesome under Pinega Strata.</h2>
+          </header>
+
+          <div class="pinega-stack pinega-lab-panel">
+            <div class="pinega-cluster" aria-label="Button variants">
+              <wa-button variant="brand" appearance="filled">Brand action</wa-button>
+              <wa-button variant="neutral" appearance="outlined">Neutral action</wa-button>
+              <wa-button variant="success" appearance="filled-outlined">Success</wa-button>
+              <wa-button variant="warning" appearance="accent">Warning</wa-button>
+              <wa-button variant="danger" appearance="plain">Danger</wa-button>
+              <wa-button disabled>Disabled</wa-button>
+              <wa-button loading>Loading</wa-button>
+            </div>
+
+            <wa-divider></wa-divider>
+
+            <div class="pinega-cluster" aria-label="Badge variants">
+              <wa-badge variant="brand" pill>Brand</wa-badge>
+              <wa-badge variant="success" pill>Success</wa-badge>
+              <wa-badge variant="neutral" pill>Neutral</wa-badge>
+              <wa-badge variant="warning" pill>Warning</wa-badge>
+              <wa-badge variant="danger" pill>Danger</wa-badge>
+            </div>
+
+            <wa-callout variant="brand" appearance="filled-outlined">
+              Web Awesome provides the generic interaction primitive; Pinega supplies the cross-platform tokens and domain model.
+            </wa-callout>
+          </div>
+        </section>
+      </main>
+
+      <footer class="pinega-section">
+        <p class="pinega-muted">Pinega Web Foundation v0.1 · semantic HTML · modern CSS · Custom Elements · Web Awesome.</p>
+      </footer>
+    </div>
+  </body>
+</html>

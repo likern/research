@@ -1,0 +1,173 @@
+@layer pinega.base {
+  :where(*, *::before, *::after) {
+    box-sizing: border-box;
+  }
+
+  :where(html) {
+    background: var(--pinega-sys-color-surface-canvas);
+    color: var(--pinega-sys-color-text-primary);
+    font-family: var(--pinega-sys-font-family-ui);
+    font-size: 100%;
+    line-height: var(--pinega-sys-font-line-height-body);
+    scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
+  }
+
+  :where(body) {
+    margin: 0;
+    min-block-size: 100dvb;
+    background:
+      radial-gradient(circle at 8% 0%, color-mix(in oklab, var(--pinega-ref-color-river-90) 45%, transparent), transparent 32rem),
+      var(--pinega-sys-color-surface-canvas);
+  }
+
+  :where(body, button, input, textarea, select) {
+    font: inherit;
+  }
+
+  :where(img, svg, video, canvas) {
+    display: block;
+    max-inline-size: 100%;
+  }
+
+  :where(h1, h2, h3, p, ul, ol, dl, figure, blockquote, pre) {
+    margin-block: 0;
+  }
+
+  :where(h1, h2, h3) {
+    color: var(--pinega-sys-color-text-primary);
+    font-family: var(--pinega-sys-font-family-ui);
+    font-weight: var(--pinega-sys-font-weight-heading);
+    line-height: var(--pinega-sys-font-line-height-heading);
+    text-wrap: balance;
+  }
+
+  :where(h1) {
+    font-size: clamp(2.6rem, 1.7rem + 4.1vi, 6.3rem);
+    letter-spacing: -0.055em;
+  }
+
+  :where(h2) {
+    font-size: clamp(1.7rem, 1.35rem + 1.5vi, 3rem);
+    letter-spacing: -0.035em;
+  }
+
+  :where(h3) {
+    font-size: clamp(1.15rem, 1rem + 0.5vi, 1.5rem);
+  }
+
+  :where(p, li, dd, figcaption) {
+    max-inline-size: calc(var(--pinega-sys-measure-prose) * 1ch);
+    text-wrap: pretty;
+  }
+
+  :where(a) {
+    color: var(--pinega-sys-color-text-link);
+    text-decoration-color: color-mix(in oklab, currentColor 60%, transparent);
+    text-underline-offset: 0.18em;
+  }
+
+  :where(a:hover) {
+    text-decoration-thickness: 0.12em;
+  }
+
+  :where(:focus-visible) {
+    outline: 0.1875rem solid var(--pinega-sys-color-focus);
+    outline-offset: 0.1875rem;
+  }
+
+  :where(code, kbd, samp, pre) {
+    font-family: var(--pinega-sys-font-family-code);
+  }
+
+  :where(pre) {
+    overflow: auto;
+    tab-size: 2;
+  }
+
+  :where(table) {
+    border-collapse: collapse;
+    inline-size: 100%;
+  }
+
+  :where(th) {
+    text-align: start;
+  }
+
+  :where([hidden]) {
+    display: none !important;
+  }
+
+  .pinega-skip-link {
+    position: fixed;
+    inset-block-start: var(--pinega-ref-space-s);
+    inset-inline-start: var(--pinega-ref-space-s);
+    z-index: 1000;
+    translate: 0 -200%;
+    border-radius: var(--pinega-sys-radius-control);
+    background: var(--pinega-sys-color-surface-inverse);
+    color: var(--pinega-sys-color-text-inverse);
+    padding: var(--pinega-ref-space-s) var(--pinega-ref-space-m);
+  }
+
+  .pinega-skip-link:focus {
+    translate: 0;
+  }
+
+  .pinega-eyebrow {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.78rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .pinega-muted {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-visually-hidden {
+    position: absolute !important;
+    inline-size: 1px !important;
+    block-size: 1px !important;
+    overflow: hidden !important;
+    clip-path: inset(50%) !important;
+    white-space: nowrap !important;
+  }
+
+  :where(wa-card, wa-callout):not(:defined) {
+    display: block;
+  }
+
+  wa-button:not(:defined) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-block-size: 2.5rem;
+    border: 1px solid var(--pinega-sys-color-border-normal);
+    border-radius: var(--pinega-sys-radius-control);
+    padding-inline: var(--pinega-ref-space-m);
+  }
+
+  wa-badge:not(:defined) {
+    display: inline-flex;
+    border: 1px solid var(--pinega-sys-color-border-normal);
+    border-radius: var(--pinega-ref-radius-pill);
+    padding: var(--pinega-ref-space-2xs) var(--pinega-ref-space-s);
+    font-size: 0.78rem;
+  }
+
+  wa-card:not(:defined),
+  wa-callout:not(:defined) {
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+    padding: var(--pinega-ref-space-l);
+  }
+
+  wa-button[data-theme-toggle]:not(:defined),
+  wa-button[data-navigation-toggle]:not(:defined),
+  wa-copy-button:not(:defined) {
+    display: none;
+  }
+}
