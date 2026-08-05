@@ -1,0 +1,408 @@
+@layer pinega.components {
+  .pinega-site-main > :not(.pinega-full-bleed) {
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin-inline: auto;
+  }
+
+  .pinega-product-hero {
+    padding-block-start: clamp(4rem, 2.5rem + 6vi, 9rem);
+  }
+
+  .pinega-product-hero h1 {
+    max-inline-size: 14ch;
+    font-size: clamp(2.8rem, 2rem + 3.6vi, 5.2rem);
+  }
+
+  .pinega-home-status {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-feature);
+    background: var(--pinega-sys-color-border-subtle);
+  }
+
+  .pinega-status-card {
+    display: grid;
+    align-content: start;
+    gap: var(--pinega-ref-space-s);
+    min-block-size: 13rem;
+    background: var(--pinega-sys-color-surface-raised);
+    padding: clamp(1.25rem, 1rem + 1.4vi, 2.25rem);
+  }
+
+  .pinega-status-card h3 {
+    font-size: 1.15rem;
+  }
+
+  .pinega-status-card p {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-status-kicker,
+  .pinega-state-label,
+  .pinega-doc-card-state,
+  .pinega-doc-maturity dt span {
+    inline-size: fit-content;
+    border: 1px solid var(--pinega-sys-color-border-normal);
+    border-radius: var(--pinega-ref-radius-pill);
+    padding: 0.2rem 0.55rem;
+    font-size: 0.72rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: 0.06em;
+    line-height: 1.3;
+    text-transform: uppercase;
+  }
+
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-status='available'],
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-state='available'] {
+    border-color: color-mix(in oklab, var(--pinega-research-color-confirmed) 55%, var(--pinega-sys-color-border-normal));
+    background: var(--pinega-research-color-confirmed-surface);
+    color: var(--pinega-research-color-confirmed);
+  }
+
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-status='validated'],
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-state='validated'],
+  :where(.pinega-doc-card-state, .pinega-doc-maturity dt span)[data-state='decision'] {
+    border-color: color-mix(in oklab, var(--pinega-sys-color-action-primary) 55%, var(--pinega-sys-color-border-normal));
+    background: color-mix(in oklab, var(--pinega-sys-color-action-primary) 10%, var(--pinega-sys-color-surface-raised));
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-status='planned'],
+  :where(.pinega-status-kicker, .pinega-state-label, .pinega-doc-card-state, .pinega-doc-maturity dt span)[data-state='planned'],
+  :where(.pinega-doc-card-state, .pinega-doc-maturity dt span)[data-state='research'] {
+    border-color: color-mix(in oklab, var(--pinega-research-color-hypothesis) 55%, var(--pinega-sys-color-border-normal));
+    background: var(--pinega-research-color-hypothesis-surface);
+    color: var(--pinega-research-color-hypothesis);
+  }
+
+  .pinega-principle-grid wa-card {
+    min-block-size: 18rem;
+  }
+
+  .pinega-card-index {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+  }
+
+  .pinega-section-contrast {
+    background:
+      linear-gradient(135deg, color-mix(in oklab, var(--pinega-sys-color-action-primary) 9%, transparent), transparent 42%),
+      var(--pinega-sys-color-surface-lowered);
+  }
+
+  .pinega-section-inner {
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin-inline: auto;
+    padding-block: clamp(4rem, 3rem + 5vi, 8rem);
+  }
+
+  .pinega-architecture-figure {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-architecture-layers {
+    display: grid;
+    gap: var(--pinega-ref-space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pinega-architecture-layers li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--pinega-ref-space-l);
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-inline-start: 0.35rem solid var(--pinega-sys-color-action-primary);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+    box-shadow: 0 1rem 3rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 7%, transparent);
+    padding: clamp(1rem, 0.75rem + 1vi, 1.75rem);
+  }
+
+  .pinega-architecture-layers li:nth-child(2) {
+    border-inline-start-color: var(--pinega-research-color-confirmed);
+  }
+
+  .pinega-architecture-layers li:nth-child(3) {
+    border-inline-start-color: var(--pinega-research-color-hypothesis);
+  }
+
+  .pinega-architecture-layers li:nth-child(4) {
+    border-inline-start-color: var(--pinega-research-color-external);
+  }
+
+  .pinega-architecture-number {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.78rem;
+  }
+
+  .pinega-architecture-layers li > div {
+    display: grid;
+    gap: var(--pinega-ref-space-2xs);
+  }
+
+  .pinega-architecture-layers li strong {
+    font-size: 1.05rem;
+  }
+
+  .pinega-architecture-layers li > div span {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-architecture-state {
+    border-radius: var(--pinega-ref-radius-pill);
+    background: var(--pinega-sys-color-surface-lowered);
+    color: var(--pinega-sys-color-text-quiet);
+    padding: 0.28rem 0.7rem;
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+  }
+
+  .pinega-architecture-figure figcaption {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.9rem;
+  }
+
+  .pinega-table-scroller {
+    overflow-x: auto;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+  }
+
+  .pinega-roadmap-table {
+    min-inline-size: 48rem;
+  }
+
+  .pinega-roadmap-table :where(th, td) {
+    border-block-end: 1px solid var(--pinega-sys-color-border-subtle);
+    padding: var(--pinega-ref-space-m) var(--pinega-ref-space-l);
+    vertical-align: top;
+  }
+
+  .pinega-roadmap-table thead th {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pinega-roadmap-table tbody tr:last-child :where(th, td) {
+    border-block-end: 0;
+  }
+
+  .pinega-cta {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--pinega-ref-space-2xl);
+    margin-block: clamp(2rem, 1rem + 3vi, 5rem);
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-feature);
+    background:
+      radial-gradient(circle at 100% 0%, color-mix(in oklab, var(--pinega-ref-color-river-80) 45%, transparent), transparent 22rem),
+      var(--pinega-sys-color-surface-raised);
+    padding-inline: clamp(1.5rem, 1rem + 3vi, 4rem);
+  }
+
+  .pinega-cta > div:first-child {
+    display: grid;
+    gap: var(--pinega-ref-space-m);
+  }
+
+  .pinega-site-footer {
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    background: var(--pinega-sys-color-surface-lowered);
+  }
+
+  .pinega-site-footer-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: var(--pinega-ref-space-2xl);
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin-inline: auto;
+    padding-block: var(--pinega-ref-space-2xl);
+  }
+
+  .pinega-site-footer-inner > div {
+    display: grid;
+    gap: var(--pinega-ref-space-m);
+  }
+
+  .pinega-site-footer p {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-site-footer nav {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: var(--pinega-ref-space-s) var(--pinega-ref-space-xl);
+  }
+
+  .pinega-site-footer nav a {
+    color: var(--pinega-sys-color-text-secondary);
+    text-decoration: none;
+  }
+
+  .pinega-site-footer nav a:hover {
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-research-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+    align-items: end;
+    gap: clamp(2rem, 1rem + 5vi, 7rem);
+    padding-block: clamp(5rem, 3rem + 7vi, 10rem);
+  }
+
+  .pinega-research-hero > div:first-child {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-research-hero > div:first-child > p:last-child {
+    color: var(--pinega-sys-color-text-secondary);
+    font-family: var(--pinega-sys-font-family-reading);
+    font-size: clamp(1.1rem, 1rem + 0.35vi, 1.35rem);
+    line-height: 1.7;
+  }
+
+  .pinega-research-ledger {
+    display: grid;
+    gap: var(--pinega-ref-space-s);
+    border-inline-start: 1px solid var(--pinega-sys-color-border-normal);
+    padding-inline-start: var(--pinega-ref-space-xl);
+  }
+
+  .pinega-research-ledger span {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+  }
+
+  .pinega-research-ledger span::before {
+    content: '';
+    display: inline-block;
+    inline-size: 0.55rem;
+    block-size: 0.55rem;
+    margin-inline-end: var(--pinega-ref-space-s);
+    border-radius: 50%;
+    background: var(--pinega-sys-color-action-primary);
+  }
+
+  .pinega-research-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+    gap: var(--pinega-ref-space-2xl);
+  }
+
+  .pinega-research-split > div:first-child {
+    display: grid;
+    align-content: start;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-research-timeline {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-feature);
+    background: var(--pinega-sys-color-border-subtle);
+  }
+
+  .pinega-research-timeline > div {
+    display: grid;
+    align-content: start;
+    gap: var(--pinega-ref-space-s);
+    min-block-size: 15rem;
+    background: var(--pinega-sys-color-surface-raised);
+    padding: var(--pinega-ref-space-l);
+  }
+
+  .pinega-research-timeline > div > span {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.75rem;
+  }
+
+  .pinega-research-timeline p,
+  .pinega-research-programme article p {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-research-programme article {
+    display: grid;
+    align-content: start;
+    gap: var(--pinega-ref-space-s);
+    border-block-start: 0.22rem solid var(--pinega-sys-color-action-primary);
+    padding-block-start: var(--pinega-ref-space-l);
+  }
+
+  .pinega-not-found {
+    display: grid;
+    place-content: center start;
+    gap: var(--pinega-ref-space-l);
+    min-block-size: calc(100dvb - var(--pinega-component-header-height));
+    padding-block: var(--pinega-ref-space-4xl);
+  }
+
+  .pinega-not-found h1 {
+    max-inline-size: 14ch;
+  }
+
+  .pinega-not-found > p:not(.pinega-eyebrow) {
+    color: var(--pinega-sys-color-text-secondary);
+    font-size: 1.15rem;
+  }
+
+  @media (width <= 64rem) {
+    .pinega-research-timeline {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (width <= 52rem) {
+    .pinega-home-status,
+    .pinega-research-hero,
+    .pinega-research-split,
+    .pinega-cta,
+    .pinega-site-footer-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .pinega-site-footer nav {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (width <= 38rem) {
+    .pinega-home-status,
+    .pinega-research-timeline {
+      grid-template-columns: 1fr;
+    }
+
+    .pinega-architecture-layers li {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .pinega-architecture-state {
+      grid-column: 2;
+      justify-self: start;
+    }
+  }
+}

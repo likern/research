@@ -13,34 +13,85 @@ const mimeTypes = new Map([
   ['.json', 'application/json; charset=utf-8'],
   ['.map', 'application/json; charset=utf-8'],
   ['.svg', 'image/svg+xml'],
+  ['.txt', 'text/plain; charset=utf-8'],
+  ['.xml', 'application/xml; charset=utf-8'],
   ['.woff2', 'font/woff2'],
 ]);
 
 const server = createServer(async (request, response) => {
-  const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
-  const requested = url.pathname === '/' ? '/index.html' : url.pathname;
-  const path = resolve(root, `.${requested}`);
-
-  if (path !== root && !path.startsWith(`${root}${sep}`)) {
-    response.writeHead(403).end('Forbidden');
+  const method = request.method ?? 'GET';
+  if (method !== 'GET' && method !== 'HEAD') {
+    response.writeHead(405, { Allow: 'GET, HEAD' }).end();
     return;
   }
 
+  const url = new URL(request.url ?? '/', `http://${request.headers.host ?? 'localhost'}`);
+  let requested;
   try {
-    const info = await stat(path);
-    if (!info.isFile()) throw Object.assign(new Error('Not a file'), { code: 'ENOENT' });
-    response.writeHead(200, {
-      'Content-Type': mimeTypes.get(extname(path)) ?? 'application/octet-stream',
-      'Cache-Control': 'no-store',
-      'Cross-Origin-Opener-Policy': 'same-origin',
-    });
-    createReadStream(path).pipe(response);
-  } catch (error) {
-    if (error?.code !== 'ENOENT') console.error(error);
-    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
+    requested = decodeURIComponent(url.pathname);
+  } catch {
+    response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Bad request');
+    return;
   }
+  const candidates = routeCandidates(requested);
+
+  for (const candidate of candidates) {
+    const file = safeResolve(candidate);
+    if (!file) {
+      response.writeHead(403).end('Forbidden');
+      return;
+    }
+    if (await isFile(file)) {
+      sendFile(file, method, response, 200);
+      return;
+    }
+  }
+
+  const notFound = resolve(root, '404.html');
+  if (await isFile(notFound)) {
+    sendFile(notFound, method, response, 404);
+    return;
+  }
+
+  response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
 });
 
 server.listen(port, '127.0.0.1', () => {
-  console.log(`Pinega component lab: http://127.0.0.1:${port}`);
+  console.log(`Pinega website: http://127.0.0.1:${port}`);
 });
+
+function routeCandidates(pathname) {
+  if (pathname === '/') return ['/index.html'];
+  if (pathname.endsWith('/')) return [`${pathname}index.html`];
+  if (extname(pathname)) return [pathname];
+  return [pathname, `${pathname}/index.html`];
+}
+
+function safeResolve(requested) {
+  const file = resolve(root, `.${requested}`);
+  return file === root || file.startsWith(`${root}${sep}`) ? file : undefined;
+}
+
+async function isFile(path) {
+  try {
+    return (await stat(path)).isFile();
+  } catch (error) {
+    if (error?.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+function sendFile(path, method, response, status) {
+  response.writeHead(status, {
+    'Content-Type': mimeTypes.get(extname(path)) ?? 'application/octet-stream',
+    'Cache-Control': 'no-store',
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  if (method === 'HEAD') {
+    response.end();
+    return;
+  }
+  createReadStream(path).pipe(response);
+}

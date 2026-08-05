@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="research">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pinega Research</title>
+    <meta name="description" content="The Pinega Labs research programme: versioned storage, concurrent lifetimes, PostgreSQL integration, and evidence-driven database engineering.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/research/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pinega Research">
+    <meta property="og:description" content="Evidence-driven research into PostgreSQL storage, concurrency, reclamation, and correctness.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/research/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="/docs/">Documentation</a></li>
+              <li><a href="/research/" aria-current="page">Research</a></li>
+              <li><a href="/#architecture">Architecture</a></li>
+              <li><a href="/component-lab/">Design system</a></li>
+            </ul>
+          </nav>
+          <div class="pinega-cluster">
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1" class="pinega-site-main pinega-full-bleed">
+        <section class="pinega-research-hero" aria-labelledby="research-title">
+          <div>
+            <p class="pinega-eyebrow">Pinega Labs</p>
+            <h1 id="research-title">Research is part of the product boundary, not a marketing appendix.</h1>
+            <p>
+              Pinega keeps formal definitions, learner interpretations, external evidence, architecture decisions, and unresolved questions as distinct artefacts. The goal is to make implementation claims traceable to the reasoning that supports them.
+            </p>
+          </div>
+          <div class="pinega-research-ledger" role="list" aria-label="Research workflow">
+            <span role="listitem">READ</span><span role="listitem">MODEL</span><span role="listitem">VERIFY</span><span role="listitem">IMPLEMENT</span><span role="listitem">MEASURE</span>
+          </div>
+        </section>
+
+        <section class="pinega-section" aria-labelledby="method-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">YDMP Research Workspace</p>
+            <h2 id="method-title">A workflow that preserves uncertainty and provenance.</h2>
+            <p class="pinega-muted">The workspace separates captured sessions, canonical models, verification ledgers, and implementation evidence.</p>
+          </header>
+          <div class="pinega-grid">
+            <wa-card><p class="pinega-card-index" aria-hidden="true">01</p><h3>Capture</h3><p>Record questions, answers, corrections, and source scope without rewriting history.</p></wa-card>
+            <wa-card><p class="pinega-card-index" aria-hidden="true">02</p><h3>Canonical model</h3><p>Consolidate definitions, invariants, examples, and dependencies into a stable explanatory model.</p></wa-card>
+            <wa-card><p class="pinega-card-index" aria-hidden="true">03</p><h3>Verification ledger</h3><p>Track confirmed, inferred, external, contradicted, and unresolved claims explicitly.</p></wa-card>
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-section-contrast pinega-full-bleed" id="versioned-storage" aria-labelledby="versioned-storage-title">
+          <div class="pinega-section-inner">
+            <header class="pinega-section-heading">
+              <p class="pinega-eyebrow">Research direction 01</p>
+              <h2 id="versioned-storage-title">Versioned OLTP storage</h2>
+            </header>
+            <div class="pinega-research-split">
+              <div>
+                <p>The mutable store is being designed around out-of-place row versions and explicit visibility metadata rather than an implicit update-in-place abstraction.</p>
+                <ul>
+                  <li>Version chains and stable handles</li>
+                  <li>Snapshot-compatible visibility rules</li>
+                  <li>SIMD-oriented metadata evaluation</li>
+                  <li>Garbage collection and space reuse as separate protocols</li>
+                </ul>
+              </div>
+              <pinega-evidence kind="hypothesis">
+                <h3>Open hypothesis</h3>
+                <p>Separating version metadata from tuple payloads may enable faster visibility scans, but layout and cache costs must be measured on real PostgreSQL workloads.</p>
+              </pinega-evidence>
+            </div>
+          </div>
+        </section>
+
+        <section class="pinega-section" id="concurrent-lifetimes" aria-labelledby="lifetimes-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Research direction 02</p>
+            <h2 id="lifetimes-title">Concurrent object lifetimes and reclamation</h2>
+          </header>
+          <div class="pinega-research-timeline" role="list" aria-label="Concurrent object lifecycle">
+            <div role="listitem"><span>01</span><strong>Publish</strong><p>Make a candidate visible with an explicit memory-order contract.</p></div>
+            <div role="listitem"><span>02</span><strong>Protect</strong><p>Acquire a lifetime guard or pin before dereferencing shared state.</p></div>
+            <div role="listitem"><span>03</span><strong>Revalidate</strong><p>Confirm identity and generation after protection.</p></div>
+            <div role="listitem"><span>04</span><strong>Retire</strong><p>Separate logical deletion and physical unlinking from reuse.</p></div>
+            <div role="listitem"><span>05</span><strong>Reclaim</strong><p>Free or reuse storage only after all protections are gone.</p></div>
+          </div>
+        </section>
+
+        <section class="pinega-section" aria-labelledby="programme-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Current programme</p>
+            <h2 id="programme-title">Topics that feed the Pinega architecture.</h2>
+          </header>
+          <div class="pinega-grid pinega-research-programme">
+            <article><h3>PostgreSQL MVCC</h3><p>Visibility, snapshots, tuple headers, indexes, and the extension boundary.</p></article>
+            <article><h3>Lock-free buffer management</h3><p>Publication, pins, ABA mitigation, helping, and safe memory reclamation.</p></article>
+            <article><h3>Cache-aware concurrency</h3><p>NUMA, false sharing, ownership migration, sharding, batching, and SIMD validation.</p></article>
+            <article><h3>Formal correctness</h3><p>Linearizability, sequential consistency, progress conditions, and executable models.</p></article>
+            <article><h3>Durability and recovery</h3><p>One PostgreSQL WAL, row-image trade-offs, replication, and crash boundaries.</p></article>
+            <article><h3>Deterministic testing</h3><p>Stress schedules, model checking, trace capture, and regression artefacts.</p></article>
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-cta" aria-labelledby="research-cta-title">
+          <div><p class="pinega-eyebrow">Inspect the artefacts</p><h2 id="research-cta-title">Follow the documentation or read the repository directly.</h2><p class="pinega-muted">Research claims remain useful only when their source, status, and implementation boundary are visible.</p></div>
+          <div class="pinega-cluster"><a class="pinega-action pinega-action-primary" href="/docs/">Documentation map</a><a class="pinega-action pinega-action-secondary" href="https://github.com/likern/research">Open GitHub</a></div>
+        </section>
+      </main>
+
+      <footer class="pinega-site-footer pinega-full-bleed">
+        <div class="pinega-site-footer-inner">
+          <div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Research-stage database systems engineering by Pinega Labs.</p></div>
+          <nav aria-label="Footer navigation"><a href="/docs/">Documentation</a><a href="/research/">Research</a><a href="/component-lab/">Design system</a><a href="https://github.com/likern/research">GitHub</a></nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

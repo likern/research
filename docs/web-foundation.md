@@ -1,13 +1,26 @@
-# Pinega Web Foundation architecture
+# Pinega Web architecture
 
 ## Status
 
-Version: `0.1`
+Version: `0.2`
 
-Scope: canonical cross-platform tokens, Web Awesome integration boundary,
-component laboratory, five representative Pinega compositions, and executable
-quality gates. This is not yet the public Pinega homepage or documentation
-portal.
+The `0.1` gate established canonical cross-platform tokens, the Web Awesome
+integration boundary, the component laboratory, five representative Pinega
+compositions, and executable quality gates.
+
+Version `0.2` adds the first public information architecture:
+
+```text
+/                         product homepage
+/docs/                    documentation landing
+/docs/getting-started/    first documentation article
+/research/                research programme
+/component-lab/           design-system validation surface
+```
+
+The public pages remain research-stage communications. They explicitly
+separate available artefacts, validated design contracts, research hypotheses,
+and planned engine work.
 
 ## Principles
 
@@ -19,6 +32,8 @@ portal.
    vendor isolation boundaries.
 6. Licensed Pro components progressively enhance complete semantic fallbacks.
 7. Canonical Pinega tokens generate CSS, TypeScript, and Typst adapters.
+8. Product maturity is expressed with text and structure, never colour alone.
+9. Public claims distinguish implemented, validated, proposed, and planned work.
 
 ## Layers
 
@@ -37,6 +52,24 @@ Web Awesome retains its internal layers inside `vendor`. The Pinega adapter
 maps canonical tokens after vendor defaults, and component styling remains
 above that adapter.
 
+## Page and build model
+
+The site is a static multi-page build. Source HTML is not generated from a
+client-side framework and is useful before Custom Elements register.
+
+`web/scripts/build.mjs`:
+
+- bundles the shared CSS and JavaScript entrypoint;
+- copies each explicit page to a clean directory route;
+- injects the private Web Awesome project boundary when configured;
+- emits canonical URLs from `PINEGA_SITE_ORIGIN`;
+- generates `robots.txt`, `sitemap.xml`, and `site-manifest.json`;
+- copies Web Awesome assets and static Pinega assets.
+
+`web/scripts/serve.mjs` resolves directory indexes, rejects path traversal,
+supports `GET` and `HEAD`, and returns the generated not-found page with HTTP
+status 404.
+
 ## Component decision rule
 
 ```text
@@ -53,6 +86,10 @@ Pinega custom element
     for domain semantics, lifecycle, or vendor API isolation
 ```
 
+`pinega-doc-search` follows this rule: documentation cards are durable HTML;
+the Custom Element adds filtering and an aria-live result count without
+constructing or replacing the cards.
+
 ## Pro boundary
 
 The licensed project is deployment configuration, not public source. No Pro
@@ -65,9 +102,11 @@ Web Awesome Pro only after `wa-line-chart` is registered.
 - generated token artifacts are deterministic and current;
 - no purchased project URL or license material is present in the repository;
 - TypeScript passes strict checking;
-- all component compositions build from the pinned dependency set;
+- all public routes and the component laboratory build from the pinned dependency set;
+- local links, canonical metadata, sitemap entries, and 404 handling are validated;
 - semantic and keyboard browser tests pass in Chromium, Firefox, and WebKit;
-- serious and critical axe violations are absent;
+- serious and critical axe violations are absent on every public route;
 - mobile and desktop layouts have no horizontal overflow;
-- committed screenshots protect representative light and dark compositions;
-- the site remains meaningful without the Pro project.
+- committed screenshots protect the homepage, docs, research, component lab,
+  and representative dark-mode compositions;
+- public pages remain meaningful without the Pro project and without client-side content generation.
