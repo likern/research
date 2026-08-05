@@ -95,7 +95,19 @@ test('passes automated accessibility checks without serious or critical violatio
   await ready(page);
   await page.addScriptTag({ path: axePath });
   const results = await page.evaluate(async () => {
-    const axe = (window as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
+    const axe = (window as unknown as Window & {
+      axe: {
+        run: (
+          context: Document,
+          options: unknown,
+        ) => Promise<{
+          violations: Array<{
+            impact: string | null;
+            id: string;
+          }>;
+        }>;
+      };
+    }).axe;
     return axe.run(document, { resultTypes: ['violations'] });
   });
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
