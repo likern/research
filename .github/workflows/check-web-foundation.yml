@@ -1,0 +1,92 @@
+name: Check Pinega Web Foundation
+
+on:
+  push:
+    branches:
+      - main
+      - "agent/**"
+    paths:
+      - "design/**"
+      - "web/**"
+      - "docs/web-foundation.md"
+      - ".github/workflows/check-web-foundation.yml"
+  pull_request:
+    paths:
+      - "design/**"
+      - "web/**"
+      - "docs/web-foundation.md"
+      - ".github/workflows/check-web-foundation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact dependencies
+        run: npm install --ignore-scripts
+
+      - name: Verify generated design-token adapters
+        run: npm run tokens:check
+
+      - name: Type-check Web Components
+        run: npm run typecheck
+
+      - name: Run token and architecture tests
+        run: npm run test:unit
+
+      - name: Build the component laboratory
+        run: npm run build
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run browser and accessibility tests
+        run: npm run test:browser
+
+      - name: Render visual baselines
+        run: npm run test:visual -- --update-snapshots
+
+      - name: Record artifact checksums
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          find dist tests/visual -type f -print0 2>/dev/null \
+            | sort -z \
+            | xargs -0 -r sha256sum \
+            > artifacts/SHA256SUMS.txt
+
+      - name: Upload the validated foundation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinega-web-foundation-v0.1
+          path: |
+            web/dist
+            web/package-lock.json
+            web/tests/visual
+            web/test-results
+            web/playwright-report
+            web/artifacts/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
