@@ -1,0 +1,65 @@
+@layer pinega.components {
+  pinega-code-example {
+    display: block;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-code-surface);
+    color: var(--pinega-sys-color-code-text);
+    box-shadow: 0 1.25rem 3.5rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 16%, transparent);
+    overflow: clip;
+  }
+
+  pinega-code-example > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pinega-ref-space-m);
+    border-block-end: 1px solid color-mix(in oklab, var(--pinega-sys-color-code-muted) 28%, transparent);
+    padding: var(--pinega-ref-space-s) var(--pinega-ref-space-l);
+  }
+
+  pinega-code-example > header > :first-child {
+    color: var(--pinega-sys-color-code-muted);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.74rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  pinega-code-example pre {
+    margin: 0;
+    padding: var(--pinega-component-code-padding);
+    font-size: clamp(0.78rem, 0.72rem + 0.22vi, 0.92rem);
+    line-height: 1.7;
+  }
+
+  pinega-code-example code {
+    color: inherit;
+    white-space: pre;
+  }
+
+  pinega-code-example [data-native-copy] {
+    border: 1px solid color-mix(in oklab, var(--pinega-sys-color-code-muted) 38%, transparent);
+    border-radius: var(--pinega-sys-radius-control);
+    background: transparent;
+    color: var(--pinega-sys-color-code-text);
+    cursor: pointer;
+    padding: var(--pinega-ref-space-xs) var(--pinega-ref-space-s);
+  }
+
+  pinega-code-example[data-copy-renderer='webawesome'] [data-native-copy] {
+    display: none;
+  }
+
+  pinega-code-example:not([data-copy-renderer='webawesome']) wa-copy-button {
+    display: none;
+  }
+
+  pinega-code-example wa-copy-button {
+    color: var(--pinega-sys-color-code-text);
+  }
+
+  pinega-code-example wa-copy-button::part(button) {
+    border-radius: var(--pinega-sys-radius-control);
+  }
+}

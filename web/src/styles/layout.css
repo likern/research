@@ -1,0 +1,68 @@
+@layer pinega.layout {
+  .pinega-page {
+    display: grid;
+    grid-template-columns:
+      minmax(var(--pinega-ref-space-m), 1fr)
+      minmax(0, var(--pinega-sys-measure-wide))
+      minmax(var(--pinega-ref-space-m), 1fr);
+    min-block-size: 100dvb;
+  }
+
+  .pinega-page > * {
+    grid-column: 2;
+  }
+
+  .pinega-full-bleed {
+    grid-column: 1 / -1 !important;
+  }
+
+  .pinega-section {
+    padding-block: clamp(4rem, 3rem + 5vi, 8rem);
+  }
+
+  .pinega-section-heading {
+    display: grid;
+    gap: var(--pinega-ref-space-m);
+    margin-block-end: var(--pinega-ref-space-2xl);
+  }
+
+  .pinega-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-component-lab {
+    padding-block-end: var(--pinega-ref-space-4xl);
+  }
+
+  .pinega-lab-panel {
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: color-mix(in oklab, var(--pinega-sys-color-surface-raised) 88%, transparent);
+    box-shadow: 0 1rem 3rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 8%, transparent);
+    padding: clamp(1.25rem, 1rem + 1.2vi, 2.25rem);
+  }
+
+  @media (width <= 42rem) {
+    .pinega-page {
+      grid-template-columns:
+        minmax(var(--pinega-ref-space-m), 1fr)
+        minmax(0, 1fr)
+        minmax(var(--pinega-ref-space-m), 1fr);
+    }
+  }
+}

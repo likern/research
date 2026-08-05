@@ -1,0 +1,81 @@
+@layer pinega.webawesome {
+  :where(.wa-theme-pinega-strata) {
+    color: var(--pinega-sys-color-text-primary);
+    color-scheme: light;
+
+    --wa-font-family-body: var(--pinega-sys-font-family-ui);
+    --wa-font-family-heading: var(--pinega-sys-font-family-ui);
+    --wa-font-family-longform: var(--pinega-sys-font-family-reading);
+    --wa-font-family-code: var(--pinega-sys-font-family-code);
+
+    --wa-font-weight-body: var(--pinega-sys-font-weight-body);
+    --wa-font-weight-heading: var(--pinega-sys-font-weight-heading);
+    --wa-font-weight-code: var(--pinega-ref-font-weight-normal);
+    --wa-font-weight-longform: var(--pinega-ref-font-weight-normal);
+    --wa-font-weight-action: var(--pinega-sys-font-weight-action);
+
+    --wa-line-height-condensed: var(--pinega-ref-font-line-height-condensed);
+    --wa-line-height-normal: var(--pinega-ref-font-line-height-normal);
+    --wa-line-height-expanded: var(--pinega-ref-font-line-height-expanded);
+
+    --wa-space-3xs: var(--pinega-ref-space-3xs);
+    --wa-space-2xs: var(--pinega-ref-space-2xs);
+    --wa-space-xs: var(--pinega-ref-space-xs);
+    --wa-space-s: var(--pinega-ref-space-s);
+    --wa-space-m: var(--pinega-ref-space-m);
+    --wa-space-l: var(--pinega-ref-space-l);
+    --wa-space-xl: var(--pinega-ref-space-xl);
+    --wa-space-2xl: var(--pinega-ref-space-2xl);
+    --wa-space-3xl: var(--pinega-ref-space-3xl);
+    --wa-space-4xl: var(--pinega-ref-space-4xl);
+
+    --wa-border-radius-s: var(--pinega-ref-radius-s);
+    --wa-border-radius-m: var(--pinega-ref-radius-m);
+    --wa-border-radius-l: var(--pinega-ref-radius-l);
+    --wa-border-radius-pill: var(--pinega-ref-radius-pill);
+
+    --wa-color-surface-raised: var(--pinega-sys-color-surface-raised);
+    --wa-color-surface-default: var(--pinega-sys-color-surface-default);
+    --wa-color-surface-lowered: var(--pinega-sys-color-surface-lowered);
+    --wa-color-surface-border: var(--pinega-sys-color-border-subtle);
+    --wa-color-text-normal: var(--pinega-sys-color-text-primary);
+    --wa-color-text-quiet: var(--pinega-sys-color-text-quiet);
+    --wa-color-text-link: var(--pinega-sys-color-text-link);
+    --wa-color-focus: var(--pinega-sys-color-focus);
+
+    --wa-focus-ring-style: solid;
+    --wa-focus-ring-width: 0.1875rem;
+    --wa-focus-ring-offset: 0.125rem;
+
+    --wa-transition-fast: var(--pinega-sys-motion-duration-fast);
+    --wa-transition-normal: var(--pinega-sys-motion-duration-normal);
+    --wa-transition-slow: var(--pinega-sys-motion-duration-slow);
+    --wa-transition-easing: var(--pinega-sys-motion-easing-standard);
+
+    --wa-panel-border-color: var(--pinega-sys-color-border-subtle);
+    --wa-panel-border-radius: var(--pinega-sys-radius-panel);
+
+    --wa-form-control-background-color: var(--pinega-sys-color-surface-raised);
+    --wa-form-control-border-color: var(--pinega-sys-color-border-normal);
+    --wa-form-control-border-radius: var(--pinega-sys-radius-control);
+    --wa-form-control-label-color: var(--pinega-sys-color-text-primary);
+    --wa-form-control-value-color: var(--pinega-sys-color-text-primary);
+    --wa-form-control-hint-color: var(--pinega-sys-color-text-quiet);
+
+    --wa-tooltip-background-color: var(--pinega-sys-color-surface-inverse);
+    --wa-tooltip-content-color: var(--pinega-sys-color-text-inverse);
+  }
+
+  :where(.wa-theme-pinega-strata.pinega-dark, .pinega-dark .wa-theme-pinega-strata) {
+    color-scheme: dark;
+  }
+
+  :where(.wa-theme-pinega-strata) wa-button[variant='brand'] {
+    --wa-button-transform-hover: translateY(-0.0625rem);
+    --wa-button-transform-active: translateY(0) scale(0.9875);
+  }
+
+  :where(.wa-theme-pinega-strata) wa-copy-button {
+    --wa-focus-ring: solid 0.1875rem var(--pinega-sys-color-focus);
+  }
+}

@@ -1,0 +1,128 @@
+@layer pinega.components {
+  pinega-benchmark {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+    container: pinega-benchmark / inline-size;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-feature);
+    background: var(--pinega-sys-color-surface-raised);
+    box-shadow: 0 1.25rem 3.75rem color-mix(in oklab, var(--pinega-ref-color-neutral-10) 8%, transparent);
+    padding: clamp(1.25rem, 1rem + 2cqi, 2.5rem);
+    overflow: clip;
+  }
+
+  pinega-benchmark > header {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  pinega-benchmark > header > div {
+    display: grid;
+    gap: var(--pinega-ref-space-xs);
+  }
+
+  pinega-benchmark [data-benchmark-visual] {
+    min-block-size: var(--pinega-component-benchmark-chart-height);
+  }
+
+  pinega-benchmark wa-line-chart {
+    display: block;
+    min-block-size: var(--pinega-component-benchmark-chart-height);
+  }
+
+  .pinega-benchmark-chart {
+    inline-size: 100%;
+    min-block-size: var(--pinega-component-benchmark-chart-height);
+    overflow: visible;
+  }
+
+  .chart-grid-line {
+    stroke: var(--pinega-sys-color-border-subtle);
+    stroke-dasharray: 3 5;
+    stroke-width: 1;
+  }
+
+  .chart-axis-line {
+    stroke: var(--pinega-sys-color-border-strong);
+    stroke-width: 1;
+  }
+
+  .chart-axis-label,
+  .chart-axis-title,
+  .chart-legend-label {
+    fill: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-ui);
+    font-size: 12px;
+  }
+
+  .chart-axis-title {
+    font-weight: var(--pinega-ref-font-weight-semibold);
+  }
+
+  .chart-series {
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .chart-series-1 {
+    stroke: var(--pinega-sys-color-action-primary);
+    fill: var(--pinega-sys-color-action-primary);
+  }
+
+  .chart-series-2 {
+    stroke: var(--pinega-research-color-confirmed);
+    fill: var(--pinega-research-color-confirmed);
+  }
+
+  .chart-series-3 {
+    stroke: var(--pinega-research-color-hypothesis);
+    fill: var(--pinega-research-color-hypothesis);
+  }
+
+  .chart-point {
+    stroke: var(--pinega-sys-color-surface-raised);
+    stroke-width: 2.5;
+  }
+
+  pinega-benchmark details {
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    padding-block-start: var(--pinega-ref-space-m);
+  }
+
+  pinega-benchmark summary {
+    color: var(--pinega-sys-color-text-secondary);
+    cursor: pointer;
+    font-weight: var(--pinega-ref-font-weight-medium);
+  }
+
+  pinega-benchmark table {
+    margin-block-start: var(--pinega-ref-space-m);
+    font-variant-numeric: tabular-nums;
+  }
+
+  pinega-benchmark :is(th, td) {
+    border-block-end: 1px solid var(--pinega-sys-color-border-subtle);
+    padding: var(--pinega-ref-space-s);
+  }
+
+  pinega-benchmark td:not(:first-child),
+  pinega-benchmark th:not(:first-child) {
+    text-align: end;
+  }
+
+  @container pinega-benchmark (inline-size < 34rem) {
+    pinega-benchmark > header {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .chart-legend-label,
+    .chart-axis-label,
+    .chart-axis-title {
+      font-size: 10px;
+    }
+  }
+}

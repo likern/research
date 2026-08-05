@@ -1,0 +1,115 @@
+@layer pinega.components {
+  pinega-site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 20;
+    display: block;
+    min-block-size: var(--pinega-component-header-height);
+    border-block-end: 1px solid color-mix(in oklab, var(--pinega-sys-color-border-subtle) 78%, transparent);
+    background: color-mix(in oklab, var(--pinega-sys-color-surface-canvas) 88%, transparent);
+    backdrop-filter: blur(1rem) saturate(125%);
+  }
+
+  pinega-site-header > header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    min-block-size: var(--pinega-component-header-height);
+    gap: var(--pinega-ref-space-l);
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin-inline: auto;
+  }
+
+  .pinega-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--pinega-ref-space-s);
+    color: var(--pinega-sys-color-text-primary);
+    font-size: 1.05rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  .pinega-brand-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 2.15rem;
+    aspect-ratio: 1;
+    border-radius: 38% 62% 58% 42% / 44% 42% 58% 56%;
+    background: var(--pinega-sys-color-action-primary);
+    color: var(--pinega-sys-color-action-on-primary);
+    font-size: 0.9rem;
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, white 30%, transparent);
+  }
+
+  pinega-site-header nav {
+    justify-self: end;
+  }
+
+  pinega-site-header nav ul {
+    display: flex;
+    align-items: center;
+    gap: clamp(var(--pinega-ref-space-s), 2vi, var(--pinega-ref-space-xl));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  pinega-site-header nav a {
+    color: var(--pinega-sys-color-text-secondary);
+    font-size: 0.9rem;
+    font-weight: var(--pinega-ref-font-weight-medium);
+    text-decoration: none;
+  }
+
+  pinega-site-header nav a:hover,
+  pinega-site-header nav a[aria-current='page'] {
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  pinega-site-header [data-navigation-toggle] {
+    display: none;
+  }
+
+  @media (width <= 48rem) {
+    pinega-site-header > header {
+      grid-template-columns: 1fr auto;
+      position: relative;
+    }
+
+    pinega-site-header [data-navigation-toggle] {
+      display: inline-block;
+    }
+
+    pinega-site-header:not([data-enhanced]) [data-navigation-toggle] {
+      display: none;
+    }
+
+    pinega-site-header nav {
+      grid-column: 1 / -1;
+      justify-self: stretch;
+      padding-block-end: var(--pinega-ref-space-m);
+    }
+
+    pinega-site-header[data-enhanced]:not([data-open]) nav {
+      display: none;
+    }
+
+    pinega-site-header nav ul {
+      align-items: stretch;
+      flex-direction: column;
+      gap: var(--pinega-ref-space-2xs);
+    }
+
+    pinega-site-header nav a {
+      display: block;
+      border-radius: var(--pinega-sys-radius-control);
+      padding: var(--pinega-ref-space-s) var(--pinega-ref-space-m);
+    }
+
+    pinega-site-header nav a:hover {
+      background: var(--pinega-sys-color-surface-raised);
+    }
+  }
+}
