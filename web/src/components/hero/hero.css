@@ -96,13 +96,11 @@
   .pinega-hero-layer:nth-child(1) {
     inset-block-start: 1rem;
     transform: rotate(-4deg) translateX(-1.4rem) scale(0.92);
-    opacity: 0.55;
   }
 
   .pinega-hero-layer:nth-child(2) {
     inset-block-start: 4.7rem;
     transform: rotate(2.5deg) translateX(1rem) scale(0.96);
-    opacity: 0.78;
   }
 
   .pinega-hero-layer:nth-child(3) {
