@@ -1,0 +1,50 @@
+name: Temporary apply Pinega web foundation
+
+on:
+  push:
+    branches:
+      - "agent/pinega-web-foundation-v0-1"
+    paths:
+      - ".github/workflows/tmp-apply-pinega-web-foundation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: agent/pinega-web-foundation-v0-1
+          fetch-depth: 0
+
+      - name: Decode and verify the source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode \
+            .github/pinega-web-foundation-payload.b64 \
+            > /tmp/pinega-web-foundation-v0.1.tar.gz
+          printf '%s  %s\n' \
+            '161403868974c825227116c77ec597e8a9d9f383b98d1bd04b124816ccfd7f31' \
+            '/tmp/pinega-web-foundation-v0.1.tar.gz' \
+            | sha256sum --check
+          tar -tzf /tmp/pinega-web-foundation-v0.1.tar.gz > /dev/null
+
+      - name: Apply the Pinega Web Foundation source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -xzf /tmp/pinega-web-foundation-v0.1.tar.gz
+          git rm -f .github/pinega-web-foundation-payload.b64
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add design web docs/web-foundation.md
+          git diff --cached --check
+          git commit -m 'Add Pinega Web Foundation v0.1'
+          git push origin HEAD:agent/pinega-web-foundation-v0-1
