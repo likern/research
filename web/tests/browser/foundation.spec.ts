@@ -5,13 +5,19 @@ const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
 async function ready(page: Page) {
-  await page.goto('/');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
 
-test('renders durable semantic landmarks and all five foundation compositions', async ({ page }) => {
+test('renders durable semantic landmarks and all five foundation compositions', async ({ page }, testInfo) => {
   await ready(page);
-  await expect(page.getByRole('navigation', { name: 'Primary navigation' })).toBeVisible();
+  const navigation = page.locator('nav[data-primary-navigation]');
+  await expect(navigation).toHaveAttribute('aria-label', 'Primary navigation');
+  if (testInfo.project.use.isMobile) {
+    await expect(navigation).toBeHidden();
+  } else {
+    await expect(navigation).toBeVisible();
+  }
   await expect(page.getByRole('main')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Systems research');
   await expect(page.getByRole('link', { name: 'Explore the foundation' })).toHaveAttribute('href', '#foundation');
