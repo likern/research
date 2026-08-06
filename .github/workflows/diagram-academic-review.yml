@@ -1,53 +1,56 @@
 name: Academic diagram review artifacts
-
 on:
-  workflow_dispatch:
+  push:
+    branches: ["agent/scientific-diagram-language-v0-2"]
   pull_request:
-    paths:
-      - "diagrams/**"
-      - ".github/workflows/diagram-academic-review.yml"
-
+    paths: ["design/diagrams/**", "web/src/diagrams/**", "web/src/styles/**", "web/scripts/capture-diagram-review.mjs", "web/tests/**", "ydmp/templates/diagrams/**", ".github/workflows/diagram-academic-review.yml"]
+  workflow_dispatch:
 permissions:
   contents: read
-
 jobs:
   render-review:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
-
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
-
-      - name: Prepare review artifact directory
+      - uses: actions/setup-node@v6
+        with: { node-version: "26.7.0", cache: npm, cache-dependency-path: web/package-lock.json }
+      - working-directory: web
+        run: npm ci --ignore-scripts
+      - working-directory: web
+        run: npm run tokens:check && npm run typecheck && npm run test:unit && npm run build && npm run check:build
+      - working-directory: web
+        run: npx --no-install playwright install --with-deps chromium
+      - working-directory: web
+        run: npm run test:visual -- --update-snapshots
+      - shell: bash
         run: |
-          mkdir -p artifacts/scientific-diagram-v0.2-review/{pdf,png,svg,models}
-
-      - name: Copy semantic schema and available models
+          set -euo pipefail
+          mkdir -p artifacts/scientific-diagram-v0.2-review/web
+          (cd web && npm run serve > ../artifacts/scientific-diagram-v0.2-review/web/server.log 2>&1 & echo $! > ../artifacts/scientific-diagram-v0.2-review/web/server.pid)
+          server_pid=$(cat artifacts/scientific-diagram-v0.2-review/web/server.pid)
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 60); do curl --fail --silent http://127.0.0.1:4173/research/ >/dev/null && break; sleep 1; done
+          node web/scripts/capture-diagram-review.mjs artifacts/scientific-diagram-v0.2-review/web
+          mkdir -p artifacts/scientific-diagram-v0.2-review/web/playwright-baselines
+          cp -R web/tests/visual/semantic-diagrams.visual.spec.ts-snapshots artifacts/scientific-diagram-v0.2-review/web/playwright-baselines/
+      - id: versions
+        shell: bash
+        run: echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+      - uses: typst-community/setup-typst@v5
+        with: { typst-version: "${{ steps.versions.outputs.typst }}" }
+      - shell: bash
         run: |
-          cp diagrams/semantic-ir/schema/v0.2.json artifacts/scientific-diagram-v0.2-review/models/
-          find diagrams -path '*models/*.json' -type f -exec cp {} artifacts/scientific-diagram-v0.2-review/models/ \; || true
-
-      - name: Generate review manifest
+          set -euo pipefail
+          mkdir -p artifacts/scientific-diagram-v0.2-review/typst/{pdf,png}
+          typst compile --root . ydmp/templates/diagrams/specimens/academic-review.typ artifacts/scientific-diagram-v0.2-review/typst/pdf/academic-review.pdf
+          typst compile --root . --format png --ppi 180 ydmp/templates/diagrams/specimens/academic-review.typ 'artifacts/scientific-diagram-v0.2-review/typst/png/academic-review-{p}.png'
+      - shell: bash
         run: |
-          cat > artifacts/scientific-diagram-v0.2-review/README.txt <<'EOF'
-Scientific Diagram Language v0.2 review artifact
-
-Current iteration:
-- semantic IR v0.2
-- MVCC academic renderer refinement
-- Linearizability academic renderer refinement
-
-Directories:
-- pdf/ rendered documents
-- png/ visual review sheets
-- svg/ web previews
-- models/ semantic inputs
-EOF
-          find artifacts/scientific-diagram-v0.2-review -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/scientific-diagram-v0.2-review/SHA256SUMS
-
-      - name: Upload review artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: scientific-diagram-v0.2-review-iteration-1
-          path: artifacts/scientific-diagram-v0.2-review
-          if-no-files-found: error
+          review=artifacts/scientific-diagram-v0.2-review
+          mkdir -p "$review/models"
+          cp design/diagrams/schema-v1.json "$review/models/"
+          cp design/diagrams/models/*.json "$review/models/"
+          find "$review" -type f -print0 | sort -z | xargs -0 sha256sum > "$review/SHA256SUMS"
+      - uses: actions/upload-artifact@v7
+        with: { name: scientific-diagram-v0.2-review-iteration-1, path: artifacts/scientific-diagram-v0.2-review, if-no-files-found: error, retention-days: 30 }

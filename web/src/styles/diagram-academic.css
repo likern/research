@@ -1,0 +1,41 @@
+@layer pinega.components {
+  .pinega-diagram-viewport { border-radius: var(--pinega-sys-radius-panel); background: var(--pinega-sys-color-surface-raised); padding: clamp(0.75rem, 0.55rem + 0.8vi, 1.25rem); }
+  .pinega-diagram-svg-history, .pinega-diagram-svg-version-chain, .pinega-diagram-svg-lifecycle { font-kerning: normal; text-rendering: geometricPrecision; }
+  .pinega-diagram-academic-title { font-size: 20px; letter-spacing: -0.015em; }
+  .pinega-diagram-subject, .pinega-diagram-axis-label, .pinega-diagram-relation-label, .pinega-diagram-boundary-label { font-family: var(--pinega-sys-font-family-code); }
+  .pinega-diagram-version-node { fill: var(--pinega-sys-color-surface-raised); stroke-linejoin: miter; }
+  .pinega-diagram-version-node.state-visible { fill: color-mix(in oklab, var(--pinega-research-color-confirmed) 8%, var(--pinega-sys-color-surface-raised)); }
+  .pinega-diagram-version-id { font-family: var(--pinega-sys-font-family-code); font-size: 16px; }
+  .pinega-diagram-version-state { font-size: 9px; letter-spacing: 0.085em; }
+  .pinega-diagram-version-payload { font-size: 13px; font-weight: var(--pinega-ref-font-weight-bold); }
+  .pinega-diagram-version-metadata, .pinega-diagram-version-note, .pinega-diagram-evaluation-note { font-size: 10px; }
+  .pinega-diagram-version-note { font-style: italic; }
+  .pinega-diagram-node-divider, .pinega-diagram-evaluation-rule { stroke: var(--pinega-sys-color-border-subtle); }
+  .pinega-diagram-relation-reference { stroke-width: 1.55; }
+  .pinega-diagram-relation-temporal { stroke-width: 1.35; }
+  .pinega-diagram-evaluation-title { font-size: 13px; }
+  .pinega-diagram-evaluation-result { font-size: 9px; letter-spacing: 0.05em; }
+  .pinega-diagram-evaluation-result.is-rejected { font-weight: var(--pinega-ref-font-weight-medium); }
+  .pinega-diagram-time-axis, .pinega-diagram-lane-line { stroke: var(--pinega-sys-color-border-normal); }
+  .pinega-diagram-time-axis { stroke-linecap: butt; }
+  .pinega-diagram-lane-label { font-family: var(--pinega-sys-font-family-code); font-size: 13px; }
+  .pinega-diagram-operation-interval { stroke-linecap: round; }
+  .pinega-diagram-operation-label { font-size: 12px; font-weight: var(--pinega-ref-font-weight-bold); }
+  .pinega-diagram-operation-note { font-family: var(--pinega-sys-font-family-reading); font-size: 10px; font-style: italic; }
+  .pinega-diagram-lp-halo { stroke-width: 1.2; opacity: 0.62; }
+  .pinega-diagram-lp-marker { filter: drop-shadow(0 0 2px color-mix(in oklab, var(--pinega-research-color-external) 45%, transparent)); }
+  .pinega-diagram-lp-label { font-family: var(--pinega-sys-font-family-code); font-size: 12px; font-weight: var(--pinega-ref-font-weight-bold); letter-spacing: 0.08em; }
+  .pinega-diagram-real-time-precedence { stroke-linecap: square; stroke-linejoin: miter; }
+  .pinega-diagram-precedence-label { font-size: 10px; font-weight: var(--pinega-ref-font-weight-bold); }
+  .pinega-diagram-boundary { opacity: 0.78; }
+  .pinega-diagram-proof-panel { fill: color-mix(in oklab, var(--pinega-sys-color-surface-lowered) 70%, var(--pinega-sys-color-surface-raised)); stroke: var(--pinega-sys-color-border-normal); stroke-linejoin: miter; }
+  .pinega-diagram-witness-title { font-size: 13px; }
+  .pinega-diagram-witness-number { font-size: 10px; }
+  .pinega-diagram-witness-operation { font-size: 12px; font-weight: var(--pinega-ref-font-weight-bold); }
+  .pinega-diagram-witness-reason, .pinega-diagram-legend { font-size: 10px; }
+  @media print {
+    .pinega-diagram-viewport { border-color: #777; border-radius: 0; background: white; padding: 8pt; }
+    .pinega-diagram-version-node, .pinega-diagram-proof-panel { fill: white; }
+    .pinega-diagram-lp-marker { filter: none; }
+  }
+}
