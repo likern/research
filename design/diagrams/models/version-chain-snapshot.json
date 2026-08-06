@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "version-chain-snapshot",
+  "kind": "version-chain",
+  "title": "Newest-to-oldest row-version chain",
+  "caption": "A stable row head publishes the newest committed version; snapshot S17 selects v42 while older versions remain linked for other snapshots and later reclamation.",
+  "description": "The row head points to version v42, then v41, then v40. Version v42 contains balance 120, was created by transaction T42, has no deleting transaction, generation 42, and is visible to snapshot S17. Version v41 contains balance 100, was created by T41 and superseded by T42. Version v40 contains balance 80, was created by T40, superseded by T41, and has been retired but not yet reused. Snapshot S17 selects v42 because T42 committed before the snapshot.",
+  "subject": "accounts[42]",
+  "head": "v42",
+  "headLabel": "stable row head",
+  "snapshot": {
+    "id": "s17",
+    "label": "Snapshot S17",
+    "visibleVersion": "v42",
+    "note": "T42 committed before the snapshot"
+  },
+  "versions": [
+    {
+      "id": "v42",
+      "label": "v42",
+      "payload": "balance = 120",
+      "createdBy": "T42",
+      "deletedBy": null,
+      "generation": 42,
+      "state": "visible",
+      "note": "selected by S17"
+    },
+    {
+      "id": "v41",
+      "label": "v41",
+      "payload": "balance = 100",
+      "createdBy": "T41",
+      "deletedBy": "T42",
+      "generation": 41,
+      "state": "obsolete",
+      "note": "kept for older snapshots"
+    },
+    {
+      "id": "v40",
+      "label": "v40",
+      "payload": "balance = 80",
+      "createdBy": "T40",
+      "deletedBy": "T41",
+      "generation": 40,
+      "state": "retired",
+      "note": "unlinked only after visibility permits"
+    }
+  ]
+}

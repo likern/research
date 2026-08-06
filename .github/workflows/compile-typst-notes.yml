@@ -8,13 +8,17 @@ on:
     paths:
       - ".typst-version"
       - "research.toml"
+      - "design/diagrams/**"
       - "ydmp/templates/notes/**"
+      - "ydmp/templates/diagrams/**"
       - ".github/workflows/compile-typst-notes.yml"
   pull_request:
     paths:
       - ".typst-version"
       - "research.toml"
+      - "design/diagrams/**"
       - "ydmp/templates/notes/**"
+      - "ydmp/templates/diagrams/**"
       - ".github/workflows/compile-typst-notes.yml"
   workflow_dispatch:
 
@@ -119,6 +123,22 @@ jobs:
             --input "variant=candidate-strata" \
             ydmp/templates/notes/validation/strata-verify-berenson.typ \
             artifacts/validation/strata-verify-berenson.pdf
+
+      - name: Compile semantic diagram gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/diagrams
+
+          typst compile \
+            --root . \
+            ydmp/templates/diagrams/specimens/implementation-gate.typ \
+            artifacts/diagrams/strata-diagram-implementation-gate.pdf
+
+          typst compile \
+            --root . \
+            ydmp/templates/diagrams/specimens/shared-semantic-models.typ \
+            artifacts/diagrams/strata-shared-semantic-diagram-gate.pdf
 
       - name: Record artifact checksums
         shell: bash

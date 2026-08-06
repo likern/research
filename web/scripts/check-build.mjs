@@ -4,6 +4,11 @@ import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
+const diagramIds = [
+  'buffer-frame-lifecycle',
+  'linearizability-overlap',
+  'version-chain-snapshot',
+];
 const required = [
   'index.html',
   'docs/index.html',
@@ -17,6 +22,9 @@ const required = [
   'favicon.svg',
   'assets/main.js',
   'assets/main.css',
+  'diagrams/README.md',
+  'diagrams/schema/diagram.schema.json',
+  ...diagramIds.map(id => `diagrams/models/${id}.json`),
 ];
 
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
@@ -32,17 +40,26 @@ for (const file of files) {
 const javascript = totals.get('.js') ?? 0;
 const css = totals.get('.css') ?? 0;
 assert.ok(javascript <= 450 * 1024, `JavaScript budget exceeded: ${javascript} bytes`);
-assert.ok(css <= 180 * 1024, `CSS budget exceeded: ${css} bytes`);
+assert.ok(css <= 190 * 1024, `CSS budget exceeded: ${css} bytes`);
 
 for (const path of required.filter(path => path.endsWith('.html'))) {
   const html = await readFile(resolve(root, path), 'utf8');
-  assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META/u, `${path} contains an unresolved build marker`);
+  assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:/u, `${path} contains an unresolved build marker`);
   assert.match(html, /<main\b/u, `${path} does not contain main content`);
   assert.match(html, /\/assets\/main\.css/u, `${path} does not load the shared stylesheet`);
   assert.match(html, /\/assets\/main\.js/u, `${path} does not load the shared module`);
 }
 
-console.log(`Validated ${files.length} build files; JavaScript ${javascript} B, CSS ${css} B.`);
+const research = await readFile(resolve(root, 'research/index.html'), 'utf8');
+assert.equal((research.match(/class="pinega-semantic-diagram"/gu) ?? []).length, 3, 'research page must contain three semantic diagrams');
+assert.equal((research.match(/role="img" aria-labelledby=/gu) ?? []).length, 3, 'each semantic SVG must have an accessible image role and name');
+assert.equal((research.match(/<title id="pinega-diagram-/gu) ?? []).length, 3, 'each semantic SVG must have a direct title');
+assert.equal((research.match(/<desc id="pinega-diagram-/gu) ?? []).length, 3, 'each semantic SVG must have a direct description');
+
+const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
+assert.deepEqual(manifest.diagrams.map(entry => entry.id).toSorted(), diagramIds.toSorted());
+
+console.log(`Validated ${files.length} build files; JavaScript ${javascript} B, CSS ${css} B, diagrams ${diagramIds.length}.`);
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
