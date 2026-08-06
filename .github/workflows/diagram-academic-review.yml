@@ -1,22 +1,46 @@
-name: Academic diagram review artifacts
+name: Scientific diagram review artifacts
 
 on:
   push:
     branches:
-      - "agent/scientific-diagram-language-v0-2"
-  pull_request:
+      - main
     paths:
       - "design/diagrams/**"
+      - "design/tokens/**"
+      - "design/generated/**"
       - "web/src/diagrams/**"
       - "web/src/styles/**"
       - "web/scripts/capture-diagram-review.mjs"
       - "web/tests/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "web/playwright.config.ts"
       - "ydmp/templates/diagrams/**"
+      - ".typst-version"
+      - ".github/workflows/diagram-academic-review.yml"
+  pull_request:
+    paths:
+      - "design/diagrams/**"
+      - "design/tokens/**"
+      - "design/generated/**"
+      - "web/src/diagrams/**"
+      - "web/src/styles/**"
+      - "web/scripts/capture-diagram-review.mjs"
+      - "web/tests/**"
+      - "web/package.json"
+      - "web/package-lock.json"
+      - "web/playwright.config.ts"
+      - "ydmp/templates/diagrams/**"
+      - ".typst-version"
       - ".github/workflows/diagram-academic-review.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: scientific-diagrams-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   render-review:
@@ -26,6 +50,32 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Read pinned versions
+        id: versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+          echo "diagrams=$(tr -d '[:space:]' < design/diagrams/VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Determine immutable artifact identity
+        id: artifact
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          revision="${HEAD_SHA:0:12}"
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            scope="pr-${PR_NUMBER}"
+          else
+            scope="main"
+          fi
+          echo "head_sha=${HEAD_SHA}" >> "$GITHUB_OUTPUT"
+          echo "revision=${revision}" >> "$GITHUB_OUTPUT"
+          echo "name=scientific-diagrams-${scope}-${revision}-attempt-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -46,15 +96,17 @@ jobs:
         working-directory: web
         run: npx --no-install playwright install --with-deps chromium
 
-      - name: Generate current visual baselines
+      - name: Verify committed visual baselines
         working-directory: web
-        run: npm run test:visual -- --update-snapshots
+        run: npm run test:visual
 
       - name: Capture web review assets
         shell: bash
+        env:
+          PINEGA_DIAGRAM_VERSION: ${{ steps.versions.outputs.diagrams }}
         run: |
           set -euo pipefail
-          review="$GITHUB_WORKSPACE/artifacts/scientific-diagram-v0.2-review/web"
+          review="$GITHUB_WORKSPACE/artifacts/scientific-diagrams/web"
           mkdir -p "$review"
 
           (
@@ -79,13 +131,9 @@ jobs:
           fi
 
           node web/scripts/capture-diagram-review.mjs "$review"
+          rm -f "$review/server.pid"
           mkdir -p "$review/playwright-baselines"
           cp -R web/tests/visual/semantic-diagrams.visual.spec.ts-snapshots "$review/playwright-baselines/"
-
-      - name: Read pinned Typst version
-        id: versions
-        shell: bash
-        run: echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
 
       - name: Install Typst
         uses: typst-community/setup-typst@v5
@@ -96,36 +144,55 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          review="artifacts/scientific-diagram-v0.2-review/typst"
+          review="artifacts/scientific-diagrams/typst"
           mkdir -p "$review/pdf" "$review/png"
           typst compile \
             --root . \
+            --input diagram-version="${{ steps.versions.outputs.diagrams }}" \
             ydmp/templates/diagrams/specimens/academic-review.typ \
             "$review/pdf/academic-review.pdf"
           typst compile \
             --root . \
             --format png \
             --ppi 180 \
+            --input diagram-version="${{ steps.versions.outputs.diagrams }}" \
             ydmp/templates/diagrams/specimens/academic-review.typ \
             "$review/png/academic-review-{p}.png"
 
-      - name: Package semantic models and checksums
+      - name: Package models, metadata, and checksums
         shell: bash
         run: |
           set -euo pipefail
-          review="artifacts/scientific-diagram-v0.2-review"
+          review="$GITHUB_WORKSPACE/artifacts/scientific-diagrams"
           mkdir -p "$review/models"
+          cp design/diagrams/VERSION "$review/models/"
           cp design/diagrams/schema/diagram.schema.json "$review/models/"
           cp design/diagrams/models/*.json "$review/models/"
-          find "$review" -type f -print0 \
-            | sort -z \
-            | xargs -0 sha256sum \
-            > "$review/SHA256SUMS"
 
-      - name: Upload visual review artifact
+          cat > "$review/BUILD-METADATA.txt" <<EOF
+          diagram_system_version=${{ steps.versions.outputs.diagrams }}
+          event=${GITHUB_EVENT_NAME}
+          repository=${GITHUB_REPOSITORY}
+          ref=${GITHUB_REF}
+          head_commit=${{ steps.artifact.outputs.head_sha }}
+          checkout_commit=${GITHUB_SHA}
+          workflow_run=${GITHUB_RUN_ID}
+          workflow_attempt=${GITHUB_RUN_ATTEMPT}
+          artifact=${{ steps.artifact.outputs.name }}
+          EOF
+
+          (
+            cd "$review"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              > SHA256SUMS
+          )
+
+      - name: Upload immutable visual review artifact
         uses: actions/upload-artifact@v7
         with:
-          name: scientific-diagram-v0.2-review-iteration-1
-          path: artifacts/scientific-diagram-v0.2-review
+          name: ${{ steps.artifact.outputs.name }}
+          path: artifacts/scientific-diagrams
           if-no-files-found: error
           retention-days: 30
