@@ -1,0 +1,40 @@
+name: Academic diagram review artifacts
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "diagrams/**"
+      - ".github/workflows/diagram-academic-review.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  render-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Prepare review artifact directory
+        run: mkdir -p artifacts/scientific-diagram-v0.2-review
+
+      - name: Generate review manifest
+        run: |
+          cat > artifacts/scientific-diagram-v0.2-review/README.txt <<'EOF'
+          Scientific Diagram Language v0.2 review artifact
+
+          Planned contents:
+          - MVCC academic renderer output
+          - Linearizability academic renderer output
+          - SVG previews
+          - semantic models
+          EOF
+
+      - name: Upload review artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scientific-diagram-v0.2-review-iteration-1
+          path: artifacts/scientific-diagram-v0.2-review
