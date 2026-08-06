@@ -41,8 +41,8 @@
       }
     }
     let head-x = x-of(0) + node-width / 2
-    canvas-label((head-x, 1.86), chain.head_label, theme: theme, anchor: "south", font: theme.mono-font, size: 5.0pt, weight: "bold", fill: theme.primary, background: theme.paper, inset: (x: 1.4pt, y: 0.3pt))
-    arrow((head-x, 1.80), (head-x, 1.48), paint: theme.primary, thickness: theme.edge)
+    canvas-label((head-x, 1.72), chain.head_label, theme: theme, anchor: "south", font: theme.mono-font, size: 5.0pt, weight: "bold", fill: theme.primary, background: theme.paper, inset: (x: 1.4pt, y: 0.3pt))
+    arrow((head-x, 1.66), (head-x, 1.48), paint: theme.primary, thickness: theme.edge)
     let evaluation-y = -0.80
     canvas-label((left, evaluation-y), [#chain.snapshot.label #h(3pt)·#h(3pt) visibility evaluation], theme: theme, anchor: "west", size: 5.7pt, weight: "bold", fill: theme.inferred, inset: 0pt)
     line((left, evaluation-y - 0.18), (right, evaluation-y - 0.18), stroke: stroke-style(theme.rule, theme.hairline))
