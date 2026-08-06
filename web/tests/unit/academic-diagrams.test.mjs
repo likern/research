@@ -101,6 +101,7 @@ test('the permanent review workflow verifies baselines and publishes authoring a
   assert.doesNotMatch(workflow, /agent\/scientific-diagram-language/u);
   assert.match(workflow, /design\/diagrams\/VERSION/u);
   assert.match(workflow, /design\/diagrams\/layouts\/\*\.json/u);
+  assert.match(workflow, /web\/scripts\/check-build\.mjs/u);
   assert.match(workflow, /web\/authoring\/manifest\.json/u);
   assert.match(workflow, /steps\.artifact\.outputs\.name/u);
   assert.match(workflow, /id: upload[\s\S]*actions\/upload-artifact@v7/u);
