@@ -61,6 +61,7 @@
     font-size: 0.9rem;
     font-weight: var(--pinega-ref-font-weight-medium);
     text-decoration: none;
+    white-space: nowrap;
   }
 
   pinega-site-header nav a:hover,
@@ -72,7 +73,7 @@
     display: none;
   }
 
-  @media (width <= 48rem) {
+  @media (width <= 64rem) {
     pinega-site-header > header {
       grid-template-columns: 1fr auto;
       position: relative;
@@ -110,6 +111,17 @@
 
     pinega-site-header nav a:hover {
       background: var(--pinega-sys-color-surface-raised);
+    }
+  }
+
+  @media (width <= 34rem) {
+    pinega-site-header > header {
+      gap: var(--pinega-ref-space-s);
+      inline-size: min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide));
+    }
+
+    pinega-site-header .pinega-cluster {
+      gap: var(--pinega-ref-space-2xs);
     }
   }
 }

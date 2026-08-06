@@ -6,15 +6,18 @@
 @import '../vendor/webawesome/pinega-strata.theme.css';
 @import './base.css';
 @import './layout.css';
+@import './site.css';
+@import './docs.css';
 @import '../components/site-header/site-header.css';
 @import '../components/hero/hero.css';
 @import '../components/evidence/evidence.css';
 @import '../components/code-example/code-example.css';
 @import '../components/benchmark/benchmark.css';
+@import '../components/doc-search/doc-search.css';
 
 @layer pinega.overrides {
   @media (forced-colors: active) {
-    :where(pinega-evidence, pinega-code-example, pinega-benchmark) {
+    :where(pinega-evidence, pinega-code-example, pinega-benchmark, .pinega-doc-card, .pinega-architecture-layers li) {
       forced-color-adjust: auto;
       border-color: CanvasText;
     }

@@ -1,0 +1,44 @@
+@layer pinega.components {
+  pinega-doc-search {
+    display: grid;
+    gap: var(--pinega-ref-space-xl);
+    padding-block: clamp(2.5rem, 2rem + 3vi, 5rem);
+  }
+
+  .pinega-doc-search-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: var(--pinega-ref-space-l);
+  }
+
+  .pinega-doc-search-heading > div {
+    display: grid;
+    gap: var(--pinega-ref-space-xs);
+  }
+
+  [data-doc-search-status] {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  pinega-doc-search wa-input {
+    max-inline-size: 42rem;
+  }
+
+  [data-doc-search-empty] {
+    border: 1px dashed var(--pinega-sys-color-border-normal);
+    border-radius: var(--pinega-sys-radius-panel);
+    color: var(--pinega-sys-color-text-secondary);
+    padding: var(--pinega-ref-space-xl);
+    text-align: center;
+  }
+
+  @media (width <= 36rem) {
+    .pinega-doc-search-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+  }
+}

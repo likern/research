@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="home">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pinega — a research-stage PostgreSQL storage engine</title>
+    <meta name="description" content="Pinega is a research-stage PostgreSQL storage engine architecture focused on explicit row versions, concurrent object lifetimes, and a verifiable hot path.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pinega — a research-stage PostgreSQL storage engine">
+    <meta property="og:description" content="Explicit versions, protected lifetimes, and reproducible systems research for PostgreSQL.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/" aria-label="Pinega home" aria-current="page">
+            <span class="pinega-brand-mark" aria-hidden="true">P</span>
+            <span>Pinega</span>
+          </a>
+
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="/docs/">Documentation</a></li>
+              <li><a href="/research/">Research</a></li>
+              <li><a href="#architecture">Architecture</a></li>
+              <li><a href="/component-lab/">Design system</a></li>
+            </ul>
+          </nav>
+
+          <div class="pinega-cluster">
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1" class="pinega-site-main pinega-full-bleed">
+        <pinega-hero id="top" class="pinega-product-hero">
+          <section>
+            <div class="pinega-hero-copy">
+              <div class="pinega-cluster">
+                <wa-badge variant="brand" appearance="filled-outlined" pill>Research stage</wa-badge>
+                <span class="pinega-eyebrow">PostgreSQL 19 target</span>
+              </div>
+
+              <h1>A storage engine designed around explicit versions and concurrent lifetimes.</h1>
+              <p>
+                Pinega is an architecture and implementation programme for high-contention OLTP inside PostgreSQL.
+                The current work validates storage, buffer-pool, WAL, and correctness contracts; it is not a production release.
+              </p>
+
+              <div class="pinega-hero-actions">
+                <a class="pinega-action pinega-action-primary" href="/docs/getting-started/">Read the project guide</a>
+                <a class="pinega-action pinega-action-secondary" href="/research/">Inspect the research model</a>
+              </div>
+            </div>
+
+            <div class="pinega-hero-stack" aria-hidden="true">
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>PostgreSQL boundary</span><span>callbacks</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>AM</span><span class="pinega-hero-trace-line" style="--start: 8%; --length: 74%;"></span></div>
+                  <div class="pinega-hero-trace-row"><span>MVCC</span><span class="pinega-hero-trace-line" style="--start: 22%; --length: 59%;"></span></div>
+                </div>
+              </div>
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>Mutable strata</span><span>versions</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>v42</span><span class="pinega-hero-trace-line" style="--start: 9%; --length: 77%; --tone: var(--pinega-research-color-confirmed);"></span></div>
+                  <div class="pinega-hero-trace-row"><span>v41</span><span class="pinega-hero-trace-line" style="--start: 31%; --length: 53%; --tone: var(--pinega-research-color-hypothesis);"></span></div>
+                </div>
+              </div>
+              <div class="pinega-hero-layer">
+                <div class="pinega-hero-layer-header"><span>Lifetime protocol</span><span>protect · revalidate</span></div>
+                <div class="pinega-hero-trace">
+                  <div class="pinega-hero-trace-row"><span>P</span><span class="pinega-hero-trace-line" style="--start: 4%; --length: 60%;"></span></div>
+                  <div class="pinega-hero-trace-row"><span>Q</span><span class="pinega-hero-trace-line" style="--start: 29%; --length: 57%; --tone: var(--pinega-research-color-confirmed);"></span></div>
+                  <div class="pinega-hero-trace-row"><span>GC</span><span class="pinega-hero-trace-line" style="--start: 62%; --length: 26%; --tone: var(--pinega-research-color-hypothesis);"></span></div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </pinega-hero>
+
+        <section class="pinega-home-status" aria-labelledby="status-title">
+          <h2 class="pinega-visually-hidden" id="status-title">Current project status</h2>
+          <article class="pinega-status-card">
+            <span class="pinega-status-kicker" data-status="available">Available now</span>
+            <h3>Research workspace</h3>
+            <p>Versioned notes, formal models, diagrams, and reproducible web and Typst tooling.</p>
+          </article>
+          <article class="pinega-status-card">
+            <span class="pinega-status-kicker" data-status="validated">Validated</span>
+            <h3>Architecture specimens</h3>
+            <p>Storage and concurrency contracts are exercised as explicit models and documentation artefacts.</p>
+          </article>
+          <article class="pinega-status-card">
+            <span class="pinega-status-kicker" data-status="planned">Next milestone</span>
+            <h3>Runnable engine prototype</h3>
+            <p>The PostgreSQL extension and mutable-store prototype remain implementation work, not a shipped feature.</p>
+          </article>
+        </section>
+
+        <section class="pinega-section" id="why" aria-labelledby="why-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Design thesis</p>
+            <h2 id="why-title">Make the hot path explicit enough to reason about.</h2>
+            <p class="pinega-muted">
+              Pinega treats visibility, publication, pinning, reclamation, and durability as separate contracts instead of hiding them inside one mutable heap abstraction.
+            </p>
+          </header>
+
+          <div class="pinega-grid pinega-principle-grid">
+            <wa-card>
+              <p class="pinega-card-index" aria-hidden="true">01</p>
+              <h3>Version-first storage</h3>
+              <p>Out-of-place row versions make history and visibility data explicit, enabling specialised access paths and later SIMD evaluation.</p>
+            </wa-card>
+            <wa-card>
+              <p class="pinega-card-index" aria-hidden="true">02</p>
+              <h3>Protected lifetimes</h3>
+              <p>Candidate handles are protected, pinned, and revalidated before use; reclamation is modelled as a protocol rather than an afterthought.</p>
+            </wa-card>
+            <wa-card>
+              <p class="pinega-card-index" aria-hidden="true">03</p>
+              <h3>One durability boundary</h3>
+              <p>The current architecture keeps one PostgreSQL WAL pipeline and avoids inventing an independent durability subsystem.</p>
+            </wa-card>
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-section-contrast pinega-full-bleed" id="architecture" aria-labelledby="architecture-title">
+          <div class="pinega-section-inner">
+            <header class="pinega-section-heading">
+              <p class="pinega-eyebrow">Proposed architecture</p>
+              <h2 id="architecture-title">Four strata with explicit ownership boundaries.</h2>
+              <p class="pinega-muted">
+                The diagram is a design contract. It describes the intended decomposition; it does not claim that every layer is implemented.
+              </p>
+            </header>
+
+            <figure class="pinega-architecture-figure" aria-labelledby="architecture-caption">
+              <ol class="pinega-architecture-layers">
+                <li>
+                  <span class="pinega-architecture-number">01</span>
+                  <div><strong>PostgreSQL integration</strong><span>Table AM callbacks, snapshots, transactions, SQL-facing behaviour</span></div>
+                  <span class="pinega-architecture-state">target</span>
+                </li>
+                <li>
+                  <span class="pinega-architecture-number">02</span>
+                  <div><strong>Mutable version store</strong><span>Out-of-place tuples, stable handles, visibility metadata</span></div>
+                  <span class="pinega-architecture-state">design</span>
+                </li>
+                <li>
+                  <span class="pinega-architecture-number">03</span>
+                  <div><strong>Shared buffer pool</strong><span>Stable frames, protect/pin/revalidate, cache-aware placement</span></div>
+                  <span class="pinega-architecture-state">research</span>
+                </li>
+                <li>
+                  <span class="pinega-architecture-number">04</span>
+                  <div><strong>PostgreSQL WAL</strong><span>One write-ahead log and one transaction durability boundary</span></div>
+                  <span class="pinega-architecture-state">decision</span>
+                </li>
+              </ol>
+              <figcaption id="architecture-caption">
+                Proposed Pinega OLTP path from PostgreSQL callbacks to version storage, frame lifetime protection, and PostgreSQL WAL.
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <section class="pinega-section" id="correctness" aria-labelledby="correctness-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Correctness before claims</p>
+            <h2 id="correctness-title">Evidence remains labelled by maturity and origin.</h2>
+          </header>
+
+          <div class="pinega-grid">
+            <pinega-evidence kind="confirmed">
+              <h3>Confirmed design decision</h3>
+              <p>Pinega uses PostgreSQL WAL as the durability pipeline for the current architecture.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="hypothesis">
+              <h3>Research hypothesis</h3>
+              <p>A cache-aware, partitioned buffer pool may reduce coherence traffic under high contention.</p>
+            </pinega-evidence>
+            <pinega-evidence kind="external">
+              <h3>External evidence</h3>
+              <p>Published concurrent algorithms inform the design, but must still be adapted and verified against PostgreSQL process semantics.</p>
+            </pinega-evidence>
+          </div>
+        </section>
+
+        <section class="pinega-section" id="roadmap" aria-labelledby="roadmap-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Maturity ledger</p>
+            <h2 id="roadmap-title">What exists, what is being validated, and what is still planned.</h2>
+          </header>
+
+          <div class="pinega-table-scroller" tabindex="0" role="region" aria-label="Pinega maturity table">
+            <table class="pinega-roadmap-table">
+              <thead>
+                <tr><th scope="col">Area</th><th scope="col">Current state</th><th scope="col">Evidence</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">Research workspace</th><td><span class="pinega-state-label" data-state="available">Available</span></td><td>Typst templates, semantic diagrams, MODEL and VERIFY artefacts</td></tr>
+                <tr><th scope="row">Web design system</th><td><span class="pinega-state-label" data-state="available">Available</span></td><td>Canonical tokens, Web Components, browser and accessibility gates</td></tr>
+                <tr><th scope="row">Storage architecture</th><td><span class="pinega-state-label" data-state="validated">Under validation</span></td><td>Documented contracts and implementation specimens</td></tr>
+                <tr><th scope="row">PostgreSQL engine</th><td><span class="pinega-state-label" data-state="planned">Planned</span></td><td>No production binary or performance claim yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-cta" aria-labelledby="cta-title">
+          <div>
+            <p class="pinega-eyebrow">Start with the evidence</p>
+            <h2 id="cta-title">Read the architecture and reproduce the workspace.</h2>
+            <p class="pinega-muted">The documentation begins with the current status, repository layout, and commands that work today.</p>
+          </div>
+          <div class="pinega-cluster">
+            <a class="pinega-action pinega-action-primary" href="/docs/getting-started/">Getting started</a>
+            <a class="pinega-action pinega-action-secondary" href="/docs/">Documentation map</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="pinega-site-footer pinega-full-bleed">
+        <div class="pinega-site-footer-inner">
+          <div>
+            <a class="pinega-brand" href="/" aria-label="Pinega home">
+              <span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span>
+            </a>
+            <p>Pinega is a research-stage database systems programme by Pinega Labs.</p>
+          </div>
+          <nav aria-label="Footer navigation">
+            <a href="/docs/">Documentation</a>
+            <a href="/research/">Research</a>
+            <a href="/component-lab/">Design system</a>
+            <a href="https://github.com/likern/research">GitHub</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

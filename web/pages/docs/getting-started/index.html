@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Getting started — Pinega Documentation</title>
+    <meta name="description" content="Start with the current Pinega project status, repository structure, research workspace, web workspace, and proposed architecture boundaries.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/getting-started/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Getting started — Pinega Documentation">
+    <meta property="og:description" content="Reproduce the Pinega research and web workspaces and understand the current architecture contract.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/getting-started/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="/docs/" aria-current="page">Documentation</a></li>
+              <li><a href="/research/">Research</a></li>
+              <li><a href="/#architecture">Architecture</a></li>
+              <li><a href="/component-lab/">Design system</a></li>
+            </ul>
+          </nav>
+          <div class="pinega-cluster">
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <div class="pinega-doc-shell">
+        <nav class="pinega-doc-navigation" aria-label="Documentation sections">
+          <div class="pinega-doc-version">
+            <span>Documentation version</span>
+            <select aria-label="Documentation version" disabled>
+              <option>Research v0.1</option>
+            </select>
+          </div>
+          <ul>
+            <li><a href="/docs/getting-started/" aria-current="page">Getting started</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#durability">WAL and durability</a></li>
+            <li><a href="#research-workspace">Research workspace</a></li>
+            <li><a href="#web-workspace">Web workspace</a></li>
+            <li><a href="/research/">Research programme</a></li>
+          </ul>
+        </nav>
+
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+          <nav class="pinega-breadcrumbs" aria-label="Breadcrumb">
+            <wa-breadcrumb>
+              <wa-breadcrumb-item href="/">Pinega</wa-breadcrumb-item>
+              <wa-breadcrumb-item href="/docs/">Documentation</wa-breadcrumb-item>
+              <wa-breadcrumb-item>Getting started</wa-breadcrumb-item>
+            </wa-breadcrumb>
+          </nav>
+
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">Start here</p>
+              <h1>Getting started with the Pinega workspace</h1>
+              <p class="pinega-article-lede">
+                This guide documents what can be built and inspected today. It does not present an installable Pinega database engine.
+              </p>
+            </header>
+
+            <wa-callout variant="warning" appearance="filled-outlined">
+              <strong>Project status:</strong> Pinega is in architecture and research-tooling development. Commands below reproduce documentation and web artefacts, not a production database extension.
+            </wa-callout>
+
+            <section id="project-status" aria-labelledby="project-status-title">
+              <h2 id="project-status-title">What is available now</h2>
+              <ul>
+                <li>A versioned YDMP research workspace with Typst templates, MODEL and VERIFY artefacts.</li>
+                <li>The Strata cross-platform design system and semantic diagram layer.</li>
+                <li>A multi-browser Web Components foundation built on native HTML, CSS, JavaScript, and Web Awesome.</li>
+                <li>Architecture decisions and validation specimens for the future PostgreSQL storage engine.</li>
+              </ul>
+              <p>The runnable engine, SQL interface, persistence layer, and performance results remain future milestones.</p>
+            </section>
+
+            <section id="architecture" aria-labelledby="architecture-doc-title">
+              <h2 id="architecture-doc-title">Architecture contract</h2>
+              <p>The current design separates four responsibilities:</p>
+              <ol>
+                <li><strong>PostgreSQL integration:</strong> Table Access Method callbacks, snapshots, transaction identity, and SQL-visible behaviour.</li>
+                <li><strong>Mutable version store:</strong> out-of-place row versions, explicit visibility metadata, and stable handles.</li>
+                <li><strong>Shared buffer pool:</strong> stable frames, protect/pin/revalidate, retirement, and reclamation.</li>
+                <li><strong>Durability:</strong> PostgreSQL WAL remains the single write-ahead logging boundary.</li>
+              </ol>
+              <p>These are design boundaries. Individual modules may still change as implementation evidence accumulates.</p>
+            </section>
+
+            <section id="durability" aria-labelledby="durability-title">
+              <h2 id="durability-title">WAL and durability</h2>
+              <pinega-evidence kind="confirmed">
+                <h3>Current decision</h3>
+                <p>Pinega uses one PostgreSQL WAL pipeline. The MVP may log complete row images, while physical standby support can follow after the core storage path is validated.</p>
+              </pinega-evidence>
+            </section>
+
+            <section id="research-workspace" aria-labelledby="research-workspace-title">
+              <h2 id="research-workspace-title">Build the research workspace</h2>
+              <p>From the repository root, first verify the pinned toolchain and then compile registered Typst artefacts.</p>
+              <pinega-code-example>
+                <header>
+                  <span>Nushell · research workspace</span>
+                  <div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div>
+                </header>
+                <pre tabindex="0"><code>^nu research.nu doctor
+^nu research.nu list documents
+^nu research.nu build all</code></pre>
+              </pinega-code-example>
+              <p>The exact command surface remains defined by the repository scripts. Use <code>list</code> before assuming an artefact name.</p>
+            </section>
+
+            <section id="web-workspace" aria-labelledby="web-workspace-title">
+              <h2 id="web-workspace-title">Build and inspect the website</h2>
+              <p>The web workspace uses a committed lockfile and a static multi-page build.</p>
+              <pinega-code-example>
+                <header>
+                  <span>Nushell · website</span>
+                  <div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div>
+                </header>
+                <pre tabindex="0"><code>cd web
+^npm ci --ignore-scripts
+^npm run build
+^npm run serve</code></pre>
+              </pinega-code-example>
+              <p>Open <code>http://127.0.0.1:4173</code>. The component laboratory remains available at <a href="/component-lab/">/component-lab/</a>.</p>
+            </section>
+
+            <section id="validation" aria-labelledby="validation-title">
+              <h2 id="validation-title">Run the validation gate</h2>
+              <p>On RHEL, use the version-matched Playwright container for the complete Chromium, Firefox, and WebKit matrix. Native Node commands remain suitable for token generation, type checking, and the static build.</p>
+              <pinega-code-example>
+                <header>
+                  <span>Nushell · non-browser checks</span>
+                  <div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div>
+                </header>
+                <pre tabindex="0"><code>^npm run tokens:check
+^npm run typecheck
+^npm run test:unit
+^npm run build</code></pre>
+              </pinega-code-example>
+            </section>
+
+            <section id="next" aria-labelledby="next-title">
+              <h2 id="next-title">Where to continue</h2>
+              <p>Use the <a href="/docs/">documentation map</a> to follow a topic, or open the <a href="/research/">research programme</a> to inspect the assumptions behind versioned storage and concurrent lifetimes.</p>
+            </section>
+          </article>
+        </main>
+
+        <aside class="pinega-doc-toc" aria-label="On this page">
+          <p>On this page</p>
+          <ol>
+            <li><a href="#project-status">What is available</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#durability">WAL and durability</a></li>
+            <li><a href="#research-workspace">Research workspace</a></li>
+            <li><a href="#web-workspace">Web workspace</a></li>
+            <li><a href="#validation">Validation</a></li>
+          </ol>
+        </aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed">
+        <div class="pinega-site-footer-inner">
+          <div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Research-stage database systems engineering by Pinega Labs.</p></div>
+          <nav aria-label="Footer navigation"><a href="/docs/">Documentation</a><a href="/research/">Research</a><a href="/component-lab/">Design system</a><a href="https://github.com/likern/research">GitHub</a></nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

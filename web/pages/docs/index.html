@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pinega Documentation</title>
+    <meta name="description" content="Documentation map for the Pinega research-stage PostgreSQL storage engine, its architecture, workspace, and implementation status.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pinega Documentation">
+    <meta property="og:description" content="Architecture, status, research methods, and reproducible workspace documentation for Pinega.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/" aria-label="Pinega home">
+            <span class="pinega-brand-mark" aria-hidden="true">P</span>
+            <span>Pinega</span>
+          </a>
+
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="/docs/" aria-current="page">Documentation</a></li>
+              <li><a href="/research/">Research</a></li>
+              <li><a href="/#architecture">Architecture</a></li>
+              <li><a href="/component-lab/">Design system</a></li>
+            </ul>
+          </nav>
+
+          <div class="pinega-cluster">
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1" class="pinega-docs-landing">
+        <section class="pinega-doc-hero" aria-labelledby="docs-title">
+          <div>
+            <div class="pinega-cluster">
+              <wa-badge variant="brand" appearance="filled-outlined" pill>Documentation v0.1</wa-badge>
+              <span class="pinega-eyebrow">Research-stage project</span>
+            </div>
+            <h1 id="docs-title">Documentation that distinguishes facts, decisions, and hypotheses.</h1>
+            <p>
+              Start with the current project status, then follow the architecture, concurrency, durability, and research trails. Pages describe what exists now and label proposed behaviour explicitly.
+            </p>
+          </div>
+          <wa-callout variant="brand" appearance="filled-outlined">
+            <strong>Current scope:</strong> the workspace, design system, and architecture artefacts are runnable. The PostgreSQL storage engine is not yet a production release.
+          </wa-callout>
+        </section>
+
+        <pinega-doc-search aria-labelledby="doc-search-title">
+          <div class="pinega-doc-search-heading">
+            <div>
+              <p class="pinega-eyebrow">Find a topic</p>
+              <h2 id="doc-search-title">Documentation map</h2>
+            </div>
+            <p data-doc-search-status aria-live="polite">8 topics</p>
+          </div>
+          <wa-input data-doc-search-input type="search" label="Search documentation" placeholder="Try WAL, MVCC, buffer pool, or workspace"></wa-input>
+
+          <div class="pinega-doc-grid" data-doc-search-results>
+            <article class="pinega-doc-card" data-doc-card data-search="start status repository workspace commands">
+              <span class="pinega-doc-card-state" data-state="available">Available</span>
+              <h3><a href="/docs/getting-started/">Getting started</a></h3>
+              <p>Understand the current scope, repository layout, and commands that work today.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="architecture storage layers table access method callbacks postgres">
+              <span class="pinega-doc-card-state" data-state="validated">Design contract</span>
+              <h3><a href="/docs/getting-started/#architecture">Architecture overview</a></h3>
+              <p>See the PostgreSQL boundary, mutable store, buffer pool, and WAL decomposition.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="mvcc versions xmin xmax visibility snapshots tuples">
+              <span class="pinega-doc-card-state" data-state="research">Research</span>
+              <h3><a href="/research/#versioned-storage">Versioned storage and MVCC</a></h3>
+              <p>Track the assumptions behind out-of-place versions and visibility evaluation.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="buffer pool frame pin protect revalidate reclamation memory">
+              <span class="pinega-doc-card-state" data-state="research">Research</span>
+              <h3><a href="/research/#concurrent-lifetimes">Concurrent frame lifetimes</a></h3>
+              <p>Follow publication, protection, revalidation, retirement, and reclamation.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="wal durability logging recovery postgres one wal">
+              <span class="pinega-doc-card-state" data-state="decision">Decision</span>
+              <h3><a href="/docs/getting-started/#durability">WAL and durability</a></h3>
+              <p>Document the one-PostgreSQL-WAL decision and its current boundaries.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="typst ydmp notes model verify research workspace">
+              <span class="pinega-doc-card-state" data-state="available">Available</span>
+              <h3><a href="/docs/getting-started/#research-workspace">Research workspace</a></h3>
+              <p>Compile Strata notes, MODEL, VERIFY, and semantic concurrency diagrams.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="web website web components css tokens web awesome playwright">
+              <span class="pinega-doc-card-state" data-state="available">Available</span>
+              <h3><a href="/docs/getting-started/#web-workspace">Web workspace</a></h3>
+              <p>Build the multi-page site, run the component laboratory, and execute browser gates.</p>
+            </article>
+            <article class="pinega-doc-card" data-doc-card data-search="contributing github pull request code research">
+              <span class="pinega-doc-card-state" data-state="available">Available</span>
+              <h3><a href="https://github.com/likern/research">Repository and contributions</a></h3>
+              <p>Inspect the source, issues, pull requests, and reproducible validation workflows.</p>
+            </article>
+          </div>
+          <p data-doc-search-empty hidden>No documentation topics match this search.</p>
+        </pinega-doc-search>
+
+        <section class="pinega-section" aria-labelledby="path-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Recommended path</p>
+            <h2 id="path-title">Read in the order that preserves the evidence boundary.</h2>
+          </header>
+          <ol class="pinega-reading-path">
+            <li><span>01</span><div><strong>Current status</strong><p>Learn which artefacts are runnable and which claims remain proposed.</p></div></li>
+            <li><span>02</span><div><strong>Architecture contract</strong><p>Understand the ownership and durability boundaries before implementation details.</p></div></li>
+            <li><span>03</span><div><strong>Concurrency model</strong><p>Study object histories, lifetime protection, and reclamation assumptions.</p></div></li>
+            <li><span>04</span><div><strong>Implementation evidence</strong><p>Only then interpret benchmarks, traces, tests, and future prototype results.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="pinega-section pinega-doc-maturity" aria-labelledby="maturity-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Documentation maturity</p>
+            <h2 id="maturity-title">Labels are part of the contract.</h2>
+          </header>
+          <dl>
+            <div><dt><span data-state="available">Available</span></dt><dd>A runnable or inspectable artefact exists in the repository.</dd></div>
+            <div><dt><span data-state="validated">Design contract</span></dt><dd>The architecture is documented and tested as a model or specimen, not necessarily implemented.</dd></div>
+            <div><dt><span data-state="research">Research</span></dt><dd>The topic is under active investigation and may change.</dd></div>
+            <div><dt><span data-state="decision">Decision</span></dt><dd>A project direction is fixed unless new evidence forces revision.</dd></div>
+          </dl>
+        </section>
+      </main>
+
+      <footer class="pinega-site-footer pinega-full-bleed">
+        <div class="pinega-site-footer-inner">
+          <div>
+            <a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
+            <p>Research-stage database systems engineering by Pinega Labs.</p>
+          </div>
+          <nav aria-label="Footer navigation">
+            <a href="/docs/">Documentation</a>
+            <a href="/research/">Research</a>
+            <a href="/component-lab/">Design system</a>
+            <a href="https://github.com/likern/research">GitHub</a>
+          </nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>

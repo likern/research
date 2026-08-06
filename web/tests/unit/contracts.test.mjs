@@ -18,11 +18,17 @@ test('the component lab keeps semantic HTML as the durable source', async () => 
 });
 
 test('the repository contains no purchased Web Awesome project URL or key', async () => {
-  const html = await read('component-lab/index.html');
+  const pages = await Promise.all([
+    read('component-lab/index.html'),
+    read('pages/home/index.html'),
+    read('pages/docs/index.html'),
+    read('pages/docs/getting-started/index.html'),
+    read('pages/research/index.html'),
+  ]);
   const runtime = await read('src/vendor/webawesome/runtime.ts');
-  assert.match(html, /<!-- PINEGA_PROJECT_META -->/u);
-  assert.doesNotMatch(`${html}\n${runtime}`, /kit\.fontawesome\.com\/[a-z0-9]{8,}/iu);
-  assert.doesNotMatch(`${html}\n${runtime}`, /cdn\.webawesome\.com\/[^\s"']{16,}/iu);
+  assert.ok(pages.every(html => html.includes('<!-- PINEGA_PROJECT_META -->')));
+  assert.doesNotMatch(`${pages.join('\n')}\n${runtime}`, /kit\.fontawesome\.com\/[a-z0-9]{8,}/iu);
+  assert.doesNotMatch(`${pages.join('\n')}\n${runtime}`, /cdn\.webawesome\.com\/[^\s"']{16,}/iu);
 });
 
 test('Web Awesome experimental Copy Button is isolated by pinega-code-example', async () => {

@@ -5,7 +5,7 @@ const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
 async function ready(page: Page) {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/component-lab/', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
 
@@ -13,11 +13,8 @@ test('renders durable semantic landmarks and all five foundation compositions', 
   await ready(page);
   const navigation = page.locator('nav[data-primary-navigation]');
   await expect(navigation).toHaveAttribute('aria-label', 'Primary navigation');
-  if (testInfo.project.use.isMobile) {
-    await expect(navigation).toBeHidden();
-  } else {
-    await expect(navigation).toBeVisible();
-  }
+  if (testInfo.project.use.isMobile) await expect(navigation).toBeHidden();
+  else await expect(navigation).toBeVisible();
   await expect(page.getByRole('main')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Systems research');
   await expect(page.getByRole('link', { name: 'Explore the foundation' })).toHaveAttribute('href', '#foundation');
@@ -64,9 +61,7 @@ test('evidence semantics are explicit and not encoded by colour alone', async ({
   const expected = ['Confirmed', 'Inferred', 'Hypothesis', 'External evidence', 'Contradicted'];
   const labels = await page.locator('pinega-evidence [data-evidence-label]').allTextContents();
   expect(labels).toEqual(expected);
-  for (const evidence of await page.locator('pinega-evidence').all()) {
-    await expect(evidence).toHaveAttribute('role', 'note');
-  }
+  for (const evidence of await page.locator('pinega-evidence').all()) await expect(evidence).toHaveAttribute('role', 'note');
 });
 
 test('benchmark retains native SVG and semantic table when Pro is unavailable', async ({ page }) => {
@@ -83,9 +78,7 @@ test('benchmark progressively upgrades when the licensed Pro element registers',
   await ready(page);
   await page.evaluate(() => {
     if (!customElements.get('wa-line-chart')) {
-      customElements.define('wa-line-chart', class extends HTMLElement {
-        config: unknown;
-      });
+      customElements.define('wa-line-chart', class extends HTMLElement { config: unknown; });
     }
     window.dispatchEvent(new CustomEvent('pinega:webawesome-pro-ready'));
   });
@@ -101,19 +94,7 @@ test('passes automated accessibility checks without serious or critical violatio
   await ready(page);
   await page.addScriptTag({ path: axePath });
   const results = await page.evaluate(async () => {
-    const axe = (window as unknown as Window & {
-      axe: {
-        run: (
-          context: Document,
-          options: unknown,
-        ) => Promise<{
-          violations: Array<{
-            impact: string | null;
-            id: string;
-          }>;
-        }>;
-      };
-    }).axe;
+    const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
     return axe.run(document, { resultTypes: ['violations'] });
   });
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');

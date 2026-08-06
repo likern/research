@@ -1,4 +1,4 @@
-name: Check Pinega Web Foundation
+name: Check Pinega Website
 
 on:
   push:
@@ -53,8 +53,11 @@ jobs:
       - name: Run token and architecture tests
         run: npm run test:unit
 
-      - name: Build the component laboratory
+      - name: Build the multi-page website
         run: npm run build
+
+      - name: Enforce build and performance budgets
+        run: npm run check:build
 
       - name: Install Playwright browsers
         run: npx --no-install playwright install --with-deps chromium firefox webkit
@@ -76,11 +79,11 @@ jobs:
             | xargs -0 -r sha256sum \
             > artifacts/SHA256SUMS.txt
 
-      - name: Upload the validated foundation
+      - name: Upload the validated website
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: pinega-web-foundation-v0.1-${{ github.event_name }}
+          name: pinega-website-v0.2-${{ github.event_name }}
           path: |
             web/dist
             web/package-lock.json
