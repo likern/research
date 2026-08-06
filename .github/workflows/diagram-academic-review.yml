@@ -100,7 +100,7 @@ jobs:
         working-directory: web
         run: npm run test:visual
 
-      - name: Capture web review assets
+      - name: Capture web and authoring review assets
         shell: bash
         env:
           PINEGA_DIAGRAM_VERSION: ${{ steps.versions.outputs.diagrams }}
@@ -132,6 +132,8 @@ jobs:
 
           node web/scripts/capture-diagram-review.mjs "$review"
           rm -f "$review/server.pid"
+          test -f "$review/authoring/manifest.json"
+          test -f "$review/authoring/pdf/layout-profile-review.pdf"
           mkdir -p "$review/playwright-baselines"
           cp -R web/tests/visual/semantic-diagrams.visual.spec.ts-snapshots "$review/playwright-baselines/"
 
@@ -159,18 +161,31 @@ jobs:
             ydmp/templates/diagrams/specimens/academic-review.typ \
             "$review/png/academic-review-{p}.png"
 
-      - name: Package models, metadata, and checksums
+      - name: Package models, profiles, metadata, and checksums
         shell: bash
         run: |
           set -euo pipefail
           review="$GITHUB_WORKSPACE/artifacts/scientific-diagrams"
-          mkdir -p "$review/models"
+          mkdir -p "$review/models" "$review/layouts"
           cp design/diagrams/VERSION "$review/models/"
           cp design/diagrams/schema/diagram.schema.json "$review/models/"
           cp design/diagrams/models/*.json "$review/models/"
+          cp design/diagrams/layouts/*.json "$review/layouts/"
+          cp design/diagrams/layouts/README.md "$review/layouts/"
 
-          cat > "$review/BUILD-METADATA.txt" <<EOF
+          cat > "$review/ARTIFACT-CONTRACT.md" <<'CONTRACT'
+          # Scientific diagram review artifact
+
+          The canonical semantic sources are under `models/`. Layout profiles are
+          versioned presentation configuration under `layouts/`. Files under
+          `web/authoring/svg/` are layered, editable SVG working copies and are not
+          canonical semantic models. `web/authoring/manifest.json` maps every review
+          variant to its model, profile, scene plan, metadata, SVG, and PNG preview.
+          CONTRACT
+
+          cat > "$review/BUILD-METADATA.txt" <<EOF_META
           diagram_system_version=${{ steps.versions.outputs.diagrams }}
+          authoring_format=pinega-svg-v1
           event=${GITHUB_EVENT_NAME}
           repository=${GITHUB_REPOSITORY}
           ref=${GITHUB_REF}
@@ -179,7 +194,7 @@ jobs:
           workflow_run=${GITHUB_RUN_ID}
           workflow_attempt=${GITHUB_RUN_ATTEMPT}
           artifact=${{ steps.artifact.outputs.name }}
-          EOF
+          EOF_META
 
           (
             cd "$review"
@@ -190,9 +205,22 @@ jobs:
           )
 
       - name: Upload immutable visual review artifact
+        id: upload
         uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: artifacts/scientific-diagrams
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish artifact identity
+        shell: bash
+        run: |
+          {
+            echo "## Scientific diagram review artifact"
+            echo
+            echo "- name: \`${{ steps.artifact.outputs.name }}\`"
+            echo "- id: \`${{ steps.upload.outputs.artifact-id }}\`"
+            echo "- digest: \`${{ steps.upload.outputs.artifact-digest }}\`"
+            echo "- URL: ${{ steps.upload.outputs.artifact-url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

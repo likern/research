@@ -24,6 +24,7 @@ const required = [
   'assets/main.css',
   'diagrams/README.md',
   'diagrams/schema/diagram.schema.json',
+  'diagrams/layouts/profiles.json',
   ...diagramIds.map(id => `diagrams/models/${id}.json`),
 ];
 
@@ -45,9 +46,9 @@ assert.ok(css <= 190 * 1024, `CSS budget exceeded: ${css} bytes`);
 for (const path of required.filter(path => path.endsWith('.html'))) {
   const html = await readFile(resolve(root, path), 'utf8');
   assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:/u, `${path} contains an unresolved build marker`);
-  assert.match(html, /<main\b/u, `${path} does not contain main content`);
   assert.match(html, /\/assets\/main\.css/u, `${path} does not load the shared stylesheet`);
   assert.match(html, /\/assets\/main\.js/u, `${path} does not load the shared module`);
+  assert.match(html, /<main\b/u, `${path} does not contain main content`);
 }
 
 const research = await readFile(resolve(root, 'research/index.html'), 'utf8');
@@ -55,6 +56,7 @@ assert.equal((research.match(/class="pinega-semantic-diagram"/gu) ?? []).length,
 assert.equal((research.match(/role="img" aria-labelledby=/gu) ?? []).length, 3, 'each semantic SVG must have an accessible image role and name');
 assert.equal((research.match(/<title id="pinega-diagram-/gu) ?? []).length, 3, 'each semantic SVG must have a direct title');
 assert.equal((research.match(/<desc id="pinega-diagram-/gu) ?? []).length, 3, 'each semantic SVG must have a direct description');
+assert.equal((research.match(/data-layout-profile="production-v0\.2"/gu) ?? []).length, 6, 'each semantic figure and SVG must identify the accepted layout profile');
 
 const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
 assert.deepEqual(manifest.diagrams.map(entry => entry.id).toSorted(), diagramIds.toSorted());
