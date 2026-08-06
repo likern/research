@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pinega.example/schema/semantic-diagram-v1.json",
+  "title": "Pinega semantic diagram",
+  "oneOf": [
+    { "$ref": "#/$defs/history" },
+    { "$ref": "#/$defs/versionChain" },
+    { "$ref": "#/$defs/lifecycle" }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "tone": {
+      "enum": ["primary", "event", "inferred", "warning", "danger", "pending", "muted", "neutral"]
+    },
+    "base": {
+      "type": "object",
+      "required": ["schemaVersion", "id", "kind", "title", "caption", "description"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "type": "string" },
+        "title": { "type": "string", "minLength": 1 },
+        "caption": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+    "lane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1 }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "lane", "call", "start", "tone"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "lane": { "$ref": "#/$defs/id" },
+        "call": { "type": "string", "minLength": 1 },
+        "start": { "type": "number" },
+        "end": { "type": ["number", "null"] },
+        "result": { "type": ["string", "null"] },
+        "linearization": {
+          "oneOf": [
+            { "type": "number" },
+            {
+              "type": "array",
+              "prefixItems": [{ "type": "number" }, { "type": "number" }],
+              "items": false
+            },
+            { "type": "null" }
+          ]
+        },
+        "tone": { "$ref": "#/$defs/tone" },
+        "object": { "type": ["string", "null"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "history": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "kind", "title", "caption", "description", "lanes", "operations", "markers", "witnesses", "precedence", "horizon"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/id" },
+            "kind": { "const": "history" },
+            "title": { "type": "string", "minLength": 1 },
+            "caption": { "type": "string", "minLength": 1 },
+            "description": { "type": "string", "minLength": 1 },
+            "lanes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/lane" } },
+            "operations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/operation" } },
+            "markers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["time", "label", "tone", "pattern"],
+                "properties": {
+                  "time": { "type": "number" },
+                  "label": { "type": "string", "minLength": 1 },
+                  "tone": { "$ref": "#/$defs/tone" },
+                  "pattern": { "enum": ["solid", "dashed", "dotted"] }
+                }
+              }
+            },
+            "witnesses": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["label", "operations", "tone"],
+                "properties": {
+                  "label": { "type": "string", "minLength": 1 },
+                  "operations": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/id" } },
+                  "tone": { "$ref": "#/$defs/tone" }
+                }
+              }
+            },
+            "precedence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["from", "to", "label", "tone"],
+                "properties": {
+                  "from": { "$ref": "#/$defs/id" },
+                  "to": { "$ref": "#/$defs/id" },
+                  "label": { "type": ["string", "null"] },
+                  "tone": { "$ref": "#/$defs/tone" }
+                }
+              }
+            },
+            "horizon": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "payload", "createdBy", "deletedBy", "generation", "state", "note"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1 },
+        "payload": { "type": "string", "minLength": 1 },
+        "createdBy": { "type": "string", "minLength": 1 },
+        "deletedBy": { "type": ["string", "null"] },
+        "generation": { "type": "integer", "minimum": 0 },
+        "state": { "enum": ["visible", "obsolete", "retired", "uncommitted", "aborted"] },
+        "note": { "type": ["string", "null"] }
+      }
+    },
+    "versionChain": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "kind", "title", "caption", "description", "subject", "head", "headLabel", "snapshot", "versions"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/id" },
+            "kind": { "const": "version-chain" },
+            "title": { "type": "string", "minLength": 1 },
+            "caption": { "type": "string", "minLength": 1 },
+            "description": { "type": "string", "minLength": 1 },
+            "subject": { "type": "string", "minLength": 1 },
+            "head": { "$ref": "#/$defs/id" },
+            "headLabel": { "type": "string", "minLength": 1 },
+            "snapshot": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "label", "visibleVersion", "note"],
+              "properties": {
+                "id": { "$ref": "#/$defs/id" },
+                "label": { "type": "string", "minLength": 1 },
+                "visibleVersion": { "$ref": "#/$defs/id" },
+                "note": { "type": "string", "minLength": 1 }
+              }
+            },
+            "versions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/version" } }
+          }
+        }
+      ]
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "description", "tone"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "tone": { "$ref": "#/$defs/tone" }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "from", "to", "label", "guard", "tone"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "label": { "type": "string", "minLength": 1 },
+        "guard": { "type": ["string", "null"] },
+        "tone": { "$ref": "#/$defs/tone" }
+      }
+    },
+    "lifecycle": {
+      "allOf": [
+        { "$ref": "#/$defs/base" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "kind", "title", "caption", "description", "subject", "initial", "states", "transitions"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/id" },
+            "kind": { "const": "lifecycle" },
+            "title": { "type": "string", "minLength": 1 },
+            "caption": { "type": "string", "minLength": 1 },
+            "description": { "type": "string", "minLength": 1 },
+            "subject": { "type": "string", "minLength": 1 },
+            "initial": { "$ref": "#/$defs/id" },
+            "states": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/state" } },
+            "transitions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/transition" } }
+          }
+        }
+      ]
+    }
+  }
+}

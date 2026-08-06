@@ -28,7 +28,7 @@ The build emits a static multi-page site:
 /                         product homepage
 /docs/                    documentation landing
 /docs/getting-started/    first documentation article
-/research/                research programme
+/research/                research programme and shared semantic diagrams
 /component-lab/           design-system validation surface
 /404.html                 explicit not-found page
 ```
@@ -36,6 +36,23 @@ The build emits a static multi-page site:
 Source pages live under `pages/`. The component laboratory remains a separate
 source under `component-lab/` so production pages do not become test-fixture
 markup.
+
+## Shared semantic diagrams
+
+Canonical renderer-independent models live under `design/diagrams/models/`.
+The website build creates a temporary Node-only bundle from
+`src/diagrams/index.ts`, validates every model, lays it out, and replaces
+explicit `PINEGA_DIAGRAM` placeholders with complete accessible inline SVG
+figures.
+
+The temporary renderer bundle is deleted before the build finishes, so diagram
+layout code is not shipped to the browser. Each generated figure retains a
+caption, direct SVG title and description, keyboard-reachable viewport, text
+transcript, and a link to the canonical JSON model copied under
+`dist/diagrams/`.
+
+The same JSON is consumed by `ydmp/templates/diagrams/shared-model.typ` for the
+Typst/CeTZ publication renderer.
 
 ## Run locally with Nushell
 
@@ -94,7 +111,9 @@ Pro, every public page remains complete, readable, and testable.
 - `pinega-evidence`: YDMP provenance semantics with explicit text labels;
 - `pinega-code-example`: native code plus isolated Web Awesome copy action;
 - `pinega-benchmark`: canonical table, native SVG fallback, optional Pro chart;
-- `pinega-doc-search`: progressive client-side filtering over durable docs cards.
+- `pinega-doc-search`: progressive client-side filtering over durable docs cards;
+- build-time semantic diagrams: linearizability histories, version chains, and
+  object lifecycles with accessible SVG and textual projections.
 
 ## Validation
 
@@ -105,10 +124,12 @@ Native checks:
 ^npm run typecheck
 ^npm run test:unit
 ^npm run build
+^npm run check:build
 ```
 
 The complete browser matrix should use the version-matched Playwright container
 on unsupported Linux distributions. Browser tests cover the public routes,
 component laboratory, keyboard behavior, theme switching, docs search,
-not-found handling, horizontal overflow, metadata, local links, and automated
-accessibility. Chromium screenshots provide the visual-regression contract.
+semantic diagrams, not-found handling, horizontal overflow, metadata, local
+links, and automated accessibility. Chromium screenshots provide the visual-
+regression contract.

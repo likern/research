@@ -225,7 +225,7 @@
   vector-canvas({
     if history.title != none {
       canvas-label(
-        (left, title-y + 0.24),
+        (left, title-y + 0.56),
         history.title,
         theme: theme,
         anchor: "west",
@@ -358,10 +358,8 @@
   width: 100%,
 )[
   #render-history(history, theme: theme, scale: scale)
-  #if history.witnesses.len() > 0 [
-    #v(5pt)
-    #render-witnesses(history, theme: theme)
-  ]
+  #v(4pt)
+  #render-witnesses(history, theme: theme)
 ]
 
 #let history-text(history, theme: diagram-theme()) = {
@@ -369,23 +367,8 @@
   text-fallback(model.history-text-lines(history), theme: theme)
 }
 
-#let history-figure(
-  history,
+#let history-figure(history, caption, alt, theme: diagram-theme(), scale: 1.0) = diagram-figure(
+  render-history-with-witnesses(history, theme: theme, scale: scale),
   caption,
-  alt: auto,
-  theme: diagram-theme(),
-  scale: 1.0,
-  witnesses: true,
-) = diagram-figure(
-  if witnesses {
-    render-history-with-witnesses(history, theme: theme, scale: scale)
-  } else {
-    render-history(history, theme: theme, scale: scale)
-  },
-  caption,
-  if alt == auto {
-    model.history-text-lines(history).map(line => str(line)).join("; ")
-  } else {
-    alt
-  },
+  alt,
 )

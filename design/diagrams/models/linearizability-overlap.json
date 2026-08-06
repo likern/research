@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "id": "linearizability-overlap",
+  "kind": "history",
+  "title": "Overlapping queue operations and a legal linearization",
+  "caption": "Two overlapping operations may be ordered at internal linearization points; a later enqueue must remain after both completed calls in real time.",
+  "description": "Three thread lanes share a time axis. Thread P enqueues x from time 0.8 to 4.7 and linearizes at 2.3. Thread Q dequeues x from time 1.6 to 5.9 and linearizes at 3.6. Thread R enqueues y from time 6.2 to 7.7 and linearizes at 6.8. The first two operations overlap; both precede the third in real time. The legal sequential witness is enqueue x, dequeue x, enqueue y.",
+  "lanes": [
+    { "id": "p", "label": "Thread P" },
+    { "id": "q", "label": "Thread Q" },
+    { "id": "r", "label": "Thread R" }
+  ],
+  "operations": [
+    {
+      "id": "enq-x",
+      "lane": "p",
+      "call": "enq(x)",
+      "start": 0.8,
+      "end": 4.7,
+      "result": "ok",
+      "linearization": 2.3,
+      "tone": "primary",
+      "object": "queue",
+      "note": "publishes x"
+    },
+    {
+      "id": "deq-x",
+      "lane": "q",
+      "call": "deq()",
+      "start": 1.6,
+      "end": 5.9,
+      "result": "x",
+      "linearization": 3.6,
+      "tone": "event",
+      "object": "queue",
+      "note": "observes x"
+    },
+    {
+      "id": "enq-y",
+      "lane": "r",
+      "call": "enq(y)",
+      "start": 6.2,
+      "end": 7.7,
+      "result": "ok",
+      "linearization": 6.8,
+      "tone": "inferred",
+      "object": "queue",
+      "note": "later in real time"
+    }
+  ],
+  "markers": [
+    { "time": 6.0, "label": "quiescent cut", "tone": "muted", "pattern": "dashed" }
+  ],
+  "witnesses": [
+    {
+      "label": "legal witness",
+      "operations": ["enq-x", "deq-x", "enq-y"],
+      "tone": "inferred"
+    }
+  ],
+  "precedence": [
+    { "from": "enq-x", "to": "enq-y", "label": "real time", "tone": "primary" },
+    { "from": "deq-x", "to": "enq-y", "label": null, "tone": "event" }
+  ],
+  "horizon": 8.2
+}

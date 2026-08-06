@@ -114,3 +114,10 @@ source = "ydmp/templates/diagrams/specimens/implementation-gate.typ"
 formats = ["pdf"]
 categories = ["diagram-validation", "strata", "concurrency", "taomp"]
 inputs = {}
+
+[[documents]]
+id = "strata-shared-semantic-diagram-gate"
+source = "ydmp/templates/diagrams/specimens/shared-semantic-models.typ"
+formats = ["pdf"]
+categories = ["diagram-validation", "shared-model", "strata", "concurrency", "web"]
+inputs = {}

@@ -87,6 +87,12 @@
                 <p>Separating version metadata from tuple payloads may enable faster visibility scans, but layout and cache costs must be measured on real PostgreSQL workloads.</p>
               </pinega-evidence>
             </div>
+            <div class="pinega-diagram-feature">
+              <p class="pinega-eyebrow">Shared semantic model</p>
+              <h3>Snapshot selection over a newest-to-oldest version chain</h3>
+              <p>The same version records and visibility selection drive this SVG and the Typst/CeTZ publication specimen.</p>
+              <!-- PINEGA_DIAGRAM:version-chain-snapshot -->
+            </div>
           </div>
         </section>
 
@@ -101,6 +107,23 @@
             <div role="listitem"><span>03</span><strong>Revalidate</strong><p>Confirm identity and generation after protection.</p></div>
             <div role="listitem"><span>04</span><strong>Retire</strong><p>Separate logical deletion and physical unlinking from reuse.</p></div>
             <div role="listitem"><span>05</span><strong>Reclaim</strong><p>Free or reuse storage only after all protections are gone.</p></div>
+          </div>
+          <div class="pinega-diagram-feature">
+            <p class="pinega-eyebrow">Executable lifecycle model</p>
+            <h3>Publication, withdrawal, quiescence, and generation-safe reuse</h3>
+            <p>The diagram distinguishes logical state changes from the later point at which storage becomes safe to reuse.</p>
+            <!-- PINEGA_DIAGRAM:buffer-frame-lifecycle -->
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-section-contrast pinega-full-bleed" id="linearizability" aria-labelledby="linearizability-title">
+          <div class="pinega-section-inner">
+            <header class="pinega-section-heading">
+              <p class="pinega-eyebrow">Research direction 03</p>
+              <h2 id="linearizability-title">Concurrent histories as explicit data</h2>
+              <p class="pinega-muted">Calls, responses, real-time precedence, candidate linearization points, and sequential witnesses are stored independently from either renderer.</p>
+            </header>
+            <!-- PINEGA_DIAGRAM:linearizability-overlap -->
           </div>
         </section>
 

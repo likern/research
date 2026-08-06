@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "buffer-frame-lifecycle",
+  "kind": "lifecycle",
+  "title": "Buffer-frame publication and reclamation lifecycle",
+  "caption": "A frame can be reused only after publication has been withdrawn, identity revalidation can no longer succeed, and every lifetime protection has disappeared.",
+  "description": "The buffer frame begins free, is reserved with a new generation, becomes valid after initialization and release publication, enters eviction after its mapping is removed and new pins are blocked, becomes retired while existing protectors drain, becomes reclaimable when no pins or hazard protections remain, and finally returns to free with another generation increment.",
+  "subject": "buffer frame",
+  "initial": "free",
+  "states": [
+    { "id": "free", "label": "Free", "description": "No published identity", "tone": "muted" },
+    { "id": "reserved", "label": "Reserved", "description": "Slot claimed; generation advanced", "tone": "warning" },
+    { "id": "valid", "label": "Valid", "description": "Identity published; pins admitted", "tone": "inferred" },
+    { "id": "evicting", "label": "Evicting", "description": "Mapping removed; new pins blocked", "tone": "event" },
+    { "id": "retired", "label": "Retired", "description": "Old protectors may still exist", "tone": "pending" },
+    { "id": "reclaimable", "label": "Reclaimable", "description": "No pins or hazard protections", "tone": "primary" }
+  ],
+  "transitions": [
+    { "id": "claim", "from": "free", "to": "reserved", "label": "claim slot", "guard": "generation++", "tone": "warning" },
+    { "id": "publish", "from": "reserved", "to": "valid", "label": "publish identity", "guard": "store-release", "tone": "inferred" },
+    { "id": "begin-eviction", "from": "valid", "to": "evicting", "label": "begin eviction", "guard": "remove mapping", "tone": "event" },
+    { "id": "retire", "from": "evicting", "to": "retired", "label": "retire generation", "guard": "no new pins", "tone": "pending" },
+    { "id": "quiesce", "from": "retired", "to": "reclaimable", "label": "observe quiescence", "guard": "protectors = 0", "tone": "primary" },
+    { "id": "reuse", "from": "reclaimable", "to": "free", "label": "reuse storage", "guard": "generation++", "tone": "event" }
+  ]
+}
