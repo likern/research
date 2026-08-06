@@ -163,7 +163,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          review="artifacts/scientific-diagrams"
+          review="$GITHUB_WORKSPACE/artifacts/scientific-diagrams"
           mkdir -p "$review/models"
           cp design/diagrams/VERSION "$review/models/"
           cp design/diagrams/schema/diagram.schema.json "$review/models/"
@@ -181,10 +181,13 @@ jobs:
           artifact=${{ steps.artifact.outputs.name }}
           EOF
 
-          find "$review" -type f ! -name SHA256SUMS -print0 \
-            | sort -z \
-            | xargs -0 sha256sum \
-            > "$review/SHA256SUMS"
+          (
+            cd "$review"
+            find . -type f ! -name SHA256SUMS -print0 \
+              | sort -z \
+              | xargs -0 sha256sum \
+              > SHA256SUMS
+          )
 
       - name: Upload immutable visual review artifact
         uses: actions/upload-artifact@v7
