@@ -61,32 +61,36 @@ export function layoutHistory(model: HistoryDiagram): DiagramScene {
     const targetX = xOf(to.start);
     const routeX = targetX - 38 + index * 16;
     const approachY = targetY - 30 - index * 10;
-    const targetOffset = 8 + index * 7;
-    const label = edge.label ?? 'response < invocation';
+    const targetOffset = 2 + index * 5;
+    const accessibleLabel = edge.label ?? 'response before invocation';
+    const children: SceneElement[] = [
+      {
+        kind: 'path',
+        d: `M ${sourceX + 7} ${sourceY} H ${routeX} V ${approachY} L ${targetX - targetOffset} ${targetY}`,
+        tone: edge.tone,
+        width: 1.35,
+        arrowEnd: true,
+        className: 'pinega-diagram-real-time-precedence',
+      },
+    ];
+
+    if (edge.label) {
+      children.push({
+        kind: 'text',
+        x: round((sourceX + routeX) / 2),
+        y: sourceY - 13,
+        text: edge.label,
+        role: 'meta',
+        anchor: 'middle',
+        tone: edge.tone,
+        className: 'pinega-diagram-precedence-label',
+      });
+    }
 
     elements.push(group(
-      `${edge.from} precedes ${edge.to}: ${label}`,
+      `${edge.from} precedes ${edge.to}: ${accessibleLabel}`,
       'real-time-precedence',
-      [
-        {
-          kind: 'path',
-          d: `M ${sourceX + 7} ${sourceY} H ${routeX} V ${approachY} L ${targetX - targetOffset} ${targetY}`,
-          tone: edge.tone,
-          width: 1.35,
-          arrowEnd: true,
-          className: 'pinega-diagram-real-time-precedence',
-        },
-        {
-          kind: 'text',
-          x: round((sourceX + routeX) / 2),
-          y: sourceY - 13,
-          text: label,
-          role: 'meta',
-          anchor: 'middle',
-          tone: edge.tone,
-          className: 'pinega-diagram-precedence-label',
-        },
-      ],
+      children,
     ));
   }
 
