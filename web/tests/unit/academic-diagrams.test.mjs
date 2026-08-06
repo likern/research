@@ -100,6 +100,8 @@ test('the permanent review workflow verifies rather than rewrites baselines', as
   assert.doesNotMatch(workflow, /agent\/scientific-diagram-language/u);
   assert.match(workflow, /design\/diagrams\/VERSION/u);
   assert.match(workflow, /steps\.artifact\.outputs\.name/u);
+  assert.match(workflow, /HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/u);
+  assert.match(workflow, /cd "\$review"[\s\S]*find \. -type f ! -name SHA256SUMS/u);
   assert.match(captureScript, /PINEGA_DIAGRAM_VERSION/u);
   assert.match(typstReview, /sys\.inputs\.at\("diagram-version"/u);
 });
