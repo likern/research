@@ -11,10 +11,9 @@ const left = 126;
 const right = 42;
 const laneGap = 98;
 const axisY = 76;
+const top = 154;
 
 export function layoutHistory(model: HistoryDiagram): DiagramScene {
-  const precedenceHeight = Math.max(1, model.precedence.length) * 22;
-  const top = 142 + precedenceHeight;
   const lanesHeight = Math.max(1, model.lanes.length - 1) * laneGap;
   const witnessHeight = model.witnesses.length > 0 ? model.witnesses.length * 112 : 24;
   const height = top + lanesHeight + witnessHeight + 96;
@@ -39,25 +38,6 @@ export function layoutHistory(model: HistoryDiagram): DiagramScene {
     );
   }
 
-  for (const [index, edge] of model.precedence.entries()) {
-    const from = model.operations.find(operation => operation.id === edge.from);
-    const to = model.operations.find(operation => operation.id === edge.to);
-    if (!from || !to) continue;
-    const sourceTime = from.end ?? from.start;
-    const relationY = axisY + 26 + index * 20;
-    const sourceX = xOf(sourceTime);
-    const targetX = xOf(to.start);
-    const laneTop = top - 18;
-    elements.push(group(
-      `${edge.from} precedes ${edge.to}${edge.label ? `: ${edge.label}` : ''}`,
-      'real-time-precedence',
-      [
-        { kind: 'path', d: `M ${sourceX} ${laneTop} V ${relationY} H ${targetX} V ${laneTop}`, tone: edge.tone, width: 1.35, arrowEnd: true, className: 'pinega-diagram-real-time-precedence' },
-        ...(edge.label ? [{ kind: 'text', x: round((sourceX + targetX) / 2), y: relationY - 9, text: edge.label, role: 'meta', anchor: 'middle', tone: edge.tone, className: 'pinega-diagram-precedence-label' } as const] : []),
-      ],
-    ));
-  }
-
   for (const marker of model.markers) {
     const x = xOf(marker.time);
     elements.push(group(
@@ -66,6 +46,46 @@ export function layoutHistory(model: HistoryDiagram): DiagramScene {
       [
         { kind: 'line', x1: x, y1: axisY + 14, x2: x, y2: top + lanesHeight + 34, tone: marker.tone, width: 1.1, dash: marker.pattern, className: 'pinega-diagram-boundary' },
         { kind: 'text', x, y: axisY + 8, text: marker.label, role: 'meta', anchor: 'middle', tone: marker.tone, className: 'pinega-diagram-boundary-label' },
+      ],
+    ));
+  }
+
+  for (const [index, edge] of model.precedence.entries()) {
+    const from = model.operations.find(operation => operation.id === edge.from);
+    const to = model.operations.find(operation => operation.id === edge.to);
+    const sourceY = from ? laneY.get(from.lane) : undefined;
+    const targetY = to ? laneY.get(to.lane) : undefined;
+    if (!from || !to || sourceY === undefined || targetY === undefined) continue;
+
+    const sourceX = xOf(from.end ?? from.start);
+    const targetX = xOf(to.start);
+    const routeX = targetX - 38 + index * 16;
+    const approachY = targetY - 30 - index * 10;
+    const targetOffset = 8 + index * 7;
+    const label = edge.label ?? 'response < invocation';
+
+    elements.push(group(
+      `${edge.from} precedes ${edge.to}: ${label}`,
+      'real-time-precedence',
+      [
+        {
+          kind: 'path',
+          d: `M ${sourceX + 7} ${sourceY} H ${routeX} V ${approachY} L ${targetX - targetOffset} ${targetY}`,
+          tone: edge.tone,
+          width: 1.35,
+          arrowEnd: true,
+          className: 'pinega-diagram-real-time-precedence',
+        },
+        {
+          kind: 'text',
+          x: round((sourceX + routeX) / 2),
+          y: sourceY - 13,
+          text: label,
+          role: 'meta',
+          anchor: 'middle',
+          tone: edge.tone,
+          className: 'pinega-diagram-precedence-label',
+        },
       ],
     ));
   }
@@ -134,11 +154,11 @@ function layoutOperation(operation: HistoryOperation, horizon: number, xOf: (tim
         { kind: 'text', x, y: y - 45, text: 'LP', role: 'label', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
       );
     } else {
-      const start = xOf(operation.linearization[0]);
-      const end = xOf(operation.linearization[1]);
+      const linearizationStart = xOf(operation.linearization[0]);
+      const linearizationEnd = xOf(operation.linearization[1]);
       children.push(
-        { kind: 'rect', x: start, y: y - 16, width: Math.max(4, end - start), height: 32, radius: 3, tone: 'event', fillTone: null, dash: 'dotted', strokeWidth: 1.5, className: 'pinega-diagram-lp-interval' },
-        { kind: 'text', x: (start + end) / 2, y: y - 28, text: 'LP interval', role: 'chip', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
+        { kind: 'rect', x: linearizationStart, y: y - 16, width: Math.max(4, linearizationEnd - linearizationStart), height: 32, radius: 3, tone: 'event', fillTone: null, dash: 'dotted', strokeWidth: 1.5, className: 'pinega-diagram-lp-interval' },
+        { kind: 'text', x: (linearizationStart + linearizationEnd) / 2, y: y - 28, text: 'LP interval', role: 'chip', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
       );
     }
   }
@@ -146,7 +166,11 @@ function layoutOperation(operation: HistoryOperation, horizon: number, xOf: (tim
   if (operation.note) children.push({ kind: 'text', x: midpoint, y: y + 24, text: operation.note, role: 'meta', anchor: 'middle', tone: 'muted', className: 'pinega-diagram-operation-note' });
 
   const endDescription = pending ? 'pending' : `response ${operation.result ?? 'ok'} at ${operation.end}`;
-  const linearizationDescription = operation.linearization == null ? '' : typeof operation.linearization === 'number' ? `; linearization at ${operation.linearization}` : `; linearization interval ${operation.linearization[0]} to ${operation.linearization[1]}`;
+  const linearizationDescription = operation.linearization == null
+    ? ''
+    : typeof operation.linearization === 'number'
+      ? `; linearization at ${operation.linearization}`
+      : `; linearization interval ${operation.linearization[0]} to ${operation.linearization[1]}`;
   return group(`${operation.lane}: invocation ${operation.call} at ${operation.start}; ${endDescription}${linearizationDescription}`, 'operation', children, `pinega-diagram-operation-group ${pending ? 'is-pending' : 'is-complete'}`);
 }
 
