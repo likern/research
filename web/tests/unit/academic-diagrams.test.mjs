@@ -70,7 +70,7 @@ test('the consolidated system has one canonical model surface', async () => {
   assert.match(version, /^\d+\.\d+\.\d+$/u);
   assert.match(architecture, /only canonical source is `design\/diagrams\/models\/\*\.json`/u);
   assert.match(architecture, /not a second schema or authoring\s+format/u);
-  assert.match(architecture, /layout profiles are versioned presentation configuration/u);
+  assert.match(architecture, /Layout profiles are versioned presentation configuration/u);
 
   await assert.rejects(
     access(resolve(repositoryRoot, 'diagrams')),
