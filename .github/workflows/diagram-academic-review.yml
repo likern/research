@@ -115,7 +115,7 @@ jobs:
           set -euo pipefail
           review="artifacts/scientific-diagram-v0.2-review"
           mkdir -p "$review/models"
-          cp design/diagrams/schema-v1.json "$review/models/"
+          cp design/diagrams/schema/diagram.schema.json "$review/models/"
           cp design/diagrams/models/*.json "$review/models/"
           find "$review" -type f -print0 \
             | sort -z \
