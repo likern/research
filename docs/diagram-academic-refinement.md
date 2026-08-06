@@ -1,63 +1,97 @@
 # Scientific Diagram Language v0.2 — Academic Renderer Refinement
 
-This document defines the first implementation pass for improving research diagrams.
+## Status
 
-## Scope
+Accepted after visual review and merged in PR #17.
 
-The refinement starts with two diagram families:
+The v0.2 milestone established the first production academic visual language for
+shared Pinega/YDMP semantic diagrams. The follow-up v0.2.1 consolidation keeps
+the accepted rendering unchanged while closing temporary documentation,
+workflow, naming, and prototype boundaries.
 
-- MVCC version-chain and snapshot visibility
-- Linearizability history and proof witness
+## Accepted scope
 
-The semantic model remains independent from renderer layout.
+The refinement covered two primary diagram families:
+
+- MVCC version-chain and snapshot visibility;
+- Linearizability history and proof witness.
+
+The buffer-frame lifecycle remained in the review corpus as a third-family
+consistency check.
 
 ## Rendering contract
 
 ```text
-semantic model
-      |
-      v
-semantic IR
-      |
- +----+----+
- |         |
- v         v
-SVG      Typst/CeTZ
+canonical semantic model
+          |
+          v
+schema + domain validation
+          |
+   +------+------+
+   |             |
+   v             v
+Web SVG       Typst/CeTZ
 ```
 
-The renderer must not encode domain meaning only through geometry or colour.
+The semantic model remains independent from renderer layout. Domain meaning may
+not be encoded only through geometry or colour.
 
-## Semantic primitives
+## Accepted semantic distinctions
 
-The academic renderer introduces explicit concepts:
+The academic renderers distinguish:
 
-- reference edge — object identity or pointer relation
-- temporal edge — ordering in a chain or timeline
-- marker — a significant event such as a linearization point
-- evaluation — a decision process such as MVCC visibility
-- witness — an explanatory proof artefact
-- precedence relation — real-time ordering constraints
+- reference edge — object identity or pointer relation;
+- temporal edge — ordering in a chain or timeline;
+- marker — a significant event such as a linearization point;
+- evaluation — a decision context such as MVCC visibility;
+- witness — a proof-oriented explanatory artefact;
+- precedence relation — a real-time ordering constraint.
 
-## MVCC goals
+These are semantic roles expressed by the canonical family-specific models and
+normalized renderer-side records. They do not define a second canonical schema.
 
-The renderer must distinguish:
+## MVCC result
 
-- row head reference
-- version nodes
-- visibility evaluation
-- temporal ordering
-- version state
+The accepted renderer distinguishes:
+
+- the row-head reference;
+- version nodes;
+- newest-to-oldest temporal ordering;
+- version lifecycle state;
+- snapshot visibility evaluation;
+- selected and rejected versions.
 
 A snapshot is an evaluation context, not a pointer to a version.
 
-## Linearizability goals
+## Linearizability result
 
-The renderer must distinguish:
+The accepted renderer distinguishes:
 
-- invocation and response intervals
-- linearization points
-- timeline ordering
-- real-time precedence
-- legal sequential witness
+- invocation and response endpoints;
+- operation intervals;
+- linearization-point markers;
+- the real-time axis;
+- real-time precedence relations;
+- quiescent boundaries where present;
+- the legal sequential witness.
 
-The generated review artifacts are the primary design review surface.
+The witness is presented as a proof artefact rather than a minor footer label.
+
+## Review and validation
+
+The accepted result was reviewed through generated GitHub Actions artifacts,
+not only through the code diff. The corpus includes Web SVG/PNG/PDF output,
+Typst PDF/PNG output, canonical JSON models, textual fallbacks, and checksum
+metadata.
+
+Regression coverage includes deterministic layout, committed visual baselines,
+accessibility, keyboard navigation, responsive overflow, dark mode, forced
+colours, monochrome print, and pinned Typst compilation.
+
+## Closure
+
+The v0.2 visual-language milestone is closed. Further work should either:
+
+1. improve authoring and lifecycle tooling without changing accepted semantics;
+2. adopt the language in real research documents; or
+3. introduce a deliberately versioned model-family/schema extension.
