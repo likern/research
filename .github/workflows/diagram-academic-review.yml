@@ -1,0 +1,131 @@
+name: Academic diagram review artifacts
+
+on:
+  push:
+    branches:
+      - "agent/scientific-diagram-language-v0-2"
+  pull_request:
+    paths:
+      - "design/diagrams/**"
+      - "web/src/diagrams/**"
+      - "web/src/styles/**"
+      - "web/scripts/capture-diagram-review.mjs"
+      - "web/tests/**"
+      - "ydmp/templates/diagrams/**"
+      - ".github/workflows/diagram-academic-review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "26.7.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
+
+      - name: Validate and build web diagrams
+        working-directory: web
+        run: npm run tokens:check && npm run typecheck && npm run test:unit && npm run build && npm run check:build
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Generate current visual baselines
+        working-directory: web
+        run: npm run test:visual -- --update-snapshots
+
+      - name: Capture web review assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          review="$GITHUB_WORKSPACE/artifacts/scientific-diagram-v0.2-review/web"
+          mkdir -p "$review"
+
+          (
+            cd "$GITHUB_WORKSPACE/web"
+            npm run serve > "$review/server.log" 2>&1
+          ) &
+          server_pid=$!
+          echo "$server_pid" > "$review/server.pid"
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:4173/research/ >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 1
+          done
+          if [[ "$ready" != true ]]; then
+            cat "$review/server.log"
+            exit 1
+          fi
+
+          node web/scripts/capture-diagram-review.mjs "$review"
+          mkdir -p "$review/playwright-baselines"
+          cp -R web/tests/visual/semantic-diagrams.visual.spec.ts-snapshots "$review/playwright-baselines/"
+
+      - name: Read pinned Typst version
+        id: versions
+        shell: bash
+        run: echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install Typst
+        uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "${{ steps.versions.outputs.typst }}"
+
+      - name: Render Typst review assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          review="artifacts/scientific-diagram-v0.2-review/typst"
+          mkdir -p "$review/pdf" "$review/png"
+          typst compile \
+            --root . \
+            ydmp/templates/diagrams/specimens/academic-review.typ \
+            "$review/pdf/academic-review.pdf"
+          typst compile \
+            --root . \
+            --format png \
+            --ppi 180 \
+            ydmp/templates/diagrams/specimens/academic-review.typ \
+            "$review/png/academic-review-{p}.png"
+
+      - name: Package semantic models and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          review="artifacts/scientific-diagram-v0.2-review"
+          mkdir -p "$review/models"
+          cp design/diagrams/schema/diagram.schema.json "$review/models/"
+          cp design/diagrams/models/*.json "$review/models/"
+          find "$review" -type f -print0 \
+            | sort -z \
+            | xargs -0 sha256sum \
+            > "$review/SHA256SUMS"
+
+      - name: Upload visual review artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: scientific-diagram-v0.2-review-iteration-1
+          path: artifacts/scientific-diagram-v0.2-review
+          if-no-files-found: error
+          retention-days: 30

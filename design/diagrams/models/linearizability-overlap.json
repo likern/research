@@ -59,7 +59,7 @@
     }
   ],
   "precedence": [
-    { "from": "enq-x", "to": "enq-y", "label": "real time", "tone": "primary" },
+    { "from": "enq-x", "to": "enq-y", "label": "real-time precedence", "tone": "primary" },
     { "from": "deq-x", "to": "enq-y", "label": null, "tone": "event" }
   ],
   "horizon": 8.2

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Scientific Diagram Semantic IR v0.2",
+  "type": "object",
+  "required": ["kind", "id"],
+  "properties": {
+    "kind": {
+      "enum": [
+        "entity",
+        "reference-edge",
+        "temporal-edge",
+        "marker",
+        "visibility-evaluation",
+        "witness",
+        "precedence-relation"
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "semanticRole": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    }
+  }
+}

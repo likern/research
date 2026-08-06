@@ -9,6 +9,7 @@
 @import './site.css';
 @import './docs.css';
 @import './diagrams.css';
+@import './diagram-academic.css';
 @import '../components/site-header/site-header.css';
 @import '../components/hero/hero.css';
 @import '../components/evidence/evidence.css';
@@ -18,35 +19,13 @@
 
 @layer pinega.overrides {
   @media (forced-colors: active) {
-    :where(pinega-evidence, pinega-code-example, pinega-benchmark, .pinega-doc-card, .pinega-architecture-layers li, .pinega-diagram-viewport) {
-      forced-color-adjust: auto;
-      border-color: CanvasText;
-    }
-
-    .pinega-diagram-edge,
-    .pinega-diagram-shape {
-      stroke: CanvasText;
-    }
-
-    .pinega-diagram-shape {
-      fill: Canvas;
-    }
-
-    .pinega-diagram-text,
-    .pinega-diagram-arrowhead {
-      fill: CanvasText;
-    }
+    :where(pinega-evidence, pinega-code-example, pinega-benchmark, .pinega-doc-card, .pinega-architecture-layers li, .pinega-diagram-viewport) { forced-color-adjust: auto; border-color: CanvasText; }
+    .pinega-diagram-edge, .pinega-diagram-shape { stroke: CanvasText; }
+    .pinega-diagram-shape { fill: Canvas; }
+    .pinega-diagram-text, .pinega-diagram-arrowhead { fill: CanvasText; }
   }
-
   @media (prefers-reduced-motion: reduce) {
-    :where(html) {
-      scroll-behavior: auto;
-    }
-
-    :where(*, *::before, *::after) {
-      animation-duration: 0.001ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.001ms !important;
-    }
+    :where(html) { scroll-behavior: auto; }
+    :where(*, *::before, *::after) { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
   }
 }

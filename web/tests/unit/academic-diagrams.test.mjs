@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import { build } from 'esbuild';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import test from 'node:test';
+const root = resolve(fileURLToPath(new URL('../..', import.meta.url)));
+const modelRoot = resolve(root, '../design/diagrams/models');
+const temp = await mkdtemp(resolve(tmpdir(), 'pinega-academic-diagrams-'));
+const rendererPath = resolve(temp, 'renderer.mjs');
+await build({ entryPoints: [resolve(root, 'src/diagrams/index.ts')], outfile: rendererPath, bundle: true, platform: 'node', format: 'esm', target: ['node26'], sourcemap: false, logLevel: 'silent' });
+const renderer = await import(pathToFileURL(rendererPath).href);
+const history = JSON.parse(await readFile(resolve(modelRoot, 'linearizability-overlap.json'), 'utf8'));
+const versions = JSON.parse(await readFile(resolve(modelRoot, 'version-chain-snapshot.json'), 'utf8'));
+test.after(async () => { await rm(temp, { recursive: true, force: true }); });
+test('version-chain renderer separates references from snapshot evaluation', () => {
+  const figure = renderer.renderDiagramFigure(versions);
+  assert.match(figure, /data-diagram-role="head-reference"/u);
+  assert.match(figure, /data-diagram-role="temporal-relation"/u);
+  assert.match(figure, /data-diagram-role="visibility-evaluation"/u);
+  assert.match(figure, /data-diagram-role="visibility-result"/u);
+  assert.doesNotMatch(figure, /data-diagram-role="snapshot"/u);
+});
+test('history renderer exposes LP, time, precedence, and proof roles independently', () => {
+  const figure = renderer.renderDiagramFigure(history);
+  assert.match(figure, /pinega-diagram-time-axis/u);
+  assert.match(figure, /data-diagram-role="real-time-precedence"/u);
+  assert.match(figure, /pinega-diagram-lp-marker/u);
+  assert.match(figure, /data-diagram-role="sequential-witness"/u);
+  assert.match(figure, /Preserves process order and every real-time precedence constraint/u);
+});
