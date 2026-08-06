@@ -44,6 +44,13 @@ identity, domain facts, captions, and descriptions but no renderer coordinates.
 `shared-model.typ` loads the same JSON files used by the website build and
 converts them to the existing Typst semantic model layer.
 
+Versioned presentation profiles live in
+`design/diagrams/layouts/profiles.json`. Scientific Diagram Language v0.3 keeps
+the accepted `production-v0.2` CeTZ geometry unchanged while alternative
+profiles are evaluated first through layered authoring SVG artifacts. The
+catalogue marks candidate Typst support explicitly; unsupported candidates must
+not be selected silently.
+
 The first shared gate covers:
 
 - a linearizability history with overlap, real-time precedence, and a witness;
@@ -66,6 +73,14 @@ Classic sequential structures and generic relation graphs are accessed only
 through `dsa.typ`, which pins typed-dsa. `typed-dsa` is not used to imitate
 transient concurrent states: pointer lag, local observations, publication,
 helping, retirement, and reclamation remain YDMP-owned semantics.
+
+## v0.3 promotion boundary
+
+The Typst review PDF remains the accepted publication baseline in the v0.3
+architecture PR. Candidate profile promotion is a separate visual decision. A
+promotion must implement the chosen strategy in CeTZ, compare it with the
+layered SVG authoring surface, and deliberately refresh publication review
+artifacts.
 
 ## Gates
 
