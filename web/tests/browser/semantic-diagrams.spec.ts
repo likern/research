@@ -36,7 +36,9 @@ test('diagram viewports and transcripts are keyboard reachable', async ({ page }
   const details = page.locator('.pinega-diagram-transcript').first();
   await details.locator('summary').click();
   const transcript = details.locator('pre');
-  await transcript.focus();
+  await expect(transcript).toBeVisible();
+  await expect(transcript).toHaveAttribute('tabindex', '0');
+  await transcript.click();
   await expect(transcript).toBeFocused();
   await expect(transcript).toContainText('Newest-to-oldest row-version chain');
 });
