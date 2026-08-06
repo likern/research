@@ -1,4 +1,6 @@
 import type {
+  DiagramLayer,
+  DiagramLayoutOptions,
   DiagramModel,
   DiagramScene,
   DiagramTone,
@@ -8,21 +10,39 @@ import type {
 } from './types.js';
 import { layoutHistory } from './layout/history.js';
 import { layoutLifecycle } from './layout/lifecycle.js';
+import {
+  resolveHistoryLayoutProfile,
+  resolveLifecycleLayoutProfile,
+  resolveVersionChainLayoutProfile,
+} from './layout/profiles.js';
 import { layoutVersionChain } from './layout/version-chain.js';
 
-export function layoutDiagram(model: DiagramModel): DiagramScene {
-  if (model.kind === 'history') return layoutHistory(model);
-  if (model.kind === 'version-chain') return layoutVersionChain(model);
-  return layoutLifecycle(model);
+export function layoutDiagram(model: DiagramModel, options: DiagramLayoutOptions = {}): DiagramScene {
+  if (model.kind === 'history') return layoutHistory(model, resolveHistoryLayoutProfile(options.profile));
+  if (model.kind === 'version-chain') return layoutVersionChain(model, resolveVersionChainLayoutProfile(options.profile));
+  return layoutLifecycle(model, resolveLifecycleLayoutProfile(options.profile));
 }
 
-export function group(label: string, role: string, children: readonly SceneElement[], className?: string): SceneGroup {
+export interface SceneGroupOptions {
+  readonly className?: string;
+  readonly semanticId?: string;
+  readonly layer?: DiagramLayer;
+}
+
+export function group(
+  label: string,
+  role: string,
+  children: readonly SceneElement[],
+  options: SceneGroupOptions = {},
+): SceneGroup {
   return {
     kind: 'group',
     label,
     role,
     children,
-    ...(className ? { className } : {}),
+    ...(options.className ? { className: options.className } : {}),
+    ...(options.semanticId ? { semanticId: options.semanticId } : {}),
+    ...(options.layer ? { layer: options.layer } : {}),
   };
 }
 
