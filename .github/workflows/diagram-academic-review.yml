@@ -19,22 +19,35 @@ jobs:
       - uses: actions/checkout@v6
 
       - name: Prepare review artifact directory
-        run: mkdir -p artifacts/scientific-diagram-v0.2-review
+        run: |
+          mkdir -p artifacts/scientific-diagram-v0.2-review/{pdf,png,svg,models}
+
+      - name: Copy semantic schema and available models
+        run: |
+          cp diagrams/semantic-ir/schema/v0.2.json artifacts/scientific-diagram-v0.2-review/models/
+          find diagrams -path '*models/*.json' -type f -exec cp {} artifacts/scientific-diagram-v0.2-review/models/ \; || true
 
       - name: Generate review manifest
         run: |
           cat > artifacts/scientific-diagram-v0.2-review/README.txt <<'EOF'
-          Scientific Diagram Language v0.2 review artifact
+Scientific Diagram Language v0.2 review artifact
 
-          Planned contents:
-          - MVCC academic renderer output
-          - Linearizability academic renderer output
-          - SVG previews
-          - semantic models
-          EOF
+Current iteration:
+- semantic IR v0.2
+- MVCC academic renderer refinement
+- Linearizability academic renderer refinement
+
+Directories:
+- pdf/ rendered documents
+- png/ visual review sheets
+- svg/ web previews
+- models/ semantic inputs
+EOF
+          find artifacts/scientific-diagram-v0.2-review -type f -print0 | sort -z | xargs -0 sha256sum > artifacts/scientific-diagram-v0.2-review/SHA256SUMS
 
       - name: Upload review artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: scientific-diagram-v0.2-review-iteration-1
           path: artifacts/scientific-diagram-v0.2-review
+          if-no-files-found: error
