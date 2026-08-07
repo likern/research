@@ -6,16 +6,23 @@ async function open(page: Page, route: string) {
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
 
-test('homepage product narrative and architecture', async ({ page }) => {
+test('homepage master-brand narrative and programme catalogue', async ({ page }) => {
   await open(page, '/');
-  await expect(page.locator('pinega-hero')).toHaveScreenshot('home-hero.png');
-  await expect(page.locator('#architecture')).toHaveScreenshot('home-architecture.png');
+  await expect(page.locator('pinega-hero')).toHaveScreenshot('home-master-brand-hero.png');
+  await expect(page.locator('#programmes')).toHaveScreenshot('home-programmes.png');
+  await expect(page.locator('#pinega-engine')).toHaveScreenshot('home-engine.png');
 });
 
-test('documentation landing and search map', async ({ page }) => {
+test('technology catalogue and Pinega Engine boundary', async ({ page }) => {
+  await open(page, '/technology/');
+  await expect(page.locator('.pinega-research-hero')).toHaveScreenshot('technology-hero.png');
+  await expect(page.locator('#engine-architecture')).toHaveScreenshot('technology-engine-architecture.png');
+});
+
+test('documentation landing and topic filter', async ({ page }) => {
   await open(page, '/docs/');
   await expect(page.locator('.pinega-doc-hero')).toHaveScreenshot('docs-hero.png');
-  await expect(page.locator('pinega-doc-search')).toHaveScreenshot('docs-map.png');
+  await expect(page.locator('pinega-doc-search')).toHaveScreenshot('docs-topics.png');
 });
 
 test('getting-started article shell', async ({ page }) => {
@@ -23,10 +30,17 @@ test('getting-started article shell', async ({ page }) => {
   await expect(page.locator('.pinega-doc-shell')).toHaveScreenshot('getting-started.png');
 });
 
-test('research programme', async ({ page }) => {
+test('research catalogue and active studies', async ({ page }) => {
   await open(page, '/research/');
   await expect(page.locator('.pinega-research-hero')).toHaveScreenshot('research-hero.png');
+  await expect(page.locator('#research-areas')).toHaveScreenshot('research-areas.png');
   await expect(page.locator('#concurrent-lifetimes')).toHaveScreenshot('research-lifetimes.png');
+});
+
+test('about and company-boundary narrative', async ({ page }) => {
+  await open(page, '/about/');
+  await expect(page.locator('.pinega-research-hero')).toHaveScreenshot('about-hero.png');
+  await expect(page.locator('.pinega-section-contrast')).toHaveScreenshot('about-principles.png');
 });
 
 test('homepage dark mode remains coherent', async ({ page }) => {

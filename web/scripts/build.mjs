@@ -10,25 +10,15 @@ const siteOrigin = normalizeSiteOrigin(process.env.PINEGA_SITE_ORIGIN ?? 'https:
 const diagramRoot = resolve(root, '../design/diagrams');
 const diagramModelRoot = resolve(diagramRoot, 'models');
 const diagramBuildRoot = resolve(dist, '.diagram-build');
-
-const pages = [
-  { source: 'pages/home/index.html', output: 'index.html', route: '/', sitemap: true },
-  { source: 'pages/docs/index.html', output: 'docs/index.html', route: '/docs/', sitemap: true },
-  {
-    source: 'pages/docs/getting-started/index.html',
-    output: 'docs/getting-started/index.html',
-    route: '/docs/getting-started/',
-    sitemap: true,
-  },
-  { source: 'pages/research/index.html', output: 'research/index.html', route: '/research/', sitemap: true },
-  {
-    source: 'component-lab/index.html',
-    output: 'component-lab/index.html',
-    route: '/component-lab/',
-    sitemap: false,
-  },
-  { source: 'pages/404.html', output: '404.html', route: '/404.html', sitemap: false },
-];
+const contentRoot = resolve(root, 'content');
+const contentIndex = validateContentIndex(
+  JSON.parse(await readFile(resolve(contentRoot, 'content-index.json'), 'utf8')),
+);
+const pages = contentIndex.entries.map(entry => ({
+  ...entry,
+  source: entry.source_path,
+  output: entry.output_path,
+}));
 
 await import('../../design/scripts/build-tokens.mjs');
 await rm(dist, { recursive: true, force: true });
@@ -57,6 +47,7 @@ await build({
 
 for (const page of pages) {
   const source = await readFile(resolve(root, page.source), 'utf8');
+  validatePageSource(source, page, contentIndex.primary_navigation);
   const html = replaceDiagramPlaceholders(
     source
       .replaceAll('{{SITE_ORIGIN}}', escapeHtml(siteOrigin))
@@ -82,6 +73,7 @@ try {
 }
 
 await cp(diagramRoot, resolve(dist, 'diagrams'), { recursive: true });
+await cp(contentRoot, resolve(dist, 'content'), { recursive: true });
 await rm(diagramBuildRoot, { recursive: true, force: true });
 
 const webAwesomeAssets = resolve(root, 'node_modules/@awesome.me/webawesome/dist/assets');
@@ -102,7 +94,30 @@ await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
     origin: siteOrigin,
-    routes: pages.map(({ route, output, sitemap }) => ({ route, output, sitemap })),
+    site: contentIndex.site,
+    primaryNavigation: contentIndex.primary_navigation,
+    routes: pages.map(page => ({
+      id: page.id,
+      route: page.route,
+      output: page.output,
+      contentType: page.content_type,
+      title: page.canonical_title,
+      navigationTitle: page.navigation_title,
+      summary: page.summary,
+      audience: page.audience,
+      programme: page.programme,
+      researchArea: page.research_area,
+      topics: page.topics,
+      maturityStatus: page.maturity_status,
+      publishedAt: page.published_at,
+      updatedAt: page.updated_at,
+      authors: page.authors,
+      sitemap: page.sitemap,
+      searchable: page.searchable,
+      structuredDataType: page.structured_data_type,
+      public: page.public,
+      canonical: page.canonical,
+    })),
     diagrams: diagrams.ids.map(id => ({
       id,
       model: `/diagrams/models/${id}.json`,
@@ -111,7 +126,9 @@ await writeFile(
   'utf8',
 );
 
-console.log(`Built Pinega website at ${dist} with ${diagrams.ids.length} semantic diagrams`);
+console.log(
+  `Built Pinega website at ${dist} with ${pages.length} registered pages and ${diagrams.ids.length} semantic diagrams`,
+);
 
 async function buildSemanticDiagrams() {
   const rendererPath = resolve(diagramBuildRoot, 'renderer.mjs');
@@ -149,6 +166,173 @@ async function buildSemanticDiagrams() {
 
   if (ids.length === 0) throw new TypeError('No semantic diagram models were found');
   return { figures, ids };
+}
+
+function validateContentIndex(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new TypeError('content-index.json must contain an object');
+  }
+  if (value.schema_version !== 1) {
+    throw new TypeError(`Unsupported content index schema: ${JSON.stringify(value.schema_version)}`);
+  }
+  if (!value.site || typeof value.site !== 'object') {
+    throw new TypeError('Content index must define site metadata');
+  }
+  for (const field of ['name', 'organization', 'tagline', 'summary']) {
+    if (typeof value.site[field] !== 'string' || value.site[field].trim() === '') {
+      throw new TypeError(`Content index site.${field} must be a non-empty string`);
+    }
+  }
+  if (!Array.isArray(value.primary_navigation) || value.primary_navigation.length === 0) {
+    throw new TypeError('Content index must define primary_navigation');
+  }
+  if (!Array.isArray(value.entries) || value.entries.length === 0) {
+    throw new TypeError('Content index must define entries');
+  }
+
+  const identities = new Set();
+  const routes = new Set();
+  const sources = new Set();
+  const outputs = new Set();
+  const requiredStrings = [
+    'id',
+    'route',
+    'source_path',
+    'output_path',
+    'content_type',
+    'canonical_title',
+    'navigation_title',
+    'summary',
+    'programme',
+    'maturity_status',
+    'updated_at',
+  ];
+
+  for (const entry of value.entries) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+      throw new TypeError('Every content entry must be an object');
+    }
+    for (const field of requiredStrings) {
+      if (typeof entry[field] !== 'string' || entry[field].trim() === '') {
+        throw new TypeError(`${entry.id ?? '<unknown>'}.${field} must be a non-empty string`);
+      }
+    }
+    if (!/^[a-z][a-z0-9-]*$/u.test(entry.id)) {
+      throw new TypeError(`Invalid content id: ${JSON.stringify(entry.id)}`);
+    }
+    if (!entry.route.startsWith('/')) {
+      throw new TypeError(`${entry.id}: route must start with /`);
+    }
+    if (entry.route !== '/' && !entry.route.endsWith('/') && !entry.route.endsWith('.html')) {
+      throw new TypeError(`${entry.id}: route must end with / or .html`);
+    }
+    if (!Array.isArray(entry.audience) || entry.audience.length === 0) {
+      throw new TypeError(`${entry.id}: audience must be a non-empty array`);
+    }
+    if (!Array.isArray(entry.topics) || entry.topics.length === 0) {
+      throw new TypeError(`${entry.id}: topics must be a non-empty array`);
+    }
+    if (!Array.isArray(entry.authors) || entry.authors.length === 0) {
+      throw new TypeError(`${entry.id}: authors must be a non-empty array`);
+    }
+    for (const flag of ['sitemap', 'searchable', 'public', 'canonical']) {
+      if (typeof entry[flag] !== 'boolean') {
+        throw new TypeError(`${entry.id}.${flag} must be boolean`);
+      }
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/u.test(entry.updated_at)) {
+      throw new TypeError(`${entry.id}: updated_at must use YYYY-MM-DD`);
+    }
+    if (entry.published_at !== null && !/^\d{4}-\d{2}-\d{2}$/u.test(entry.published_at)) {
+      throw new TypeError(`${entry.id}: published_at must be null or YYYY-MM-DD`);
+    }
+    if (entry.research_area !== null && typeof entry.research_area !== 'string') {
+      throw new TypeError(`${entry.id}: research_area must be a string or null`);
+    }
+    if (entry.structured_data_type !== null && typeof entry.structured_data_type !== 'string') {
+      throw new TypeError(`${entry.id}: structured_data_type must be a string or null`);
+    }
+    if (entry.sitemap && (!entry.public || !entry.canonical)) {
+      throw new TypeError(`${entry.id}: sitemap entries must be public and canonical`);
+    }
+    if (entry.searchable && !entry.public) {
+      throw new TypeError(`${entry.id}: searchable entries must be public`);
+    }
+
+    addUnique(identities, entry.id, 'content id');
+    addUnique(routes, entry.route, 'route');
+    addUnique(sources, entry.source_path, 'source path');
+    addUnique(outputs, entry.output_path, 'output path');
+  }
+
+  if (!routes.has('/')) throw new TypeError('Content index must contain the homepage route');
+  for (const item of value.primary_navigation) {
+    if (!item || typeof item !== 'object' || typeof item.label !== 'string') {
+      throw new TypeError('Every primary-navigation item must define a label');
+    }
+    if ('route' in item) {
+      const target = value.entries.find(entry => entry.route === item.route);
+      if (!target?.public) {
+        throw new TypeError(`Primary navigation route is not public: ${JSON.stringify(item.route)}`);
+      }
+    } else if ('href' in item) {
+      const url = new URL(item.href);
+      if (url.protocol !== 'https:' && url.protocol !== 'http:') {
+        throw new TypeError(`Unsupported primary-navigation URL: ${item.href}`);
+      }
+      if (item.external !== true) {
+        throw new TypeError(`External navigation item must set external=true: ${item.label}`);
+      }
+    } else {
+      throw new TypeError(`Primary navigation item has no route or href: ${item.label}`);
+    }
+  }
+
+  return value;
+}
+
+function validatePageSource(html, page, primaryNavigation) {
+  const title = html.match(/<title>([^<]+)<\/title>/u)?.[1];
+  if (title !== page.canonical_title) {
+    throw new TypeError(`${page.source}: expected title ${JSON.stringify(page.canonical_title)}, got ${JSON.stringify(title)}`);
+  }
+  const description = html.match(/<meta name="description" content="([^"]+)">/u)?.[1];
+  if (description !== page.summary) {
+    throw new TypeError(`${page.source}: meta description does not match the content registry`);
+  }
+  const pageId = html.match(/<html\b[^>]*\bdata-page="([^"]+)"/u)?.[1];
+  if (pageId !== page.id) {
+    throw new TypeError(`${page.source}: expected data-page=${JSON.stringify(page.id)}`);
+  }
+  if ((html.match(/<h1\b/gu) ?? []).length !== 1) {
+    throw new TypeError(`${page.source}: every registered page must contain exactly one h1`);
+  }
+  const canonical = `<link rel="canonical" href="{{SITE_ORIGIN}}${page.route}">`;
+  if (page.canonical && !html.includes(canonical)) {
+    throw new TypeError(`${page.source}: missing canonical template ${canonical}`);
+  }
+  if (!page.canonical && /<link rel="canonical"/u.test(html)) {
+    throw new TypeError(`${page.source}: non-canonical content must not emit a canonical link`);
+  }
+
+  if (page.public) {
+    const navigation = html.match(/<nav\b[^>]*data-primary-navigation[^>]*>[\s\S]*?<\/nav>/u)?.[0];
+    if (!navigation) throw new TypeError(`${page.source}: missing primary navigation`);
+    for (const item of primaryNavigation) {
+      const destination = 'route' in item ? item.route : item.href;
+      if (!navigation.includes(`href="${destination}"`)) {
+        throw new TypeError(`${page.source}: primary navigation is missing ${destination}`);
+      }
+    }
+    if (navigation.includes('/component-lab/')) {
+      throw new TypeError(`${page.source}: component lab must not appear in public primary navigation`);
+    }
+  }
+}
+
+function addUnique(values, value, label) {
+  if (values.has(value)) throw new TypeError(`Duplicate ${label}: ${JSON.stringify(value)}`);
+  values.add(value);
 }
 
 function replaceDiagramPlaceholders(html, figures, sourcePath) {
