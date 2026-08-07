@@ -30,7 +30,7 @@
             <header class="pinega-article-header">
               <p class="pinega-eyebrow">How-to</p>
               <h1>Build and inspect the website</h1>
-              <p class="pinega-article-lede">Use this procedure when the goal is a local static build you can inspect. It assumes the programme model is already understood and does not explain architecture that belongs in concept pages.</p>
+              <p class="pinega-article-lede">Use this procedure for the normal edit/rebuild/reload development loop or for a local static build you can inspect. It assumes the programme model is already understood and does not explain architecture that belongs in concept pages.</p>
             </header>
 
             <section id="install" aria-labelledby="install-title">
@@ -38,6 +38,14 @@
               <p>Enter the Web workspace and install from the committed lockfile without package lifecycle scripts.</p>
               <pinega-code-example><header><span>Nushell · install</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>cd web
 ^npm ci --ignore-scripts</code></pre></pinega-code-example>
+            </section>
+
+            <section id="develop" aria-labelledby="develop-title">
+              <h2 id="develop-title">Develop with automatic rebuild and reload</h2>
+              <p>For normal editing, start one long-running development process instead of rebuilding and restarting the server manually after every change.</p>
+              <pinega-code-example><header><span>Nushell · development loop</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run dev</code></pre></pinega-code-example>
+              <p>The development command runs the same <code>scripts/build.mjs</code> pipeline used by <code>npm run build</code>, watches Web source/content/pages/static files plus canonical Strata tokens and semantic diagrams, and reloads connected browsers only after a successful build. A failed rebuild is reported without terminating the watcher, so fixing and saving the source triggers the next attempt.</p>
+              <p>Live reload is response-only development behaviour: it is injected by the local server and is never written into <code>web/dist</code>. Stop the process with <kbd>Ctrl</kbd>+<kbd>C</kbd>.</p>
             </section>
 
             <section id="build" aria-labelledby="build-title">
@@ -48,9 +56,9 @@
             </section>
 
             <section id="serve" aria-labelledby="serve-title">
-              <h2 id="serve-title">Serve and inspect it</h2>
+              <h2 id="serve-title">Serve and inspect a completed build</h2>
               <pinega-code-example><header><span>Nushell · local server</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run serve</code></pre></pinega-code-example>
-              <p>Open <code>http://127.0.0.1:4173</code>. Public routes come from the content registry. The internal <a href="/component-lab/">component laboratory</a> remains available for contributor review but is excluded from the public navigation and sitemap.</p>
+              <p><code>npm run serve</code> serves the existing <code>web/dist</code> without rebuilding or watching it. Open <code>http://127.0.0.1:4173</code>. Public routes come from the content registry. The internal <a href="/component-lab/">component laboratory</a> remains available for contributor review but is excluded from the public navigation and sitemap.</p>
             </section>
 
             <section id="validate" aria-labelledby="validate-title">
@@ -61,7 +69,7 @@
 <!-- PINEGA_DOC_PROVENANCE -->
           </article>
         </main>
-        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#install">Install</a></li><li><a href="#build">Build</a></li><li><a href="#serve">Serve</a></li><li><a href="#validate">Validate</a></li></ol></aside>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#install">Install</a></li><li><a href="#develop">Develop</a></li><li><a href="#build">Build</a></li><li><a href="#serve">Serve</a></li><li><a href="#validate">Validate</a></li></ol></aside>
       </div>
 
       <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
