@@ -5,7 +5,7 @@ const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
 
 async function ready(page: Page) {
-  await page.goto('/component-lab/', { waitUntil: 'domcontentloaded' });
+  await page.goto('/component-lab/', { waitUntil: 'commit' });
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
 
