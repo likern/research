@@ -2,111 +2,168 @@
 
 ## Status
 
-Version: `0.2`
+Version: `0.3`
 
-The `0.1` gate established canonical cross-platform tokens, the Web Awesome
-integration boundary, the component laboratory, five representative Pinega
-compositions, and executable quality gates.
+The v0.1 gate established canonical cross-platform tokens, the Web Awesome
+integration boundary, the component laboratory, representative Pinega
+compositions, and executable quality gates. Version 0.2 added the first public
+homepage, documentation, research, and getting-started routes.
 
-Version `0.2` adds the first public information architecture:
+Version 0.3 implements the Information Architecture Foundation accepted in
+`docs/web-content-audit.md`:
+
+- Pinega is presented as the umbrella database-systems research and engineering
+  programme rather than as a synonym for one storage engine;
+- Pinega Engine is the first active implementation programme beneath that
+  master brand;
+- public navigation owns Technology, Research, Documentation, About, and
+  GitHub destinations;
+- the component laboratory remains an internal validation surface;
+- a versioned content registry owns route and discovery metadata;
+- documentation exposes a topic filter and content-purpose labels without
+  claiming full-text search;
+- no new diagram family, blog engine, paper viewer, or Typst HTML pipeline is
+  introduced by this milestone.
+
+The working master-brand line is:
 
 ```text
-/                         product homepage
-/docs/                    documentation landing
-/docs/getting-started/    first documentation article
-/research/                research programme
-/component-lab/           design-system validation surface
+Correctness under concurrency.
 ```
 
-The public pages remain research-stage communications. They explicitly
-separate available artefacts, validated design contracts, research hypotheses,
-and planned engine work.
+It is used as a technical positioning line, not as a claim that every proposed
+programme has reached formal verification or production maturity.
+
+## Public hierarchy
+
+```text
+Pinega / Pinega Labs          programme and organisation boundary
+        ↓
+Technology programmes        what may become maintained software
+        ↓
+Pinega Engine                 first active implementation programme
+
+Research                      questions, evidence, models, and experiments
+Documentation                 start, how-to, explanation, and reference paths
+About                         identity, principles, and commercial boundary
+```
+
+Current routes:
+
+```text
+/                         master-brand homepage
+/technology/              programme catalogue and Pinega Engine boundary
+/research/                research taxonomy, method, and active studies
+/docs/                    documentation topics and purpose/maturity labels
+/docs/getting-started/    first contributor-oriented start page
+/about/                   Pinega and Pinega Labs identity
+/component-lab/           internal validation surface
+/404.html                 explicit not-found page
+```
+
+The blog is not placed in navigation before a real content model and route
+exist. Empty destination pages are prohibited.
+
+## Content contract
+
+`web/content/content-index.json` is the only route and public-discovery
+registry. The schema records:
+
+```text
+id, route, source/output paths, content type, titles, summary, audience,
+programme, research area, topics, maturity, dates, authors, sitemap,
+searchability, structured-data intent, public/canonical status
+```
+
+Page bodies remain native semantic HTML. The build validates agreement between
+registry and source pages, then derives routes, sitemap entries, and
+`site-manifest.json` from the registry.
+
+This boundary is intentionally reusable by later blog, paper, feed, JSON-LD,
+related-content, and static-search implementations. Those gates must extend the
+same metadata model rather than introducing parallel front matter or route
+lists without reconciliation.
 
 ## Principles
 
 1. Native HTML owns document semantics and durable content.
 2. CSS owns presentation, layout, responsive adaptation, and visual state.
-3. JavaScript owns domain state, lifecycle, and interaction orchestration.
+3. JavaScript owns lifecycle and interaction enhancement.
 4. Web Awesome supplies generic interaction primitives, not Pinega semantics.
 5. Pinega custom elements wrap only stable domain concepts or intentional
-   vendor isolation boundaries.
+   vendor-isolation boundaries.
 6. Licensed Pro components progressively enhance complete semantic fallbacks.
 7. Canonical Pinega tokens generate CSS, TypeScript, and Typst adapters.
 8. Product maturity is expressed with text and structure, never colour alone.
-9. Public claims distinguish implemented, validated, proposed, and planned work.
-
-## Layers
-
-```text
-@layer vendor,
-       pinega.tokens,
-       pinega.base,
-       pinega.layout,
-       pinega.webawesome,
-       pinega.components,
-       pinega.utilities,
-       pinega.overrides;
-```
-
-Web Awesome retains its internal layers inside `vendor`. The Pinega adapter
-maps canonical tokens after vendor defaults, and component styling remains
-above that adapter.
+9. Public claims distinguish implemented, validated, experimental, proposed,
+   and planned work.
+10. Public navigation follows user intent and programme ownership, not repository
+    directories or internal validation surfaces.
 
 ## Page and build model
 
 The site is a static multi-page build. Source HTML is not generated from a
-client-side framework and is useful before Custom Elements register.
+client-side framework and remains useful before Custom Elements register.
 
 `web/scripts/build.mjs`:
 
-- bundles the shared CSS and JavaScript entrypoint;
-- copies each explicit page to a clean directory route;
-- injects the private Web Awesome project boundary when configured;
-- emits canonical URLs from `PINEGA_SITE_ORIGIN`;
-- generates `robots.txt`, `sitemap.xml`, and `site-manifest.json`;
-- copies Web Awesome assets and static Pinega assets.
+- validates the versioned content registry;
+- verifies title, description, page identity, canonical policy, heading count,
+  and public navigation for every registered source page;
+- bundles shared CSS and JavaScript;
+- injects semantic diagrams and the private Web Awesome project boundary;
+- emits clean directory routes from the registry;
+- copies canonical content, diagram, and static sources needed by consumers;
+- generates `robots.txt`, `sitemap.xml`, and a metadata-rich
+  `site-manifest.json`.
 
-`web/scripts/serve.mjs` resolves directory indexes, rejects path traversal,
-supports `GET` and `HEAD`, and returns the generated not-found page with HTTP
-status 404.
-
-## Component decision rule
+## Navigation decision rule
 
 ```text
-native element
-    when HTML already owns the semantics and behavior
+public primary navigation
+    stable audience destination with real content and route ownership
 
-direct wa-* element
-    for a stable generic interaction primitive
+footer navigation
+    durable public destinations and repository access
 
-Pinega composition
-    when multiple generic primitives form a stable product pattern
-
-Pinega custom element
-    for domain semantics, lifecycle, or vendor API isolation
+internal/contributor navigation
+    component lab, design-system validation, build and maintenance surfaces
 ```
 
-`pinega-doc-search` follows this rule: documentation cards are durable HTML;
-the Custom Element adds filtering and an aria-live result count without
-constructing or replacing the cards.
+`/component-lab/` remains out of the sitemap, public primary navigation, and
+future site search. It is reachable from contributor documentation.
 
-## Pro boundary
+## Documentation and search boundary
 
-The licensed project is deployment configuration, not public source. No Pro
-assets or project credentials are committed. `pinega-benchmark` always retains
-an accessible HTML table. It renders a native SVG chart first and upgrades to
-Web Awesome Pro only after `wa-line-chart` is registered.
+The current `pinega-doc-search` component filters eight durable topic cards.
+Its visible UI is therefore labelled **Filter documentation topics**. It does
+not claim indexed page search.
+
+The documentation cards expose purpose independently from maturity:
+
+- Start;
+- How-to;
+- Explanation;
+- Research;
+- Reference.
+
+A later documentation-reorganisation gate will split the first broad
+getting-started article into real pages. Site-wide static search follows only
+after the docs, blog, and paper corpus are large enough to justify an index.
 
 ## Gate exit criteria
 
-- generated token artifacts are deterministic and current;
-- no purchased project URL or license material is present in the repository;
-- TypeScript passes strict checking;
-- all public routes and the component laboratory build from the pinned dependency set;
-- local links, canonical metadata, sitemap entries, and 404 handling are validated;
-- semantic and keyboard browser tests pass in Chromium, Firefox, and WebKit;
-- serious and critical axe violations are absent on every public route;
-- mobile and desktop layouts have no horizontal overflow;
-- committed screenshots protect the homepage, docs, research, component lab,
-  and representative dark-mode compositions;
-- public pages remain meaningful without the Pro project and without client-side content generation.
+- Pinega is framed as the master programme on homepage and metadata;
+- `Correctness under concurrency.` appears as the working brand line;
+- Pinega Engine is explicitly subordinate to the wider programme;
+- Technology and About routes contain substantive content;
+- Research exposes the accepted seven-area taxonomy;
+- public navigation is consistent on every public page and excludes the
+  component laboratory;
+- content metadata is versioned, validated, copied to output, and represented
+  in the generated site manifest;
+- all local routes and fragments resolve;
+- the topic-filter label matches actual behaviour;
+- the site remains useful without client-side rendering or Pro assets;
+- TypeScript, unit, build-budget, Chromium, Firefox, WebKit, accessibility,
+  responsive-overflow, and visual-regression gates pass.
