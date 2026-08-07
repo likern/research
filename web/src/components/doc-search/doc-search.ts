@@ -6,6 +6,7 @@ class PinegaDocSearch extends HTMLElement {
   #controller: AbortController | undefined;
   #control: SearchControl | undefined;
   #cards: HTMLElement[] = [];
+  #groups: HTMLElement[] = [];
   #status: HTMLElement | undefined;
   #empty: HTMLElement | undefined;
 
@@ -15,6 +16,7 @@ class PinegaDocSearch extends HTMLElement {
 
     this.#control = this.querySelector<SearchControl>('[data-doc-search-input]') ?? undefined;
     this.#cards = [...this.querySelectorAll<HTMLElement>('[data-doc-card]')];
+    this.#groups = [...this.querySelectorAll<HTMLElement>('[data-doc-group]')];
     this.#status = this.querySelector<HTMLElement>('[data-doc-search-status]') ?? undefined;
     this.#empty = this.querySelector<HTMLElement>('[data-doc-search-empty]') ?? undefined;
 
@@ -46,10 +48,15 @@ class PinegaDocSearch extends HTMLElement {
       if (matches) visible += 1;
     }
 
+    for (const group of this.#groups) {
+      const cards = [...group.querySelectorAll<HTMLElement>('[data-doc-card]')];
+      group.hidden = cards.length > 0 && cards.every(card => card.hidden);
+    }
+
     if (this.#status) {
       this.#status.textContent = query
-        ? `${visible} of ${this.#cards.length} topics`
-        : `${this.#cards.length} topics`;
+        ? `${visible} of ${this.#cards.length} pages`
+        : `${this.#cards.length} pages`;
     }
     if (this.#empty) this.#empty.hidden = visible !== 0;
   }

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-build-site">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Build and inspect the website — Pinega Documentation</title>
+    <meta name="description" content="Build the Pinega static multi-page website from the committed lockfile, serve it locally, and inspect public and internal validation routes.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/how-to/build-the-site/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Build and inspect the website — Pinega Documentation">
+    <meta property="og:description" content="Build the static Pinega Web workspace, serve it locally, and inspect the generated routes.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/how-to/build-the-site/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">How-to</p>
+              <h1>Build and inspect the website</h1>
+              <p class="pinega-article-lede">Use this procedure when the goal is a local static build you can inspect. It assumes the programme model is already understood and does not explain architecture that belongs in concept pages.</p>
+            </header>
+
+            <section id="install" aria-labelledby="install-title">
+              <h2 id="install-title">Install the exact Web dependencies</h2>
+              <p>Enter the Web workspace and install from the committed lockfile without package lifecycle scripts.</p>
+              <pinega-code-example><header><span>Nushell · install</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>cd web
+^npm ci --ignore-scripts</code></pre></pinega-code-example>
+            </section>
+
+            <section id="build" aria-labelledby="build-title">
+              <h2 id="build-title">Build the static site</h2>
+              <pinega-code-example><header><span>Nushell · build</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run build
+^npm run check:build</code></pre></pinega-code-example>
+              <p>The build validates the versioned content registry, injects documentation navigation/provenance, renders semantic diagrams, writes discovery metadata, and emits the multi-page site under <code>web/dist</code>. The build check then validates required outputs and budgets.</p>
+            </section>
+
+            <section id="serve" aria-labelledby="serve-title">
+              <h2 id="serve-title">Serve and inspect it</h2>
+              <pinega-code-example><header><span>Nushell · local server</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run serve</code></pre></pinega-code-example>
+              <p>Open <code>http://127.0.0.1:4173</code>. Public routes come from the content registry. The internal <a href="/component-lab/">component laboratory</a> remains available for contributor review but is excluded from the public navigation and sitemap.</p>
+            </section>
+
+            <section id="validate" aria-labelledby="validate-title">
+              <h2 id="validate-title">Validate before review</h2>
+              <p>Building is not the release gate. Continue with <a href="/docs/how-to/run-validation/">Run the Web validation gate</a> before treating the result as review-ready.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#install">Install</a></li><li><a href="#build">Build</a></li><li><a href="#serve">Serve</a></li><li><a href="#validate">Validate</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

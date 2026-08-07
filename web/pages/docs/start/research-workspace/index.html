@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-research-workspace">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reproduce the research workspace — Pinega Documentation</title>
+    <meta name="description" content="Run the pinned Pinega research workspace from a clean checkout, inspect the registered documents, and build the current Typst and YDMP artefacts.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/start/research-workspace/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Reproduce the research workspace — Pinega Documentation">
+    <meta property="og:description" content="A guided first run through the pinned YDMP research workspace and registered Typst artefacts.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/start/research-workspace/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">Tutorial</p>
+              <h1>Reproduce the research workspace</h1>
+              <p class="pinega-article-lede">This first-run tutorial verifies the pinned tools, shows what the workspace actually registers, and builds the current research corpus. It is deliberately about learning the workflow, not about installing Pinega Engine.</p>
+            </header>
+
+            <section id="prerequisites" aria-labelledby="prerequisites-title">
+              <h2 id="prerequisites-title">Prerequisites</h2>
+              <p>Work from a clean checkout of <code>likern/research</code>. Nushell and Typst versions are pinned by repository files; do not substitute assumed system versions when a reproducibility failure is being diagnosed.</p>
+            </section>
+
+            <section id="doctor" aria-labelledby="doctor-title">
+              <h2 id="doctor-title">1. Verify the workspace</h2>
+              <p>Run the repository doctor before building anything. A successful result establishes that the expected toolchain is available.</p>
+              <pinega-code-example>
+                <header><span>Nushell · doctor</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header>
+                <pre tabindex="0"><code>^nu research.nu doctor</code></pre>
+              </pinega-code-example>
+            </section>
+
+            <section id="inventory" aria-labelledby="inventory-title">
+              <h2 id="inventory-title">2. Inspect the registered documents</h2>
+              <p>Ask the workspace for its own document inventory rather than guessing a path or artefact name.</p>
+              <pinega-code-example>
+                <header><span>Nushell · document inventory</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header>
+                <pre tabindex="0"><code>^nu research.nu list documents</code></pre>
+              </pinega-code-example>
+              <p>The registry output is the authoritative list for the current checkout. This protects the workflow from stale documentation that names a document which has moved or been superseded.</p>
+            </section>
+
+            <section id="build" aria-labelledby="build-title">
+              <h2 id="build-title">3. Build the registered corpus</h2>
+              <pinega-code-example>
+                <header><span>Nushell · build all</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header>
+                <pre tabindex="0"><code>^nu research.nu build all</code></pre>
+              </pinega-code-example>
+              <p>A successful build demonstrates that the checked-in research sources and pinned toolchain can reproduce their registered outputs. It does not validate every research claim; MODEL, VERIFY, tests, and source evidence remain separate gates.</p>
+            </section>
+
+            <section id="next" aria-labelledby="next-title">
+              <h2 id="next-title">4. Continue from the evidence, not from filenames</h2>
+              <p>Use the <a href="/research/">research catalogue</a> to choose a subject, then follow its source and artefact links. For repository boundaries use <a href="/docs/reference/repository-layout/">Repository layout</a>; for review rules use <a href="/docs/contributing/review-and-release-gates/">Review and release gates</a>.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#prerequisites">Prerequisites</a></li><li><a href="#doctor">Verify</a></li><li><a href="#inventory">Inspect inventory</a></li><li><a href="#build">Build</a></li><li><a href="#next">Continue</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

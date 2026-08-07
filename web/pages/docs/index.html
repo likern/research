@@ -4,14 +4,14 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Documentation — Pinega</title>
-    <meta name="description" content="Pinega documentation for understanding the programme, reproducing the research and web workspaces, and following technology decisions.">
+    <meta name="description" content="Pinega documentation organised into real start, how-to, explanation, reference, and contributing pages for the current research-stage programme.">
     <meta name="color-scheme" content="light dark">
     <meta name="theme-color" content="#f7f2e8">
     <link rel="canonical" href="{{SITE_ORIGIN}}/docs/">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Documentation — Pinega">
-    <meta property="og:description" content="Start, explanation, how-to, and reference paths for the Pinega programme and its reproducible workspaces.">
+    <meta property="og:description" content="Real start, how-to, explanation, reference, and contributing pages for the Pinega research-stage programme.">
     <meta property="og:url" content="{{SITE_ORIGIN}}/docs/">
     <!-- PINEGA_PROJECT_META -->
     <link rel="stylesheet" href="/assets/main.css">
@@ -44,18 +44,31 @@
         <section class="pinega-doc-hero" aria-labelledby="docs-title">
           <div>
             <div class="pinega-cluster">
-              <wa-badge variant="brand" appearance="filled-outlined" pill>Documentation foundation</wa-badge>
-              <span class="pinega-eyebrow">Research-stage programme</span>
+              <wa-badge variant="brand" appearance="filled-outlined" pill>Documentation Gate 2</wa-badge>
+              <span class="pinega-eyebrow">Research-stage corpus</span>
             </div>
-            <h1 id="docs-title">Documentation organised by user intent and evidence maturity.</h1>
+            <h1 id="docs-title">Use the documentation for the job you are doing now.</h1>
             <p>
-              Use the start, explanation, how-to, research, and reference paths below. The current corpus is deliberately small:
-              cards point to real pages or real sections rather than promising documentation that does not yet exist.
+              The documentation is now a real corpus rather than a map of anchors. Start pages orient you, how-to guides solve concrete tasks, explanations build understanding, reference pages define exact contracts, and contributing pages describe review gates.
             </p>
           </div>
           <wa-callout variant="brand" appearance="filled-outlined">
-            <strong>Current scope:</strong> the research workspace, Web platform, design system, and architecture artefacts are runnable or inspectable. Pinega Engine is not yet an installable production release.
+            <strong>Scope boundary:</strong> these pages document the Pinega programme, research workspace, Web platform, and accepted architecture. They do not claim that Pinega Engine is an installable production release.
           </wa-callout>
+        </section>
+
+        <section class="pinega-section pinega-doc-corpus-summary" aria-labelledby="corpus-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Documentation model</p>
+            <h2 id="corpus-title">Purpose, evidence maturity, and applicability are independent.</h2>
+            <p class="pinega-muted">A how-to can describe an available Web task while an explanation can document a design contract that is accepted but not yet implemented. Every nested page exposes both dimensions and its applicable programme or workspace.</p>
+          </header>
+          <dl class="pinega-doc-maturity">
+            <div><dt>Start / Tutorial</dt><dd>Orientation and guided first runs that help a reader become productive in the current workspace.</dd></div>
+            <div><dt>How-to</dt><dd>Goal-oriented procedures with prerequisites, commands, expected outcomes, and failure boundaries.</dd></div>
+            <div><dt>Explanation</dt><dd>Concepts, architecture, trade-offs, programme relationships, and the reasoning behind accepted boundaries.</dd></div>
+            <div><dt>Reference</dt><dd>Exact repository, environment, command, schema, and metadata contracts intended for lookup.</dd></div>
+          </dl>
         </section>
 
         <pinega-doc-search aria-labelledby="doc-filter-title">
@@ -63,101 +76,39 @@
             <div>
               <p class="pinega-eyebrow">Current corpus</p>
               <h2 id="doc-filter-title">Filter documentation topics</h2>
+              <p class="pinega-muted">This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.</p>
             </div>
-            <p data-doc-search-status aria-live="polite">8 topics</p>
+            <p data-doc-search-status aria-live="polite"><!-- PINEGA_DOC_COUNT --> pages</p>
           </div>
-          <wa-input data-doc-search-input type="search" label="Filter documentation topics" placeholder="Try engine, workspace, validation, or research"></wa-input>
+          <wa-input data-doc-search-input type="search" label="Filter documentation topics" placeholder="Try engine architecture, Web validation, metadata, or research workspace"></wa-input>
 
-          <div class="pinega-doc-grid" data-doc-search-results>
-            <article class="pinega-doc-card" data-doc-card data-content-type="start" data-search="start status repository workspace commands contributor">
-              <span class="pinega-doc-card-state" data-state="available">Available</span>
-              <p class="pinega-eyebrow">Start</p>
-              <h3><a href="/docs/getting-started/">Getting started</a></h3>
-              <p>Understand the programme boundary, repository status, and commands that work today.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="explanation" data-search="pinega pinega labs company programme brand purpose commercialisation">
-              <span class="pinega-doc-card-state" data-state="research">Current framing</span>
-              <p class="pinega-eyebrow">Explanation</p>
-              <h3><a href="/about/">What Pinega is</a></h3>
-              <p>Distinguish the master programme, Pinega Labs, technology programmes, and future commercial boundaries.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="explanation" data-search="technology programmes products engine optimiser verification distributed systems">
-              <span class="pinega-doc-card-state" data-state="research">Programme map</span>
-              <p class="pinega-eyebrow">Explanation</p>
-              <h3><a href="/technology/">Technology programmes</a></h3>
-              <p>See active design, research infrastructure, portfolio directions, and promotion rules.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="explanation" data-search="engine architecture storage table access method buffer pool wal postgres mvcc">
-              <span class="pinega-doc-card-state" data-state="validated">Design contract</span>
-              <p class="pinega-eyebrow">Explanation</p>
-              <h3><a href="/technology/#engine-architecture">Pinega Engine architecture</a></h3>
-              <p>Follow the PostgreSQL boundary, mutable version store, buffer pool, and WAL decisions.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="research" data-search="research catalogue storage concurrency transactions distributed optimisation ai performance verification">
-              <span class="pinega-doc-card-state" data-state="research">Active research</span>
-              <p class="pinega-eyebrow">Research</p>
-              <h3><a href="/research/">Research programme</a></h3>
-              <p>Browse the research-area taxonomy, evidence method, and current technical studies.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="how-to" data-search="typst ydmp notes model verify build research workspace nushell">
-              <span class="pinega-doc-card-state" data-state="available">Available</span>
-              <p class="pinega-eyebrow">How-to</p>
-              <h3><a href="/docs/getting-started/#research-workspace">Build the research workspace</a></h3>
-              <p>Check the pinned toolchain and compile registered Typst and YDMP artefacts.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="how-to" data-search="web website build serve validation tests playwright component lab npm">
-              <span class="pinega-doc-card-state" data-state="available">Available</span>
-              <p class="pinega-eyebrow">How-to</p>
-              <h3><a href="/docs/getting-started/#web-workspace">Build and validate the Web workspace</a></h3>
-              <p>Build the static site, start the local server, and run the non-browser and browser gates.</p>
-            </article>
-            <article class="pinega-doc-card" data-doc-card data-content-type="reference" data-search="repository source github contributions issues pull requests ci reference">
-              <span class="pinega-doc-card-state" data-state="available">Available</span>
-              <p class="pinega-eyebrow">Reference</p>
-              <h3><a href="https://github.com/likern/research">Repository and contribution surface</a></h3>
-              <p>Inspect source, manifests, issues, pull requests, tests, generated artefacts, and validation workflows.</p>
-            </article>
-          </div>
-          <p data-doc-search-empty hidden>No documentation topics match this filter.</p>
+<!-- PINEGA_DOC_CATALOGUE -->
+          <p data-doc-search-empty hidden>No documentation pages match this filter.</p>
         </pinega-doc-search>
-
-        <section class="pinega-section" aria-labelledby="types-title">
-          <header class="pinega-section-heading">
-            <p class="pinega-eyebrow">Content types</p>
-            <h2 id="types-title">Purpose and maturity are separate labels.</h2>
-            <p class="pinega-muted">A page can be a how-to and still describe experimental work; it can be an explanation and document an accepted decision.</p>
-          </header>
-          <dl class="pinega-doc-maturity">
-            <div><dt>Start</dt><dd>A guided first path through current scope and working commands.</dd></div>
-            <div><dt>How-to</dt><dd>Task-oriented steps for building, validating, or contributing.</dd></div>
-            <div><dt>Explanation</dt><dd>Architecture, concepts, trade-offs, and programme boundaries.</dd></div>
-            <div><dt>Reference</dt><dd>Exact commands, schemas, manifests, APIs, and repository contracts.</dd></div>
-          </dl>
-        </section>
 
         <section class="pinega-section" aria-labelledby="path-title">
           <header class="pinega-section-heading">
-            <p class="pinega-eyebrow">Recommended path</p>
-            <h2 id="path-title">Read in the order that preserves the evidence boundary.</h2>
+            <p class="pinega-eyebrow">Recommended first path</p>
+            <h2 id="path-title">Orient first; execute only after the boundary is clear.</h2>
           </header>
           <ol class="pinega-reading-path">
-            <li><span>01</span><div><strong>Programme boundary</strong><p>Understand Pinega, Pinega Labs, technology programmes, and what is not yet offered.</p></div></li>
-            <li><span>02</span><div><strong>Current status</strong><p>Learn which artefacts are runnable and which claims remain proposed.</p></div></li>
-            <li><span>03</span><div><strong>Architecture and research</strong><p>Follow ownership, correctness, and durability boundaries before implementation detail.</p></div></li>
-            <li><span>04</span><div><strong>Implementation evidence</strong><p>Only then interpret benchmarks, traces, tests, and future prototype results.</p></div></li>
+            <li><span>01</span><div><strong><a href="/docs/start/project-overview/">Project overview</a></strong><p>Understand what Pinega is, what exists today, and what remains a future implementation or product claim.</p></div></li>
+            <li><span>02</span><div><strong><a href="/docs/start/research-workspace/">Reproduce the research workspace</a></strong><p>Run the pinned toolchain and build registered research artefacts from a clean checkout.</p></div></li>
+            <li><span>03</span><div><strong><a href="/docs/concepts/pinega-engine-architecture/">Understand Pinega Engine architecture</a></strong><p>Read the PostgreSQL, version-store, buffer-pool, and WAL boundaries as an explanation rather than a setup guide.</p></div></li>
+            <li><span>04</span><div><strong><a href="/docs/contributing/review-and-release-gates/">Review and release gates</a></strong><p>Use the validation and evidence contracts before declaring a change or public claim ready.</p></div></li>
           </ol>
         </section>
 
         <section class="pinega-section pinega-doc-maturity" aria-labelledby="maturity-title">
           <header class="pinega-section-heading">
             <p class="pinega-eyebrow">Evidence maturity</p>
-            <h2 id="maturity-title">Labels are part of the public contract.</h2>
+            <h2 id="maturity-title">The label describes evidence, not the type of page.</h2>
           </header>
           <dl>
             <div><dt><span data-state="available">Available</span></dt><dd>A runnable or inspectable artefact exists in the repository.</dd></div>
-            <div><dt><span data-state="validated">Design contract</span></dt><dd>The architecture is documented and tested as a model or specimen, not necessarily implemented.</dd></div>
-            <div><dt><span data-state="research">Research</span></dt><dd>The topic is under active investigation and may change.</dd></div>
-            <div><dt><span data-state="decision">Decision</span></dt><dd>A project direction is fixed unless new evidence forces revision.</dd></div>
+            <div><dt><span data-state="validated">Design contract</span></dt><dd>The architecture or contract is documented and tested as a model/specimen, not necessarily implemented as a production system.</dd></div>
+            <div><dt><span data-state="research">Research</span></dt><dd>The topic is actively investigated and may change with evidence.</dd></div>
+            <div><dt><span data-state="decision">Decision</span></dt><dd>A project direction is accepted unless later evidence explicitly supersedes it.</dd></div>
           </dl>
         </section>
       </main>

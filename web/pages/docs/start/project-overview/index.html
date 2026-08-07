@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-project-overview">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project overview — Pinega Documentation</title>
+    <meta name="description" content="Understand what Pinega, Pinega Labs, and Pinega Engine mean, what repository artefacts exist today, and which product claims remain future work.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/start/project-overview/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Project overview — Pinega Documentation">
+    <meta property="og:description" content="The current Pinega programme boundary, repository status, and product-claim boundary.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/start/project-overview/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">Start</p>
+              <h1>Project overview</h1>
+              <p class="pinega-article-lede">Use this page to establish the naming, maturity, and repository boundary before interpreting architecture, research, or performance claims.</p>
+            </header>
+
+            <section id="programme" aria-labelledby="programme-title">
+              <h2 id="programme-title">Programme model</h2>
+              <p><strong>Pinega</strong> is the umbrella database-systems research, engineering, technology, and future product programme. <strong>Pinega Labs</strong> is its working research and engineering identity and a plausible future company identity. <strong>Pinega Engine</strong> is the first active implementation programme beneath that umbrella.</p>
+              <p>The names are intentionally not interchangeable. Research on query optimisation, verification, distributed systems, or performance engineering can belong to Pinega without being part of Pinega Engine.</p>
+            </section>
+
+            <section id="available" aria-labelledby="available-title">
+              <h2 id="available-title">What exists today</h2>
+              <ul>
+                <li>A versioned YDMP research workspace with Typst templates and durable research artefacts.</li>
+                <li>Pinega Strata, the shared cross-platform design system.</li>
+                <li>Scientific Diagram Language with canonical renderer-independent models and Web/Typst renderers.</li>
+                <li>A static multi-page Web platform with content metadata, browser/accessibility gates, and visual regression tests.</li>
+                <li>Accepted architecture decisions and validation specimens for Pinega Engine.</li>
+              </ul>
+            </section>
+
+            <section id="not-available" aria-labelledby="not-available-title">
+              <h2 id="not-available-title">What does not exist yet</h2>
+              <p>There is no production Pinega Engine binary, customer deployment, production SQL/TAM interface, validated persistence path, or benchmark result that can support a public performance claim. The site therefore uses research, decision, and design-contract labels instead of product-availability language.</p>
+              <wa-callout variant="warning" appearance="filled-outlined"><strong>Do not infer implementation from architecture.</strong> A documented boundary may be accepted while the corresponding production code remains future work.</wa-callout>
+            </section>
+
+            <section id="continue" aria-labelledby="continue-title">
+              <h2 id="continue-title">Where to continue</h2>
+              <p>For the identity model, read <a href="/docs/concepts/pinega-programme/">Pinega programme model</a>. For implementation boundaries, read <a href="/docs/concepts/pinega-engine-architecture/">Pinega Engine architecture</a>. To reproduce current artefacts, continue with <a href="/docs/start/research-workspace/">Reproduce the research workspace</a>.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#programme">Programme model</a></li><li><a href="#available">What exists</a></li><li><a href="#not-available">What does not</a></li><li><a href="#continue">Continue</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

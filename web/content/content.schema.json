@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "site", "primary_navigation", "entries"],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "site": {
       "type": "object",
       "additionalProperties": false,
@@ -52,6 +52,26 @@
     }
   },
   "$defs": {
+    "documentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["section", "purpose", "order", "applies_to", "related"],
+      "properties": {
+        "section": {
+          "enum": ["landing", "start", "tutorials", "how-to", "concepts", "reference", "contributing"]
+        },
+        "purpose": {
+          "enum": ["index", "start", "tutorial", "how-to", "explanation", "reference", "contributing"]
+        },
+        "order": { "type": "integer", "minimum": 0 },
+        "applies_to": { "type": "string", "minLength": 1 },
+        "related": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+        }
+      }
+    },
     "entry": {
       "type": "object",
       "additionalProperties": false,
@@ -114,7 +134,8 @@
         "searchable": { "type": "boolean" },
         "structured_data_type": { "type": ["string", "null"] },
         "public": { "type": "boolean" },
-        "canonical": { "type": "boolean" }
+        "canonical": { "type": "boolean" },
+        "documentation": { "$ref": "#/$defs/documentation" }
       }
     }
   }
