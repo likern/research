@@ -1,0 +1,199 @@
+{
+  "profileSchemaVersion": 1,
+  "defaults": {
+    "history": "production-v0.2",
+    "version-chain": "production-v0.2",
+    "lifecycle": "production-v0.2"
+  },
+  "layerOrder": [
+    "background",
+    "relations",
+    "objects",
+    "annotations",
+    "proof"
+  ],
+  "profiles": {
+    "history": {
+      "production-v0.2": {
+        "label": "Accepted v0.2 production layout",
+        "status": "production",
+        "strategy": "timeline-panel",
+        "web": {
+          "width": 980,
+          "left": 126,
+          "right": 42,
+          "laneGap": 98,
+          "axisY": 76,
+          "top": 154,
+          "witnessPanelHeight": 96,
+          "witnessStride": 112,
+          "witnessTopGap": 54,
+          "bottomPadding": 96,
+          "operationCompleteWidth": 7,
+          "operationPendingWidth": 4.5,
+          "precedenceBaseOffset": 38,
+          "precedenceStep": 16,
+          "minInlineSize": 780,
+          "witnessStyle": "panel",
+          "linearizationStyle": "halo"
+        },
+        "typst": {
+          "supported": true,
+          "left": 1.12,
+          "timelineUnit": 0.86,
+          "laneGap": 1.18,
+          "axisOffset": 0.82,
+          "titleOffset": 0.48,
+          "bottom": -0.62
+        }
+      },
+      "proof-oriented-v0.3": {
+        "label": "Proof-oriented timeline candidate",
+        "status": "candidate",
+        "strategy": "proof-timeline",
+        "web": {
+          "width": 1080,
+          "left": 138,
+          "right": 52,
+          "laneGap": 106,
+          "axisY": 82,
+          "top": 174,
+          "witnessPanelHeight": 76,
+          "witnessStride": 96,
+          "witnessTopGap": 70,
+          "bottomPadding": 88,
+          "operationCompleteWidth": 5,
+          "operationPendingWidth": 3.4,
+          "precedenceBaseOffset": 46,
+          "precedenceStep": 18,
+          "minInlineSize": 820,
+          "witnessStyle": "sequence",
+          "linearizationStyle": "tick"
+        },
+        "typst": {
+          "supported": false,
+          "left": 1.16,
+          "timelineUnit": 0.91,
+          "laneGap": 1.24,
+          "axisOffset": 0.88,
+          "titleOffset": 0.5,
+          "bottom": -0.66
+        }
+      }
+    },
+    "version-chain": {
+      "production-v0.2": {
+        "label": "Accepted v0.2 production layout",
+        "status": "production",
+        "strategy": "cards",
+        "web": {
+          "nodeWidth": 190,
+          "nodeHeight": 118,
+          "gap": 92,
+          "left": 72,
+          "top": 104,
+          "evaluationGap": 72,
+          "evaluationHeight": 102,
+          "radius": 4,
+          "minInlineSizeCap": 820,
+          "headSlotWidth": 0,
+          "headGap": 0
+        },
+        "typst": {
+          "supported": true,
+          "left": 0.38,
+          "nodeWidth": 2.22,
+          "nodeHeight": 1.38,
+          "gap": 0.82,
+          "titleY": 2.34,
+          "subjectY": 2.05,
+          "evaluationY": -0.8
+        }
+      },
+      "compact-records-v0.3": {
+        "label": "Compact record-strip candidate",
+        "status": "candidate",
+        "strategy": "records",
+        "web": {
+          "nodeWidth": 214,
+          "nodeHeight": 94,
+          "gap": 66,
+          "left": 64,
+          "top": 112,
+          "evaluationGap": 66,
+          "evaluationHeight": 96,
+          "radius": 2,
+          "minInlineSizeCap": 900,
+          "headSlotWidth": 112,
+          "headGap": 42
+        },
+        "typst": {
+          "supported": false,
+          "left": 0.36,
+          "nodeWidth": 2.34,
+          "nodeHeight": 1.12,
+          "gap": 0.66,
+          "titleY": 2.2,
+          "subjectY": 1.92,
+          "evaluationY": -0.66
+        }
+      }
+    },
+    "lifecycle": {
+      "production-v0.2": {
+        "label": "Accepted v0.2 production layout",
+        "status": "production",
+        "strategy": "snake-grid",
+        "web": {
+          "maxColumns": 3,
+          "stateWidth": 180,
+          "stateHeight": 118,
+          "columnGap": 122,
+          "rowGap": 118,
+          "left": 64,
+          "top": 94,
+          "minInlineSize": 0,
+          "stateSpacing": 0,
+          "returnGap": 0
+        },
+        "typst": {
+          "supported": true,
+          "columns": 3,
+          "nodeWidth": 2.25,
+          "nodeHeight": 1.3,
+          "columnGap": 1.3,
+          "topY": 2.35,
+          "bottomY": 0.05,
+          "originX": 0.55
+        }
+      },
+      "horizontal-return-v0.3": {
+        "label": "Horizontal lifecycle with return arc candidate",
+        "status": "candidate",
+        "strategy": "horizontal-return",
+        "web": {
+          "maxColumns": 6,
+          "stateWidth": 152,
+          "stateHeight": 86,
+          "columnGap": 54,
+          "rowGap": 0,
+          "left": 70,
+          "top": 118,
+          "minInlineSize": 980,
+          "stateSpacing": 194,
+          "returnGap": 92
+        },
+        "typst": {
+          "supported": false,
+          "columns": 6,
+          "nodeWidth": 1.64,
+          "nodeHeight": 0.92,
+          "columnGap": 0.58,
+          "topY": 1.78,
+          "bottomY": -0.42,
+          "originX": 0.42
+        }
+      }
+    }
+  }
+}

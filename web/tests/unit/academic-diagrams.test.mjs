@@ -70,6 +70,7 @@ test('the consolidated system has one canonical model surface', async () => {
   assert.match(version, /^\d+\.\d+\.\d+$/u);
   assert.match(architecture, /only canonical source is `design\/diagrams\/models\/\*\.json`/u);
   assert.match(architecture, /not a second schema or authoring\s+format/u);
+  assert.match(architecture, /Layout profiles are versioned presentation configuration/iu);
 
   await assert.rejects(
     access(resolve(repositoryRoot, 'diagrams')),
@@ -77,7 +78,7 @@ test('the consolidated system has one canonical model surface', async () => {
   );
 });
 
-test('the permanent review workflow verifies rather than rewrites baselines', async () => {
+test('the permanent review workflow verifies baselines and publishes authoring artifacts', async () => {
   const workflow = await readFile(
     resolve(repositoryRoot, '.github/workflows/diagram-academic-review.yml'),
     'utf8',
@@ -99,9 +100,17 @@ test('the permanent review workflow verifies rather than rewrites baselines', as
   assert.doesNotMatch(workflow, /--update-snapshots/u);
   assert.doesNotMatch(workflow, /agent\/scientific-diagram-language/u);
   assert.match(workflow, /design\/diagrams\/VERSION/u);
+  assert.match(workflow, /design\/diagrams\/layouts\/\*\.json/u);
+  assert.match(workflow, /web\/scripts\/check-build\.mjs/u);
+  assert.match(workflow, /web\/authoring\/manifest\.json/u);
   assert.match(workflow, /steps\.artifact\.outputs\.name/u);
+  assert.match(workflow, /id: upload[\s\S]*actions\/upload-artifact@v7/u);
+  assert.match(workflow, /steps\.upload\.outputs\.artifact-id/u);
+  assert.match(workflow, /steps\.upload\.outputs\.artifact-digest/u);
   assert.match(workflow, /HEAD_SHA: \$\{\{ github\.event\.pull_request\.head\.sha \|\| github\.sha \}\}/u);
   assert.match(workflow, /cd "\$review"[\s\S]*find \. -type f ! -name SHA256SUMS/u);
+  assert.match(captureScript, /renderDiagramAuthoringSvg/u);
+  assert.match(captureScript, /layout-profile-review\.pdf/u);
   assert.match(captureScript, /PINEGA_DIAGRAM_VERSION/u);
   assert.match(typstReview, /sys\.inputs\.at\("diagram-version"/u);
 });

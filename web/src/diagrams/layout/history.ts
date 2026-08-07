@@ -5,48 +5,61 @@ import type {
   SceneElement,
 } from '../types.js';
 import { group, round } from '../scene.js';
+import type { HistoryLayoutProfile } from './profiles.js';
 
-const width = 980;
-const left = 126;
-const right = 42;
-const laneGap = 98;
-const axisY = 76;
-const top = 154;
-
-export function layoutHistory(model: HistoryDiagram): DiagramScene {
-  const lanesHeight = Math.max(1, model.lanes.length - 1) * laneGap;
-  const witnessHeight = model.witnesses.length > 0 ? model.witnesses.length * 112 : 24;
-  const height = top + lanesHeight + witnessHeight + 96;
-  const plotWidth = width - left - right;
+export function layoutHistory(model: HistoryDiagram, profile: HistoryLayoutProfile): DiagramScene {
+  const metrics = profile.web;
+  const lanesHeight = Math.max(1, model.lanes.length - 1) * metrics.laneGap;
+  const witnessHeight = model.witnesses.length > 0 ? model.witnesses.length * metrics.witnessStride : 24;
+  const height = metrics.top + lanesHeight + witnessHeight + metrics.bottomPadding;
+  const plotWidth = metrics.width - metrics.left - metrics.right;
   const start = Math.min(0, ...model.operations.map(operation => operation.start), ...model.markers.map(marker => marker.time));
   const duration = model.horizon - start;
-  const xOf = (time: number) => round(left + ((time - start) / duration) * plotWidth);
-  const laneY = new Map(model.lanes.map((lane, index) => [lane.id, top + index * laneGap]));
+  const xOf = (time: number) => round(metrics.left + ((time - start) / duration) * plotWidth);
+  const laneY = new Map(model.lanes.map((lane, index) => [lane.id, metrics.top + index * metrics.laneGap]));
   const elements: SceneElement[] = [
-    { kind: 'text', x: left, y: 31, text: model.title, role: 'title', anchor: 'start', tone: 'primary', className: 'pinega-diagram-academic-title' },
-    { kind: 'line', x1: left, y1: axisY, x2: width - right, y2: axisY, tone: 'muted', width: 1, arrowEnd: true, className: 'pinega-diagram-time-axis' },
-    { kind: 'text', x: left, y: axisY - 14, text: String(start), role: 'meta', anchor: 'middle', tone: 'muted', className: 'pinega-diagram-axis-label' },
-    { kind: 'text', x: width - right, y: axisY - 14, text: `t = ${model.horizon}`, role: 'meta', anchor: 'end', tone: 'muted', className: 'pinega-diagram-axis-label' },
+    {
+      kind: 'text', x: metrics.left, y: 31, text: model.title, role: 'title', anchor: 'start', tone: 'primary',
+      className: 'pinega-diagram-academic-title', semanticId: 'diagram-title', layer: 'annotations',
+    },
+    {
+      kind: 'line', x1: metrics.left, y1: metrics.axisY, x2: metrics.width - metrics.right, y2: metrics.axisY,
+      tone: 'muted', width: 1, arrowEnd: true, className: 'pinega-diagram-time-axis', semanticId: 'time-axis', layer: 'background',
+    },
+    {
+      kind: 'text', x: metrics.left, y: metrics.axisY - 14, text: String(start), role: 'meta', anchor: 'middle', tone: 'muted',
+      className: 'pinega-diagram-axis-label', semanticId: 'time-axis-start', layer: 'annotations',
+    },
+    {
+      kind: 'text', x: metrics.width - metrics.right, y: metrics.axisY - 14, text: `t = ${model.horizon}`,
+      role: 'meta', anchor: 'end', tone: 'muted', className: 'pinega-diagram-axis-label', semanticId: 'time-axis-end', layer: 'annotations',
+    },
   ];
 
   for (const lane of model.lanes) {
     const y = laneY.get(lane.id);
     if (y === undefined) continue;
-    elements.push(
-      { kind: 'text', x: 22, y, text: lane.label, role: 'label', anchor: 'start', tone: 'primary', className: 'pinega-diagram-lane-label' },
-      { kind: 'line', x1: left, y1: y, x2: width - right, y2: y, tone: 'muted', width: 0.85, className: 'pinega-diagram-lane-line' },
-    );
+    elements.push(group(
+      `${lane.label} process lane`,
+      'process-lane',
+      [
+        { kind: 'text', x: 22, y, text: lane.label, role: 'label', anchor: 'start', tone: 'primary', className: 'pinega-diagram-lane-label' },
+        { kind: 'line', x1: metrics.left, y1: y, x2: metrics.width - metrics.right, y2: y, tone: 'muted', width: 0.85, className: 'pinega-diagram-lane-line' },
+      ],
+      { semanticId: `lane-${lane.id}`, layer: 'background' },
+    ));
   }
 
-  for (const marker of model.markers) {
+  for (const [markerIndex, marker] of model.markers.entries()) {
     const x = xOf(marker.time);
     elements.push(group(
       `Marker ${marker.label} at time ${marker.time}`,
       'boundary',
       [
-        { kind: 'line', x1: x, y1: axisY + 14, x2: x, y2: top + lanesHeight + 34, tone: marker.tone, width: 1.1, dash: marker.pattern, className: 'pinega-diagram-boundary' },
-        { kind: 'text', x, y: axisY + 8, text: marker.label, role: 'meta', anchor: 'middle', tone: marker.tone, className: 'pinega-diagram-boundary-label' },
+        { kind: 'line', x1: x, y1: metrics.axisY + 14, x2: x, y2: metrics.top + lanesHeight + 34, tone: marker.tone, width: 1.1, dash: marker.pattern, className: 'pinega-diagram-boundary' },
+        { kind: 'text', x, y: metrics.axisY + 8, text: marker.label, role: 'meta', anchor: 'middle', tone: marker.tone, className: 'pinega-diagram-boundary-label' },
       ],
+      { semanticId: `marker-${markerIndex}`, layer: 'annotations' },
     ));
   }
 
@@ -59,57 +72,77 @@ export function layoutHistory(model: HistoryDiagram): DiagramScene {
 
     const sourceX = xOf(from.end ?? from.start);
     const targetX = xOf(to.start);
-    const routeX = targetX - 38 + index * 16;
-    const approachY = targetY - 30 - index * 10;
-    const targetOffset = 2 + index * 5;
     const accessibleLabel = edge.label ?? 'response before invocation';
-    const children: SceneElement[] = [
-      {
+    const children: SceneElement[] = [];
+
+    if (profile.strategy === 'proof-timeline') {
+      const routeY = metrics.top - metrics.precedenceBaseOffset - index * metrics.precedenceStep;
+      children.push({
+        kind: 'path',
+        d: `M ${sourceX + 7} ${sourceY} V ${routeY} H ${targetX - 8 - index * 4} V ${targetY}`,
+        tone: edge.tone,
+        width: 1.25,
+        arrowEnd: true,
+        className: 'pinega-diagram-real-time-precedence',
+      });
+      if (edge.label) {
+        children.push({
+          kind: 'text', x: round((sourceX + targetX) / 2), y: routeY - 11, text: edge.label,
+          role: 'meta', anchor: 'middle', tone: edge.tone, className: 'pinega-diagram-precedence-label',
+        });
+      }
+    } else {
+      const routeX = targetX - metrics.precedenceBaseOffset + index * metrics.precedenceStep;
+      const approachY = targetY - 30 - index * 10;
+      const targetOffset = 2 + index * 5;
+      children.push({
         kind: 'path',
         d: `M ${sourceX + 7} ${sourceY} H ${routeX} V ${approachY} L ${targetX - targetOffset} ${targetY}`,
         tone: edge.tone,
         width: 1.35,
         arrowEnd: true,
         className: 'pinega-diagram-real-time-precedence',
-      },
-    ];
-
-    if (edge.label) {
-      children.push({
-        kind: 'text',
-        x: round((sourceX + routeX) / 2),
-        y: sourceY - 13,
-        text: edge.label,
-        role: 'meta',
-        anchor: 'middle',
-        tone: edge.tone,
-        className: 'pinega-diagram-precedence-label',
       });
+      if (edge.label) {
+        children.push({
+          kind: 'text', x: round((sourceX + routeX) / 2), y: sourceY - 13, text: edge.label,
+          role: 'meta', anchor: 'middle', tone: edge.tone, className: 'pinega-diagram-precedence-label',
+        });
+      }
     }
 
     elements.push(group(
       `${edge.from} precedes ${edge.to}: ${accessibleLabel}`,
       'real-time-precedence',
       children,
+      { semanticId: `precedence-${edge.from}-${edge.to}`, layer: 'relations' },
     ));
   }
 
   for (const operation of model.operations) {
     const y = laneY.get(operation.lane);
     if (y === undefined) continue;
-    elements.push(layoutOperation(operation, model.horizon, xOf, y));
+    elements.push(layoutOperation(operation, model.horizon, xOf, y, profile));
   }
 
-  let witnessY = top + lanesHeight + 54;
-  for (const witness of model.witnesses) {
-    const panelHeight = 96;
-    const panelWidth = width - left - right;
-    const children: SceneElement[] = [
-      { kind: 'rect', x: left, y: witnessY, width: panelWidth, height: panelHeight, radius: 4, tone: 'muted', fillTone: 'muted', strokeWidth: 1, className: 'pinega-diagram-proof-panel' },
-      { kind: 'text', x: left + 16, y: witnessY + 21, text: witness.label, role: 'label', anchor: 'start', tone: witness.tone, className: 'pinega-diagram-witness-title' },
-    ];
-    let x = left + 24;
-    const sequenceY = witnessY + 54;
+  let witnessY = metrics.top + lanesHeight + metrics.witnessTopGap;
+  for (const [witnessIndex, witness] of model.witnesses.entries()) {
+    const panelWidth = metrics.width - metrics.left - metrics.right;
+    const children: SceneElement[] = [];
+    if (metrics.witnessStyle === 'panel') {
+      children.push(
+        { kind: 'rect', x: metrics.left, y: witnessY, width: panelWidth, height: metrics.witnessPanelHeight, radius: 4, tone: 'muted', fillTone: 'muted', strokeWidth: 1, className: 'pinega-diagram-proof-panel' },
+        { kind: 'text', x: metrics.left + 16, y: witnessY + 21, text: witness.label, role: 'label', anchor: 'start', tone: witness.tone, className: 'pinega-diagram-witness-title' },
+      );
+    } else {
+      children.push(
+        { kind: 'line', x1: metrics.left, y1: witnessY, x2: metrics.width - metrics.right, y2: witnessY, tone: 'muted', width: 0.9, className: 'pinega-diagram-proof-rule' },
+        { kind: 'text', x: metrics.left, y: witnessY + 22, text: witness.label, role: 'label', anchor: 'start', tone: witness.tone, className: 'pinega-diagram-witness-title' },
+      );
+    }
+
+    let x = metrics.left + (metrics.witnessStyle === 'panel' ? 24 : 8);
+    const sequenceY = witnessY + (metrics.witnessStyle === 'panel' ? 54 : 50);
     for (const [operationIndex, operationId] of witness.operations.entries()) {
       const operation = model.operations.find(candidate => candidate.id === operationId);
       const label = operation ? operationLabel(operation) : operationId;
@@ -124,23 +157,53 @@ export function layoutHistory(model: HistoryDiagram): DiagramScene {
         x += 40;
       }
     }
-    children.push({ kind: 'text', x: left + 16, y: witnessY + 79, text: 'Preserves process order and every real-time precedence constraint.', role: 'meta', anchor: 'start', tone: 'muted', className: 'pinega-diagram-witness-reason' });
-    elements.push(group(`${witness.label}: ${witness.operations.join(', ')}`, 'sequential-witness', children, 'pinega-diagram-witness-group'));
-    witnessY += panelHeight + 16;
+    children.push({
+      kind: 'text', x: metrics.left + (metrics.witnessStyle === 'panel' ? 16 : 0),
+      y: witnessY + (metrics.witnessStyle === 'panel' ? 79 : 72),
+      text: 'Preserves process order and every real-time precedence constraint.',
+      role: 'meta', anchor: 'start', tone: 'muted', className: 'pinega-diagram-witness-reason',
+    });
+    elements.push(group(
+      `${witness.label}: ${witness.operations.join(', ')}`,
+      'sequential-witness',
+      children,
+      { className: 'pinega-diagram-witness-group', semanticId: `witness-${witnessIndex}`, layer: 'proof' },
+    ));
+    witnessY += metrics.witnessStride;
   }
 
-  elements.push({ kind: 'text', x: left, y: height - 22, text: '● invocation   ○ response   ● LP   ⇢ pending', role: 'meta', anchor: 'start', tone: 'muted', className: 'pinega-diagram-legend' });
+  elements.push({
+    kind: 'text', x: metrics.left, y: height - 22, text: '● invocation   ○ response   ● LP   ⇢ pending',
+    role: 'meta', anchor: 'start', tone: 'muted', className: 'pinega-diagram-legend', semanticId: 'legend', layer: 'annotations',
+  });
 
-  return { id: model.id, kind: model.kind, title: model.title, description: model.description, width, height, minInlineSize: 780, elements };
+  return {
+    id: model.id,
+    kind: model.kind,
+    title: model.title,
+    description: model.description,
+    layoutProfile: profile.id,
+    width: metrics.width,
+    height,
+    minInlineSize: metrics.minInlineSize,
+    elements,
+  };
 }
 
-function layoutOperation(operation: HistoryOperation, horizon: number, xOf: (time: number) => number, y: number) {
+function layoutOperation(
+  operation: HistoryOperation,
+  horizon: number,
+  xOf: (time: number) => number,
+  y: number,
+  profile: HistoryLayoutProfile,
+) {
+  const metrics = profile.web;
   const pending = operation.end == null;
   const x1 = xOf(operation.start);
   const x2 = xOf(operation.end ?? horizon);
   const midpoint = x1 + (x2 - x1) / 2;
   const children: SceneElement[] = [
-    { kind: 'line', x1, y1: y, x2, y2: y, tone: operation.tone, width: pending ? 4.5 : 7, dash: pending ? 'dashed' : 'solid', arrowEnd: pending, className: `pinega-diagram-operation-interval ${pending ? 'is-pending' : 'is-complete'}` },
+    { kind: 'line', x1, y1: y, x2, y2: y, tone: operation.tone, width: pending ? metrics.operationPendingWidth : metrics.operationCompleteWidth, dash: pending ? 'dashed' : 'solid', arrowEnd: pending, className: `pinega-diagram-operation-interval ${pending ? 'is-pending' : 'is-complete'}` },
     { kind: 'circle', cx: x1, cy: y, radius: 5, tone: operation.tone, fillTone: operation.tone, strokeWidth: 0, className: 'pinega-diagram-operation-endpoint is-invocation' },
     pending
       ? { kind: 'text', x: x2 - 4, y: y - 22, text: 'PENDING', role: 'chip', anchor: 'end', tone: 'pending', className: 'pinega-diagram-operation-pending' }
@@ -151,12 +214,20 @@ function layoutOperation(operation: HistoryOperation, horizon: number, xOf: (tim
   if (operation.linearization != null) {
     if (typeof operation.linearization === 'number') {
       const x = xOf(operation.linearization);
-      children.push(
-        { kind: 'circle', cx: x, cy: y, radius: 10, tone: 'event', fillTone: null, strokeWidth: 1.2, className: 'pinega-diagram-lp-halo' },
-        { kind: 'circle', cx: x, cy: y, radius: 6, tone: 'event', fillTone: 'event', strokeWidth: 0, className: 'pinega-diagram-lp-marker' },
-        { kind: 'line', x1: x, y1: y - 12, x2: x, y2: y - 34, tone: 'event', width: 1.4, className: 'pinega-diagram-lp-leader' },
-        { kind: 'text', x, y: y - 45, text: 'LP', role: 'label', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
-      );
+      if (metrics.linearizationStyle === 'halo') {
+        children.push(
+          { kind: 'circle', cx: x, cy: y, radius: 10, tone: 'event', fillTone: null, strokeWidth: 1.2, className: 'pinega-diagram-lp-halo' },
+          { kind: 'circle', cx: x, cy: y, radius: 6, tone: 'event', fillTone: 'event', strokeWidth: 0, className: 'pinega-diagram-lp-marker' },
+          { kind: 'line', x1: x, y1: y - 12, x2: x, y2: y - 34, tone: 'event', width: 1.4, className: 'pinega-diagram-lp-leader' },
+          { kind: 'text', x, y: y - 45, text: 'LP', role: 'label', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
+        );
+      } else {
+        children.push(
+          { kind: 'line', x1: x, y1: y - 16, x2: x, y2: y + 16, tone: 'event', width: 2.1, className: 'pinega-diagram-lp-tick' },
+          { kind: 'circle', cx: x, cy: y, radius: 4.5, tone: 'event', fillTone: 'event', strokeWidth: 0, className: 'pinega-diagram-lp-marker' },
+          { kind: 'text', x, y: y - 31, text: 'LP', role: 'chip', anchor: 'middle', tone: 'event', className: 'pinega-diagram-lp-label' },
+        );
+      }
     } else {
       const linearizationStart = xOf(operation.linearization[0]);
       const linearizationEnd = xOf(operation.linearization[1]);
@@ -175,7 +246,16 @@ function layoutOperation(operation: HistoryOperation, horizon: number, xOf: (tim
     : typeof operation.linearization === 'number'
       ? `; linearization at ${operation.linearization}`
       : `; linearization interval ${operation.linearization[0]} to ${operation.linearization[1]}`;
-  return group(`${operation.lane}: invocation ${operation.call} at ${operation.start}; ${endDescription}${linearizationDescription}`, 'operation', children, `pinega-diagram-operation-group ${pending ? 'is-pending' : 'is-complete'}`);
+  return group(
+    `${operation.lane}: invocation ${operation.call} at ${operation.start}; ${endDescription}${linearizationDescription}`,
+    'operation',
+    children,
+    {
+      className: `pinega-diagram-operation-group ${pending ? 'is-pending' : 'is-complete'}`,
+      semanticId: `operation-${operation.id}`,
+      layer: 'objects',
+    },
+  );
 }
 
 function operationLabel(operation: HistoryOperation): string {

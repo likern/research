@@ -1,7 +1,28 @@
 # Scientific Diagram Language changelog
 
 This changelog tracks the complete diagram subsystem. Canonical model
-compatibility is tracked separately by each model's `schemaVersion`.
+compatibility is tracked separately by each model's `schemaVersion`; layout
+profile compatibility is tracked by `profileSchemaVersion`.
+
+## 0.3.0 — 2026-08-06
+
+Layout and authoring separation without a semantic-model migration.
+
+- introduced a versioned family-specific layout-profile catalogue;
+- preserved the accepted v0.2 production layouts and committed visual baselines
+  as the defaults;
+- added proof-oriented history, compact record-strip version-chain, and
+  horizontal lifecycle candidate profiles;
+- added a renderer-side scene plan with stable semantic identities and authoring
+  layers;
+- added standalone, layered, raster-free authoring SVG for manual refinement in
+  Inkscape-compatible editors;
+- added per-profile scene JSON and provenance metadata;
+- expanded immutable review artifacts with authoring SVG, PNG previews,
+  comparison HTML/PDF, profile catalogue, manifest, checksums, and build
+  metadata;
+- exposed artifact ID, URL, and SHA-256 digest in the GitHub Actions job summary;
+- kept canonical model `schemaVersion: 1` unchanged.
 
 ## 0.2.1 — 2026-08-06
 

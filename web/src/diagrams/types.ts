@@ -128,9 +128,21 @@ export type DiagramModel = HistoryDiagram | VersionChainDiagram | LifecycleDiagr
 export type DiagramDash = 'solid' | 'dashed' | 'dotted';
 export type DiagramTextAnchor = 'start' | 'middle' | 'end';
 export type DiagramTextRole = 'title' | 'label' | 'body' | 'code' | 'meta' | 'chip';
+export type DiagramLayer = 'background' | 'relations' | 'objects' | 'annotations' | 'proof';
+
+export interface DiagramLayoutOptions {
+  readonly profile?: string;
+}
+
+export interface AuthoringSvgOptions extends DiagramLayoutOptions {
+  readonly systemVersion?: string;
+  readonly includeXmlDeclaration?: boolean;
+}
 
 export interface SceneBase {
   readonly className?: string;
+  readonly semanticId?: string;
+  readonly layer?: DiagramLayer;
 }
 
 export interface SceneGroup extends SceneBase {
@@ -183,6 +195,7 @@ export interface SceneCircle extends SceneBase {
   readonly tone: DiagramTone;
   readonly fillTone?: DiagramTone | null;
   readonly strokeWidth?: number;
+  readonly dash?: DiagramDash;
 }
 
 export interface SceneText extends SceneBase {
@@ -202,6 +215,7 @@ export interface DiagramScene {
   readonly kind: DiagramKind;
   readonly title: string;
   readonly description: string;
+  readonly layoutProfile: string;
   readonly width: number;
   readonly height: number;
   readonly minInlineSize: number;
