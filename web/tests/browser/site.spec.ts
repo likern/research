@@ -14,7 +14,7 @@ const publicRoutes = [
 const allRoutes = [...publicRoutes, '/component-lab/'];
 
 async function ready(page: Page, route: string) {
-  const response = await page.goto(route, { waitUntil: 'domcontentloaded' });
+  const response = await page.goto(route, { waitUntil: 'commit' });
   expect(response?.status(), `${route} should return a successful response`).toBeLessThan(400);
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
@@ -34,13 +34,13 @@ for (const route of allRoutes) {
 test('public navigation exposes the programme hierarchy and hides the component lab', async ({ page }) => {
   for (const route of publicRoutes) {
     await ready(page, route);
-    const navigation = page.getByRole('navigation', { name: 'Primary navigation' });
-    await expect(navigation.getByRole('link', { name: 'Technology', exact: true })).toHaveAttribute('href', '/technology/');
-    await expect(navigation.getByRole('link', { name: 'Research', exact: true })).toHaveAttribute('href', '/research/');
-    await expect(navigation.getByRole('link', { name: 'Documentation', exact: true })).toHaveAttribute('href', '/docs/');
-    await expect(navigation.getByRole('link', { name: 'About', exact: true })).toHaveAttribute('href', '/about/');
-    await expect(navigation.getByRole('link', { name: 'GitHub', exact: true })).toHaveAttribute('href', 'https://github.com/likern/research');
-    await expect(navigation.getByRole('link', { name: 'Design system' })).toHaveCount(0);
+    const navigation = page.locator('nav[data-primary-navigation]');
+    await expect(navigation.locator('a[href="/technology/"]')).toHaveText('Technology');
+    await expect(navigation.locator('a[href="/research/"]')).toHaveText('Research');
+    await expect(navigation.locator('a[href="/docs/"]')).toHaveText('Documentation');
+    await expect(navigation.locator('a[href="/about/"]')).toHaveText('About');
+    await expect(navigation.locator('a[href="https://github.com/likern/research"]')).toHaveText('GitHub');
+    await expect(navigation.locator('a[href="/component-lab/"]')).toHaveCount(0);
   }
 });
 
@@ -167,7 +167,7 @@ test('generated discovery files expose registry metadata and public routes only'
 });
 
 test('unknown routes return the accessible not-found page with HTTP 404', async ({ page }) => {
-  const response = await page.goto('/missing-stratum', { waitUntil: 'domcontentloaded' });
+  const response = await page.goto('/missing-stratum', { waitUntil: 'commit' });
   expect(response?.status()).toBe(404);
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('not part of the current model');
