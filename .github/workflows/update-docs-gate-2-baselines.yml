@@ -1,0 +1,82 @@
+name: Update Documentation Gate 2 Visual Baselines
+
+on:
+  push:
+    branches:
+      - agent/pinega-docs-gate-2
+    paths:
+      - "web/**"
+      - "docs/documentation-gate-2.md"
+      - ".github/workflows/update-docs-gate-2-baselines.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out the Gate 2 branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/pinega-docs-gate-2
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "26.7.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
+
+      - name: Validate sources and build
+        working-directory: web
+        run: |
+          npm run tokens:check
+          npm run typecheck
+          npm run test:unit
+          npm run build
+          npm run check:build
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Generate Gate 2 visual baselines
+        working-directory: web
+        run: npm run test:visual -- --update-snapshots
+
+      - name: Commit reviewed baseline candidates to the PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add web/tests/visual/site.visual.spec.ts-snapshots
+          if git diff --cached --quiet; then
+            echo "No visual baseline changes were generated."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test(web): refresh documentation Gate 2 visual baselines"
+          git push origin HEAD:agent/pinega-docs-gate-2
+
+      - name: Upload baseline review corpus
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pinega-docs-gate-2-baselines-${{ github.sha }}
+          path: |
+            web/tests/visual/site.visual.spec.ts-snapshots
+            web/dist
+            web/playwright-report
+            web/test-results
+          if-no-files-found: warn
+          retention-days: 30
