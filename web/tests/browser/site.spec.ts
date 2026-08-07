@@ -141,10 +141,10 @@ test('getting-started is orientation rather than a mixed command article', async
   await ready(page, '/docs/getting-started/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Choose the documentation path that matches your task');
   await expect(page.locator('pinega-code-example')).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Project overview' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Reproduce the research workspace' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Build and inspect the website' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Repository layout' })).toBeVisible();
+  await expect(page.locator('#orient').getByRole('link', { name: 'Project overview', exact: true })).toBeVisible();
+  await expect(page.locator('#orient').getByRole('link', { name: 'Reproduce the research workspace', exact: true })).toBeVisible();
+  await expect(page.locator('#task').getByRole('link', { name: 'Build and inspect the website', exact: true })).toBeVisible();
+  await expect(page.locator('#lookup').getByRole('link', { name: 'Repository layout', exact: true })).toBeVisible();
 });
 
 test('research landing exposes the area catalogue, method, and existing diagrams', async ({ page }) => {

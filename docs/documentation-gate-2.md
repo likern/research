@@ -1,6 +1,6 @@
 # Pinega Web Gate 2 — Documentation Reorganisation and Review
 
-Status: **PROPOSED NEXT MILESTONE IMPLEMENTATION**  
+Status: **CURRENT IMPLEMENTATION — PR review**  
 Date: 2026-08-07  
 Accepted baseline: `main@b4e897e0056202ef1df083358d21e1bb9389fbfc` (merged Web IA Foundation, PR #21)
 
@@ -126,7 +126,8 @@ full-text search. Gate 2 improves its corpus and semantics:
 - status reports pages rather than topics;
 - all cards remain visible in server/static HTML when JavaScript is absent.
 
-Full-text indexing stays in Gate 5 after docs, blog, and paper content exist.
+Full-text indexing stays in a later gate after docs, blog, and paper content
+share a stable publishing/discovery contract.
 
 ### No fake version selector
 
@@ -139,6 +140,20 @@ control should appear only when multiple maintained versions are real.
 Every nested documentation page exposes purpose, maturity, applicability,
 updated date, owner/programme, registry ID, source/edit links, and declared
 related content.
+
+## Visual review surface
+
+The Gate 2 visual corpus covers:
+
+- the documentation landing hero, content model, and complete grouped catalogue;
+- Getting Started as an orientation page;
+- Project Overview with generated side navigation and breadcrumbs;
+- Pinega Engine architecture header and provenance block;
+- the validation how-to composition;
+- existing Gate 1 homepage, Technology, Research, About, and dark-mode surfaces.
+
+Baseline candidates are generated only when the visual change is intentional;
+the normal Web gate verifies committed baselines without rewriting them.
 
 ## Review and acceptance criteria
 
@@ -155,3 +170,6 @@ Gate 2 is ready only when:
   pass on the final PR head;
 - generated website/visual artifacts are available for review;
 - Gate 1 master-brand and Scientific Diagram Language contracts remain intact.
+
+Until those checks are green on the current PR head, this document remains
+**CURRENT IMPLEMENTATION — PR review**, not an accepted baseline.
