@@ -163,7 +163,7 @@ test('technology and about pages own programme and company boundaries', () => {
   assert.match(technology, /One PostgreSQL WAL/u);
   assert.match(technology, /No item below is presented as a shipped product/u);
 
-  assert.match(about, /Pinega is the master technology programme/u);
+  assert.match(about, /Pinega is the master technology(?: and product)? programme/u);
   assert.match(about, /Pinega Labs is the working research/u);
   assert.match(about, /There is no current production engine release/u);
   assert.match(about, /Correctness under concurrency/u);
@@ -206,7 +206,8 @@ test('documentation filter labels its actual topic-filter behaviour', async () =
 
 test('the build derives routes and discovery metadata from the content registry', async () => {
   const build = await read('scripts/build.mjs');
-  assert.match(build, /content\/content-index\.json/u);
+  assert.match(build, /const contentRoot = resolve\(root, 'content'\)/u);
+  assert.match(build, /readFile\(resolve\(contentRoot, 'content-index\.json'\)/u);
   assert.match(build, /const pages = contentIndex\.entries\.map/u);
   assert.match(build, /validateContentIndex/u);
   assert.match(build, /validatePageSource/u);
