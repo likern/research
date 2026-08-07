@@ -12,6 +12,7 @@
     "tokens:check": "node ../design/scripts/build-tokens.mjs --check",
     "build": "node scripts/build.mjs",
     "check:build": "node scripts/check-build.mjs",
+    "dev": "node scripts/dev.mjs",
     "serve": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
     "test:unit": "node --test ../design/tests/*.test.mjs tests/unit/*.test.mjs",
