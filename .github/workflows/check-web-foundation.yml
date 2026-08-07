@@ -19,22 +19,20 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     defaults:
       run:
         working-directory: web
 
     steps:
-      - name: Check out the review branch
+      - name: Check out repository
         uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -46,40 +44,52 @@ jobs:
       - name: Install exact dependencies
         run: npm ci --ignore-scripts
 
-      - name: Validate and build the Web IA implementation
-        run: npm run tokens:check && npm run typecheck && npm run test:unit && npm run build && npm run check:build
+      - name: Verify generated design-token adapters
+        run: npm run tokens:check
 
-      - name: Install Chromium
-        run: npx --no-install playwright install --with-deps chromium
+      - name: Type-check Web Components
+        run: npm run typecheck
 
-      - name: Generate the complete Web IA visual baseline corpus
-        run: |
-          set -euo pipefail
-          rm -rf tests/visual/site.visual.spec.ts-snapshots
-          npx --no-install playwright test tests/visual/site.visual.spec.ts \
-            --project=chromium-desktop \
-            --update-snapshots=all
+      - name: Run token and architecture tests
+        run: npm run test:unit
 
-      - name: Commit the reviewed visual baselines to the PR branch
+      - name: Build the multi-page website
+        run: npm run build
+
+      - name: Enforce build and performance budgets
+        run: npm run check:build
+
+      - name: Install Playwright browsers
+        run: npx --no-install playwright install --with-deps chromium firefox webkit
+
+      - name: Run browser and accessibility tests
+        run: npm run test:browser
+
+      - name: Verify committed visual baselines
+        run: npm run test:visual
+
+      - name: Record artifact checksums
+        if: always()
         shell: bash
-        env:
-          TARGET_BRANCH: ${{ github.head_ref || github.ref_name }}
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add tests/visual/site.visual.spec.ts-snapshots
-          if git diff --cached --quiet; then
-            echo "Visual baselines are already current."
-            exit 0
-          fi
-          git commit -m "test(web): refresh Web IA visual baselines"
-          git push origin "HEAD:${TARGET_BRANCH}"
+          mkdir -p artifacts
+          { find dist tests/visual -type f -print0 2>/dev/null || true; } \
+            | sort -z \
+            | xargs -0 -r sha256sum \
+            > artifacts/SHA256SUMS.txt
 
-      - name: Upload the generated baseline corpus
+      - name: Upload the validated website
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: pinega-web-ia-reviewed-baselines-${{ github.sha }}
-          path: web/tests/visual/site.visual.spec.ts-snapshots
-          if-no-files-found: error
-          retention-days: 7
+          name: pinega-website-v0.2-${{ github.event_name }}
+          path: |
+            web/dist
+            web/package-lock.json
+            web/tests/visual
+            web/test-results
+            web/playwright-report
+            web/artifacts/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
