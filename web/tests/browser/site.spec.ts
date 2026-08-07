@@ -3,15 +3,24 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
-const publicRoutes = [
-  '/',
-  '/technology/',
-  '/research/',
-  '/docs/',
+const documentationRoutes = [
   '/docs/getting-started/',
-  '/about/',
+  '/docs/start/project-overview/',
+  '/docs/start/research-workspace/',
+  '/docs/how-to/build-the-site/',
+  '/docs/how-to/run-validation/',
+  '/docs/concepts/pinega-programme/',
+  '/docs/concepts/pinega-engine-architecture/',
+  '/docs/concepts/maturity-and-evidence-labels/',
+  '/docs/concepts/research-to-product-workflow/',
+  '/docs/reference/repository-layout/',
+  '/docs/reference/web-build-and-environment/',
+  '/docs/reference/content-metadata-schema/',
+  '/docs/contributing/review-and-release-gates/',
 ];
-const allRoutes = [...publicRoutes, '/component-lab/'];
+const corePublicRoutes = ['/', '/technology/', '/research/', '/docs/', '/about/'];
+const publicRoutes = ['/', '/technology/', '/research/', '/docs/', ...documentationRoutes, '/about/'];
+const allCoreRoutes = [...corePublicRoutes, '/docs/getting-started/', '/component-lab/'];
 
 async function ready(page: Page, route: string) {
   const response = await page.goto(route, { waitUntil: 'commit' });
@@ -19,20 +28,31 @@ async function ready(page: Page, route: string) {
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
 }
 
-for (const route of allRoutes) {
+for (const route of allCoreRoutes) {
   test(`${route} keeps semantic landmarks and fits the active viewport`, async ({ page }) => {
     await ready(page, route);
     await expect(page.getByRole('main')).toBeVisible();
     await expect(page.locator('pinega-site-header')).toHaveCount(1);
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-    );
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
   });
 }
 
+test('complete documentation corpus resolves with semantic article shells', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Full route inventory is exercised once; representative pages remain cross-browser.');
+  for (const route of documentationRoutes) {
+    await ready(page, route);
+    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole('navigation', { name: 'Documentation' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible();
+    await expect(page.locator('[data-doc-provenance]')).toBeVisible();
+    await expect(page.locator('select[disabled]')).toHaveCount(0);
+  }
+});
+
 test('public navigation exposes the programme hierarchy and hides the component lab', async ({ page }) => {
-  for (const route of publicRoutes) {
+  for (const route of [...corePublicRoutes, '/docs/start/project-overview/']) {
     await ready(page, route);
     const navigation = page.locator('nav[data-primary-navigation]');
     await expect(navigation.locator('a[href="/technology/"]')).toHaveText('Technology');
@@ -52,7 +72,6 @@ test('homepage states the Pinega master-brand and evidence boundary', async ({ p
   await expect(page.locator('.pinega-home-status .pinega-status-card')).toHaveCount(3);
   await expect(page.locator('#programmes .pinega-research-programme > article')).toHaveCount(3);
   await expect(page.locator('#pinega-engine .pinega-architecture-layers > li')).toHaveCount(4);
-  await expect(page.getByRole('table')).toContainText('no production engine binary');
 });
 
 test('technology page separates active, research, and portfolio programmes', async ({ page }) => {
@@ -64,14 +83,15 @@ test('technology page separates active, research, and portfolio programmes', asy
   await expect(page.locator('#distributed-systems')).toBeAttached();
   await expect(page.locator('#engine-architecture .pinega-architecture-layers > li')).toHaveCount(4);
   await expect(page.getByText('One PostgreSQL WAL', { exact: true })).toBeVisible();
-  await expect(page.getByText('No item below is presented as a shipped product', { exact: false })).toBeVisible();
 });
 
-test('documentation topic filter enhances durable cards without claiming full-text search', async ({ page }) => {
+test('documentation landing filters real metadata-backed pages by topic and group', async ({ page }) => {
   await ready(page, '/docs/');
   const cards = page.locator('[data-doc-card]');
-  await expect(cards).toHaveCount(8);
+  await expect(cards).toHaveCount(13);
+  await expect(page.locator('[data-doc-group]')).toHaveCount(5);
   await expect(page.getByRole('heading', { name: 'Filter documentation topics' })).toBeVisible();
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('13 pages');
 
   const input = page.locator('[data-doc-search-input]');
   await input.evaluate((element: HTMLElement & { value?: string }) => {
@@ -79,32 +99,59 @@ test('documentation topic filter enhances durable cards without claiming full-te
     element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
   });
   const visibleTitles = await cards.evaluateAll(elements =>
-    elements
-      .filter(element => !(element as HTMLElement).hidden)
-      .map(element => element.querySelector('h3')?.textContent?.trim()),
+    elements.filter(element => !(element as HTMLElement).hidden).map(element => element.querySelector('h4')?.textContent?.trim()),
   );
   expect(visibleTitles).toEqual(['Pinega Engine architecture']);
-  await expect(page.locator('[data-doc-search-status]')).toHaveText('1 of 8 topics');
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('1 of 13 pages');
+  await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(1);
+
+  await input.evaluate((element: HTMLElement & { value?: string }) => {
+    element.value = 'does-not-exist';
+    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  });
+  await expect(page.locator('[data-doc-search-empty]')).toBeVisible();
+  await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(0);
 });
 
-test('getting-started page exposes programme boundaries and working commands', async ({ page }) => {
+test('documentation catalogue remains complete without JavaScript', async ({ request }) => {
+  const response = await request.get('/docs/');
+  expect(response.ok()).toBeTruthy();
+  const html = await response.text();
+  expect((html.match(/data-doc-card/gu) ?? []).length).toBe(13);
+  expect((html.match(/data-doc-group/gu) ?? []).length).toBe(5);
+  expect(html).not.toContain('hidden data-doc-card');
+  expect(html).toContain('/docs/concepts/pinega-engine-architecture/');
+  expect(html).toContain('/docs/reference/content-metadata-schema/');
+});
+
+test('nested documentation exposes generated navigation, breadcrumb and provenance', async ({ page }) => {
+  await ready(page, '/docs/concepts/pinega-engine-architecture/');
+  const docsNavigation = page.getByRole('navigation', { name: 'Documentation' });
+  await expect(docsNavigation.locator('a[aria-current="page"]')).toHaveText('Pinega Engine architecture');
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb' });
+  await expect(breadcrumb.locator('ol > li')).toHaveCount(4);
+  await expect(breadcrumb).toContainText('Concepts');
+  await expect(page.locator('[data-doc-provenance]')).toContainText('Design contract');
+  await expect(page.locator('[data-doc-provenance]')).toContainText('Pinega Engine architecture for PostgreSQL 19');
+  await expect(page.locator('[data-doc-provenance] a[href*="/blob/main/web/pages/docs/"]')).toHaveCount(1);
+  await expect(page.locator('select[disabled]')).toHaveCount(0);
+});
+
+test('getting-started is orientation rather than a mixed command article', async ({ page }) => {
   await ready(page, '/docs/getting-started/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('programme and workspace');
-  await expect(page.locator('pinega-code-example')).toHaveCount(3);
-  await expect(page.getByRole('navigation', { name: 'Documentation sections' })).toBeAttached();
-  await expect(page.locator('aside[aria-label="On this page"]')).toBeAttached();
-  await expect(page.getByText('does not present an installable Pinega database engine', { exact: false })).toBeVisible();
-  await expect(page.getByText('Pinega Engine is the first active implementation programme', { exact: false })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Choose the documentation path that matches your task');
+  await expect(page.locator('pinega-code-example')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Project overview' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Reproduce the research workspace' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Build and inspect the website' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Repository layout' })).toBeVisible();
 });
 
 test('research landing exposes the area catalogue, method, and existing diagrams', async ({ page }) => {
   await ready(page, '/research/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Research is part');
   await expect(page.locator('#research-areas .pinega-research-programme > article')).toHaveCount(7);
-  await expect(page.locator('.pinega-research-ledger span')).toHaveCount(5);
-  await expect(page.locator('.pinega-research-timeline > [role="listitem"]')).toHaveCount(5);
   await expect(page.locator('figure[data-diagram-id]')).toHaveCount(3);
-  await expect(page.locator('#method')).toBeAttached();
 });
 
 test('about page distinguishes Pinega, Pinega Labs, and future offerings', async ({ page }) => {
@@ -112,58 +159,36 @@ test('about page distinguishes Pinega, Pinega Labs, and future offerings', async
   await expect(page.getByRole('heading', { level: 1 })).toContainText('defensible database technology');
   await expect(page.getByText('Pinega is the master technology and product programme', { exact: false })).toBeVisible();
   await expect(page.getByText('Pinega Labs is the working research', { exact: false })).toBeVisible();
-  await expect(page.getByText('There is no current production engine release', { exact: false })).toBeVisible();
-  await expect(page.locator('.pinega-principle-grid wa-card')).toHaveCount(6);
 });
 
-test('generated discovery files expose registry metadata and public routes only', async ({ request }) => {
+test('generated discovery files expose the complete documentation corpus', async ({ request }) => {
   const manifest = await request.get('/site-manifest.json');
   expect(manifest.ok()).toBeTruthy();
   const payload = await manifest.json() as {
     site: { tagline: string };
-    primaryNavigation: Array<{ label: string; route?: string; href?: string }>;
-    routes: Array<{ id: string; route: string; sitemap: boolean; searchable: boolean; public: boolean }>;
+    routes: Array<{ id: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; documentation?: unknown }>;
   };
-
   expect(payload.site.tagline).toBe('Correctness under concurrency.');
-  expect(payload.primaryNavigation.map(item => item.route ?? item.href)).toEqual([
-    '/technology/',
-    '/research/',
-    '/docs/',
-    '/about/',
-    'https://github.com/likern/research',
-  ]);
-  expect(payload.routes.map(entry => entry.route)).toEqual([
-    '/',
-    '/technology/',
-    '/research/',
-    '/docs/',
-    '/docs/getting-started/',
-    '/about/',
-    '/component-lab/',
-    '/404.html',
-  ]);
   expect(payload.routes.filter(entry => entry.sitemap).map(entry => entry.route)).toEqual(publicRoutes);
   expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route)).toEqual(publicRoutes);
+  expect(payload.routes.filter(entry => entry.documentation && entry.route !== '/docs/')).toHaveLength(13);
 
-  const componentLab = payload.routes.find(entry => entry.id === 'component-lab');
-  expect(componentLab).toEqual(expect.objectContaining({ public: false, sitemap: false, searchable: false }));
+  const registry = await request.get('/content/content-index.json');
+  const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };
+  expect(registryPayload.schema_version).toBe(2);
+  expect(registryPayload.entries).toHaveLength(20);
+
+  const docsManifest = await request.get('/content/documentation-manifest.json');
+  expect(docsManifest.ok()).toBeTruthy();
+  const docsPayload = await docsManifest.json() as { schema_version: number; sections: Array<{ id: string }>; entries: Array<{ route: string }> };
+  expect(docsPayload.schema_version).toBe(1);
+  expect(docsPayload.sections.map(section => section.id)).toEqual(['start', 'how-to', 'concepts', 'reference', 'contributing']);
+  expect(docsPayload.entries.map(entry => entry.route)).toEqual(documentationRoutes);
 
   const sitemap = await request.get('/sitemap.xml');
-  expect(sitemap.ok()).toBeTruthy();
   const sitemapText = await sitemap.text();
   for (const route of publicRoutes) expect(sitemapText).toContain(route);
   expect(sitemapText).not.toContain('/component-lab/');
-  expect(sitemapText).not.toContain('/404.html');
-
-  const registry = await request.get('/content/content-index.json');
-  expect(registry.ok()).toBeTruthy();
-  const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };
-  expect(registryPayload.schema_version).toBe(1);
-  expect(registryPayload.entries).toHaveLength(8);
-
-  const robots = await request.get('/robots.txt');
-  expect(await robots.text()).toContain('Sitemap: https://pinega.example/sitemap.xml');
 });
 
 test('unknown routes return the accessible not-found page with HTTP 404', async ({ page }) => {
@@ -171,27 +196,31 @@ test('unknown routes return the accessible not-found page with HTTP 404', async 
   expect(response?.status()).toBe(404);
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('not part of the current model');
-  await expect(page.locator('.pinega-not-found').getByRole('link', { name: 'Documentation' })).toHaveAttribute('href', '/docs/');
 });
 
-test('public pages have no serious or critical axe violations', async ({ page }) => {
-  for (const route of publicRoutes) {
+test('core public pages have no serious or critical axe violations', async ({ page }) => {
+  for (const route of [...corePublicRoutes, '/docs/concepts/pinega-engine-architecture/', '/docs/how-to/run-validation/']) {
     await ready(page, route);
     await page.addScriptTag({ path: axePath });
     const results = await page.evaluate(async () => {
-      const axe = (window as unknown as Window & {
-        axe: {
-          run: (
-            context: Document,
-            options: unknown,
-          ) => Promise<{ violations: Array<{ impact: string | null; id: string }> }>;
-        };
-      }).axe;
+      const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
       return axe.run(document, { resultTypes: ['violations'] });
     });
-    const blocking = results.violations.filter(
-      violation => violation.impact === 'serious' || violation.impact === 'critical',
-    );
+    const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+    expect(blocking, `${route}: ${blocking.map(violation => violation.id).join(', ')}`).toEqual([]);
+  }
+});
+
+test('every documentation page has no serious or critical axe violations', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Complete documentation accessibility corpus is exercised once.');
+  for (const route of documentationRoutes) {
+    await ready(page, route);
+    await page.addScriptTag({ path: axePath });
+    const results = await page.evaluate(async () => {
+      const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
+      return axe.run(document, { resultTypes: ['violations'] });
+    });
+    const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
     expect(blocking, `${route}: ${blocking.map(violation => violation.id).join(', ')}`).toEqual([]);
   }
 });

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-maturity-evidence">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Maturity and evidence labels — Pinega Documentation</title>
+    <meta name="description" content="Understand how Pinega separates available artefacts, design contracts, research, decisions, hypotheses, and future implementation claims.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/concepts/maturity-and-evidence-labels/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Maturity and evidence labels — Pinega Documentation">
+    <meta property="og:description" content="How Pinega separates implemented artefacts, validated contracts, research, decisions, and hypotheses.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/concepts/maturity-and-evidence-labels/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">Explanation</p>
+              <h1>Maturity and evidence labels</h1>
+              <p class="pinega-article-lede">Pinega treats claim status as part of the technical contract. A reader should be able to tell whether a statement describes an available artefact, an accepted decision, a validated model, an active research question, or a hypothesis awaiting evidence.</p>
+            </header>
+
+            <section id="maturity" aria-labelledby="maturity-title">
+              <h2 id="maturity-title">Maturity describes what exists</h2>
+              <dl class="pinega-doc-definition-list">
+                <div><dt>Available</dt><dd>A runnable or inspectable repository artefact exists.</dd></div>
+                <div><dt>Design contract</dt><dd>A boundary or model is documented and validated as a contract/specimen; production implementation may still be incomplete.</dd></div>
+                <div><dt>Research</dt><dd>The direction is actively investigated and may change with evidence.</dd></div>
+                <div><dt>Decision</dt><dd>A project direction is accepted until explicitly superseded by later evidence or a later decision.</dd></div>
+              </dl>
+            </section>
+
+            <section id="evidence" aria-labelledby="evidence-title">
+              <h2 id="evidence-title">Evidence describes why a claim is being made</h2>
+              <p>Research artefacts should distinguish sourced claims, background, inference, hypotheses, and user/project ideas. The Web evidence component similarly communicates semantic kinds such as confirmed, inferred, hypothesis, external evidence, and contradicted without relying on colour alone.</p>
+            </section>
+
+            <section id="orthogonal" aria-labelledby="orthogonal-title">
+              <h2 id="orthogonal-title">Page purpose is orthogonal to maturity</h2>
+              <p>A how-to page can be <em>Available</em> because its commands work today. An architecture explanation can be a <em>Design contract</em> because the boundary is accepted while production code is incomplete. A reference page can document a <em>Decision</em> if it is describing a fixed project contract.</p>
+              <p>This is why the documentation registry stores both <code>documentation.purpose</code> and <code>maturity_status</code> instead of overloading one field.</p>
+            </section>
+
+            <section id="promotion" aria-labelledby="promotion-title">
+              <h2 id="promotion-title">Promotion requires evidence</h2>
+              <p>Public copy must not silently move a result from research to validated capability or from validated capability to shipped product. Promotion should follow the <a href="/docs/concepts/research-to-product-workflow/">research-to-product workflow</a> and be reflected in source, tests, metadata, and review artefacts together.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#maturity">Maturity</a></li><li><a href="#evidence">Evidence</a></li><li><a href="#orthogonal">Orthogonality</a></li><li><a href="#promotion">Promotion</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>
