@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "linearizability-overlap",
+  "kind": "history",
+  "title": "Перекрывающиеся операции очереди и допустимая линеаризация",
+  "caption": "Две перекрывающиеся операции можно упорядочить по внутренним точкам линеаризации; более поздняя вставка должна оставаться после обоих завершённых вызовов в реальном времени.",
+  "description": "Три потока разделяют общую временную ось. Поток P добавляет x с момента 0,8 до 4,7 и линеаризуется в момент 2,3. Поток Q извлекает x с момента 1,6 до 5,9 и линеаризуется в момент 3,6. Поток R добавляет y с момента 6,2 до 7,7 и линеаризуется в момент 6,8. Первые две операции перекрываются; обе предшествуют третьей в реальном времени. Допустимый последовательный свидетель: добавить x, извлечь x, добавить y.",
+  "lanes": [
+    { "id": "p", "label": "Поток P" },
+    { "id": "q", "label": "Поток Q" },
+    { "id": "r", "label": "Поток R" }
+  ],
+  "operations": [
+    { "id": "enq-x", "lane": "p", "call": "enq(x)", "start": 0.8, "end": 4.7, "result": "ok", "linearization": 2.3, "tone": "primary", "object": "queue", "note": "публикует x" },
+    { "id": "deq-x", "lane": "q", "call": "deq()", "start": 1.6, "end": 5.9, "result": "x", "linearization": 3.6, "tone": "event", "object": "queue", "note": "наблюдает x" },
+    { "id": "enq-y", "lane": "r", "call": "enq(y)", "start": 6.2, "end": 7.7, "result": "ok", "linearization": 6.8, "tone": "inferred", "object": "queue", "note": "позже в реальном времени" }
+  ],
+  "markers": [
+    { "time": 6.0, "label": "срез покоя", "tone": "muted", "pattern": "dashed" }
+  ],
+  "witnesses": [
+    { "label": "допустимый свидетель", "operations": ["enq-x", "deq-x", "enq-y"], "tone": "inferred" }
+  ],
+  "precedence": [
+    { "from": "enq-x", "to": "enq-y", "label": "предшествование в реальном времени", "tone": "primary" },
+    { "from": "deq-x", "to": "enq-y", "label": null, "tone": "event" }
+  ],
+  "horizon": 8.2
+}

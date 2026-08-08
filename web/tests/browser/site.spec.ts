@@ -20,7 +20,10 @@ const documentationRoutes = [
 ];
 const corePublicRoutes = ['/', '/technology/', '/research/', '/docs/', '/about/'];
 const publicRoutes = ['/', '/technology/', '/research/', '/docs/', ...documentationRoutes, '/about/'];
-const allCoreRoutes = [...corePublicRoutes, '/docs/getting-started/', '/component-lab/'];
+const russianDocumentationRoutes = documentationRoutes.map(route => `/ru${route}`);
+const russianCorePublicRoutes = ['/ru/', '/ru/technology/', '/ru/research/', '/ru/docs/', '/ru/about/'];
+const russianPublicRoutes = publicRoutes.map(route => route === '/' ? '/ru/' : `/ru${route}`);
+const allCoreRoutes = [...corePublicRoutes, ...russianCorePublicRoutes, '/docs/getting-started/', '/ru/docs/getting-started/', '/component-lab/'];
 
 async function ready(page: Page, route: string) {
   const response = await page.goto(route, { waitUntil: 'commit' });
@@ -38,7 +41,7 @@ for (const route of allCoreRoutes) {
   });
 }
 
-test('complete documentation corpus resolves with semantic article shells', async ({ page }, testInfo) => {
+test('complete English documentation corpus resolves with semantic article shells', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Full route inventory is exercised once; representative pages remain cross-browser.');
   for (const route of documentationRoutes) {
     await ready(page, route);
@@ -48,6 +51,18 @@ test('complete documentation corpus resolves with semantic article shells', asyn
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toBeVisible();
     await expect(page.locator('[data-doc-provenance]')).toBeVisible();
     await expect(page.locator('select[disabled]')).toHaveCount(0);
+  }
+});
+
+test('complete Russian documentation corpus resolves with semantic article shells', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Full route inventory is exercised once; representative pages remain cross-browser.');
+  for (const route of russianDocumentationRoutes) {
+    await ready(page, route);
+    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole('navigation', { name: 'Документация' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Навигационная цепочка' })).toBeVisible();
+    await expect(page.locator('[data-doc-provenance]')).toBeVisible();
   }
 });
 
@@ -65,6 +80,21 @@ test('public navigation exposes the programme hierarchy and hides the component 
     await expect(language).toBeVisible();
     await expect(language.locator('[aria-current="page"]')).toHaveText('English');
     await expect(language.getByRole('link', { name: 'Русский' })).toBeVisible();
+  }
+});
+
+test('Russian public navigation stays inside the Russian corpus', async ({ page }) => {
+  for (const route of [...russianCorePublicRoutes, '/ru/docs/start/project-overview/']) {
+    await ready(page, route);
+    const navigation = page.locator('nav[data-primary-navigation]');
+    await expect(navigation.locator('a[href="/ru/technology/"]')).toHaveText('Технологии');
+    await expect(navigation.locator('a[href="/ru/research/"]')).toHaveText('Исследования');
+    await expect(navigation.locator('a[href="/ru/docs/"]')).toHaveText('Документация');
+    await expect(navigation.locator('a[href="/ru/about/"]')).toHaveText('О проекте');
+    await expect(navigation.locator('a[href="/component-lab/"]')).toHaveCount(0);
+    const language = page.getByRole('navigation', { name: 'Язык' });
+    await expect(language.locator('[aria-current="page"]')).toHaveText('Русский');
+    await expect(language.getByRole('link', { name: 'English' })).toBeVisible();
   }
 });
 
@@ -117,15 +147,34 @@ test('documentation landing filters real metadata-backed pages by topic and grou
   await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(0);
 });
 
-test('documentation catalogue remains complete without JavaScript', async ({ request }) => {
-  const response = await request.get('/docs/');
-  expect(response.ok()).toBeTruthy();
-  const html = await response.text();
-  expect((html.match(/data-doc-card/gu) ?? []).length).toBe(13);
-  expect((html.match(/data-doc-group/gu) ?? []).length).toBe(5);
-  expect(html).not.toContain('hidden data-doc-card');
-  expect(html).toContain('/docs/concepts/pinega-engine-architecture/');
-  expect(html).toContain('/docs/reference/content-metadata-schema/');
+test('Russian documentation filter uses locale-aware matching and plural forms', async ({ page }) => {
+  await ready(page, '/ru/docs/');
+  const cards = page.locator('[data-doc-card]');
+  await expect(cards).toHaveCount(13);
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('13 страниц');
+  const input = page.locator('[data-doc-search-input]');
+  await input.evaluate((element: HTMLElement & { value?: string }) => {
+    element.value = 'архитектура pinega engine';
+    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  });
+  const visibleTitles = await cards.evaluateAll(elements =>
+    elements.filter(element => !(element as HTMLElement).hidden).map(element => element.querySelector('h4')?.textContent?.trim()),
+  );
+  expect(visibleTitles).toEqual(['Архитектура Pinega Engine']);
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('1 из 13 страниц');
+});
+
+test('documentation catalogues remain complete without JavaScript', async ({ request }) => {
+  for (const [route, prefix] of [['/docs/', '/docs/'], ['/ru/docs/', '/ru/docs/']] as const) {
+    const response = await request.get(route);
+    expect(response.ok()).toBeTruthy();
+    const html = await response.text();
+    expect((html.match(/data-doc-card/gu) ?? []).length).toBe(13);
+    expect((html.match(/data-doc-group/gu) ?? []).length).toBe(5);
+    expect(html).not.toContain('hidden data-doc-card');
+    expect(html).toContain(`${prefix}concepts/pinega-engine-architecture/`);
+    expect(html).toContain(`${prefix}reference/content-metadata-schema/`);
+  }
 });
 
 test('nested documentation exposes generated navigation, breadcrumb and provenance', async ({ page }) => {
@@ -139,6 +188,17 @@ test('nested documentation exposes generated navigation, breadcrumb and provenan
   await expect(page.locator('[data-doc-provenance]')).toContainText('Pinega Engine architecture for PostgreSQL 19');
   await expect(page.locator('[data-doc-provenance] a[href*="/blob/main/web/pages/en/docs/"]')).toHaveCount(1);
   await expect(page.locator('select[disabled]')).toHaveCount(0);
+});
+
+test('Russian nested documentation localizes navigation, provenance, and source identity', async ({ page }) => {
+  await ready(page, '/ru/docs/concepts/pinega-engine-architecture/');
+  const docsNavigation = page.getByRole('navigation', { name: 'Документация' });
+  await expect(docsNavigation.locator('a[aria-current="page"]')).toHaveText('Архитектура Pinega Engine');
+  const breadcrumb = page.getByRole('navigation', { name: 'Навигационная цепочка' });
+  await expect(breadcrumb.locator('ol > li')).toHaveCount(4);
+  await expect(breadcrumb).toContainText('Концепции');
+  await expect(page.locator('[data-doc-provenance]')).toContainText('Проектный контракт');
+  await expect(page.locator('[data-doc-provenance] a[href*="/blob/main/web/pages/ru/docs/"]')).toHaveCount(1);
 });
 
 test('getting-started is orientation rather than a mixed command article', async ({ page }) => {
@@ -156,6 +216,14 @@ test('research landing exposes the area catalogue, method, and existing diagrams
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Research is part');
   await expect(page.locator('#research-areas .pinega-research-programme > article')).toHaveCount(7);
   await expect(page.locator('figure[data-diagram-id]')).toHaveCount(3);
+});
+
+test('Russian research diagrams localize visible and accessible text', async ({ page }) => {
+  await ready(page, '/ru/research/');
+  await expect(page.locator('figure[data-diagram-id]')).toHaveCount(3);
+  await expect(page.getByText('Текстовое представление и семантическая модель')).toHaveCount(3);
+  await expect(page.locator('a[download]', { hasText: 'Скачать семантическую модель' })).toHaveCount(3);
+  await expect(page.locator('svg text').filter({ hasText: 'Жизненный цикл публикации и рекламации буферного фрейма' })).toBeVisible();
 });
 
 test('about page distinguishes Pinega, Pinega Labs, and future offerings', async ({ page }) => {
@@ -177,10 +245,10 @@ test('generated discovery files expose the complete documentation corpus', async
   expect(payload.site.tagline).toBe('Correctness under concurrency.');
   expect(payload.site.defaultLocale).toBe('en');
   expect(payload.site.locales.ru?.pathPrefix).toBe('/ru');
-  expect(payload.routes.filter(entry => entry.sitemap).map(entry => entry.route)).toEqual(publicRoutes);
-  expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route)).toEqual(publicRoutes);
-  expect(payload.routes.filter(entry => entry.documentation && entry.route !== '/docs/')).toHaveLength(13);
-  expect(payload.routes.filter(entry => entry.locale === 'ru').map(entry => entry.route)).toEqual(['/ru/404.html']);
+  expect(payload.routes.filter(entry => entry.sitemap).map(entry => entry.route).toSorted()).toEqual([...publicRoutes, ...russianPublicRoutes].toSorted());
+  expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route).toSorted()).toEqual([...publicRoutes, ...russianPublicRoutes].toSorted());
+  expect(payload.routes.filter(entry => entry.documentation && !['/docs/', '/ru/docs/'].includes(entry.route))).toHaveLength(26);
+  expect(payload.routes.filter(entry => entry.locale === 'ru')).toHaveLength(19);
 
   const registry = await request.get('/content/content-index.json');
   const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };
@@ -197,12 +265,15 @@ test('generated discovery files expose the complete documentation corpus', async
 
   const russianDocsManifest = await request.get('/content/ru/documentation-manifest.json');
   expect(russianDocsManifest.ok()).toBeTruthy();
-  const russianDocsPayload = await russianDocsManifest.json() as { schema_version: number; locale: string; sections: unknown[]; entries: unknown[] };
-  expect(russianDocsPayload).toEqual({ schema_version: 2, locale: 'ru', sections: [], entries: [] });
+  const russianDocsPayload = await russianDocsManifest.json() as { schema_version: number; locale: string; sections: Array<{ id: string }>; entries: Array<{ route: string }> };
+  expect(russianDocsPayload.schema_version).toBe(2);
+  expect(russianDocsPayload.locale).toBe('ru');
+  expect(russianDocsPayload.sections.map(section => section.id)).toEqual(['start', 'how-to', 'concepts', 'reference', 'contributing']);
+  expect(russianDocsPayload.entries.map(entry => entry.route)).toEqual(russianDocumentationRoutes);
 
   const sitemap = await request.get('/sitemap.xml');
   const sitemapText = await sitemap.text();
-  for (const route of publicRoutes) expect(sitemapText).toContain(route);
+  for (const route of [...publicRoutes, ...russianPublicRoutes]) expect(sitemapText).toContain(route);
   expect(sitemapText).not.toContain('/component-lab/');
 });
 
@@ -228,7 +299,7 @@ test('Russian unknown routes use the Russian 404, locale messages, and peer swit
 });
 
 test('selecting an unavailable language keeps the current page and announces localized status', async ({ page }) => {
-  await ready(page, '/');
+  await ready(page, '/component-lab/');
   const initialUrl = page.url();
   const russian = page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' });
   const notice = page.locator('[data-translation-notice]');
@@ -239,14 +310,14 @@ test('selecting an unavailable language keeps the current page and announces loc
 
   await expect(page).toHaveURL(initialUrl);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Correctness under concurrency.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Systems research, made operational.');
   await expect(russian).toBeFocused();
   await expect(notice).toBeVisible();
   await expect(notice).toHaveText('A Russian translation of this page is not available. You are staying on the current page.');
 });
 
 test('missing-translation notice has a static fragment fallback', async ({ request }) => {
-  const response = await request.get('/');
+  const response = await request.get('/component-lab/');
   const html = await response.text();
   expect(html).toContain('href="#pinega-translation-unavailable-ru"');
   expect(html).toContain('id="pinega-translation-unavailable-ru"');
@@ -266,12 +337,13 @@ test('canonical pages emit static self-canonical and reciprocal-ready locale met
   const html = await response.text();
   expect(html).toContain('<link rel="canonical" href="https://pinega.example/docs/">');
   expect(html).toContain('<link rel="alternate" hreflang="en" href="https://pinega.example/docs/">');
+  expect(html).toContain('<link rel="alternate" hreflang="ru" href="https://pinega.example/ru/docs/">');
   expect(html).toContain('<link rel="alternate" hreflang="x-default" href="https://pinega.example/docs/">');
   expect(html).toContain('<meta property="og:locale" content="en_GB">');
 });
 
 test('core public pages have no serious or critical axe violations', async ({ page }) => {
-  for (const route of [...corePublicRoutes, '/docs/concepts/pinega-engine-architecture/', '/docs/how-to/run-validation/', '/ru/404.html']) {
+  for (const route of [...corePublicRoutes, '/docs/concepts/pinega-engine-architecture/', '/docs/how-to/run-validation/']) {
     await ready(page, route);
     await page.addScriptTag({ path: axePath });
     const results = await page.evaluate(async () => {
@@ -283,9 +355,36 @@ test('core public pages have no serious or critical axe violations', async ({ pa
   }
 });
 
-test('every documentation page has no serious or critical axe violations', async ({ page }, testInfo) => {
+test('Russian core public pages have no serious or critical axe violations', async ({ page }) => {
+  for (const route of [...russianCorePublicRoutes, '/ru/docs/concepts/pinega-engine-architecture/', '/ru/docs/how-to/run-validation/', '/ru/404.html']) {
+    await ready(page, route);
+    await page.addScriptTag({ path: axePath });
+    const results = await page.evaluate(async () => {
+      const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
+      return axe.run(document, { resultTypes: ['violations'] });
+    });
+    const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+    expect(blocking, `${route}: ${blocking.map(violation => violation.id).join(', ')}`).toEqual([]);
+  }
+});
+
+test('every English documentation page has no serious or critical axe violations', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'chromium-desktop', 'Complete documentation accessibility corpus is exercised once.');
   for (const route of documentationRoutes) {
+    await ready(page, route);
+    await page.addScriptTag({ path: axePath });
+    const results = await page.evaluate(async () => {
+      const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
+      return axe.run(document, { resultTypes: ['violations'] });
+    });
+    const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
+    expect(blocking, `${route}: ${blocking.map(violation => violation.id).join(', ')}`).toEqual([]);
+  }
+});
+
+test('every Russian documentation page has no serious or critical axe violations', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Complete documentation accessibility corpus is exercised once.');
+  for (const route of russianDocumentationRoutes) {
     await ready(page, route);
     await page.addScriptTag({ path: axePath });
     const results = await page.evaluate(async () => {

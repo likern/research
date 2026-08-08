@@ -132,7 +132,11 @@ export type DiagramLayer = 'background' | 'relations' | 'objects' | 'annotations
 
 export interface DiagramLayoutOptions {
   readonly profile?: string;
+  readonly messages?: DiagramMessages;
+  readonly modelHref?: string;
 }
+
+export type DiagramMessages = Readonly<Record<string, string>>;
 
 export interface AuthoringSvgOptions extends DiagramLayoutOptions {
   readonly systemVersion?: string;

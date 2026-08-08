@@ -1,5 +1,6 @@
-import type { DiagramScene, LifecycleDiagram, SceneElement } from '../types.js';
+import type { DiagramMessages, DiagramScene, LifecycleDiagram, SceneElement } from '../types.js';
 import { group, wrapText } from '../scene.js';
+import { diagramMessage } from '../i18n.js';
 import type { LifecycleLayoutProfile } from './profiles.js';
 
 interface PositionedState {
@@ -10,13 +11,13 @@ interface PositionedState {
   readonly y: number;
 }
 
-export function layoutLifecycle(model: LifecycleDiagram, profile: LifecycleLayoutProfile): DiagramScene {
+export function layoutLifecycle(model: LifecycleDiagram, profile: LifecycleLayoutProfile, messages?: DiagramMessages): DiagramScene {
   return profile.strategy === 'horizontal-return'
-    ? layoutHorizontalReturn(model, profile)
-    : layoutSnakeGrid(model, profile);
+    ? layoutHorizontalReturn(model, profile, messages)
+    : layoutSnakeGrid(model, profile, messages);
 }
 
-function layoutSnakeGrid(model: LifecycleDiagram, profile: LifecycleLayoutProfile): DiagramScene {
+function layoutSnakeGrid(model: LifecycleDiagram, profile: LifecycleLayoutProfile, messages?: DiagramMessages): DiagramScene {
   const metrics = profile.web;
   const columns = Math.min(metrics.maxColumns, model.states.length);
   const rows = Math.ceil(model.states.length / columns);
@@ -49,7 +50,7 @@ function layoutSnakeGrid(model: LifecycleDiagram, profile: LifecycleLayoutProfil
         role: 'body', anchor: 'middle', tone: 'muted',
       })),
     ];
-    if (state.id === model.initial) children.push({ kind: 'text', x: x + metrics.stateWidth / 2, y: y - 18, text: 'INITIAL', role: 'chip', anchor: 'middle', tone: state.tone });
+    if (state.id === model.initial) children.push({ kind: 'text', x: x + metrics.stateWidth / 2, y: y - 18, text: diagramMessage(messages, 'lifecycle_initial'), role: 'chip', anchor: 'middle', tone: state.tone });
     elements.push(group(
       `${state.label}: ${state.description}`,
       'state', children,
@@ -100,7 +101,7 @@ function layoutSnakeGrid(model: LifecycleDiagram, profile: LifecycleLayoutProfil
     }
 
     elements.push(group(
-      `${transition.label}: ${transition.from} to ${transition.to}${transition.guard ? ` when ${transition.guard}` : ''}`,
+      diagramMessage(messages, 'transition_accessible', { label: transition.label, from: transition.from, to: transition.to, guard: transition.guard ? diagramMessage(messages, 'transition_when', { guard: transition.guard }) : '' }),
       'transition', children,
       { semanticId: `transition-${transition.id}`, layer: 'relations' },
     ));
@@ -112,7 +113,7 @@ function layoutSnakeGrid(model: LifecycleDiagram, profile: LifecycleLayoutProfil
   };
 }
 
-function layoutHorizontalReturn(model: LifecycleDiagram, profile: LifecycleLayoutProfile): DiagramScene {
+function layoutHorizontalReturn(model: LifecycleDiagram, profile: LifecycleLayoutProfile, messages?: DiagramMessages): DiagramScene {
   const metrics = profile.web;
   const stateSpacing = metrics.stateSpacing || metrics.stateWidth + metrics.columnGap;
   const width = metrics.left * 2 + Math.max(0, model.states.length - 1) * stateSpacing + metrics.stateWidth;
@@ -139,7 +140,7 @@ function layoutHorizontalReturn(model: LifecycleDiagram, profile: LifecycleLayou
         role: 'body', anchor: 'middle', tone: 'muted', className: 'pinega-diagram-lifecycle-description',
       })),
     ];
-    if (selected) children.push({ kind: 'text', x, y: stateCenterY - 52, text: 'INITIAL', role: 'chip', anchor: 'middle', tone: state.tone });
+    if (selected) children.push({ kind: 'text', x, y: stateCenterY - 52, text: diagramMessage(messages, 'lifecycle_initial'), role: 'chip', anchor: 'middle', tone: state.tone });
     if (state.id === 'retired') children.push({ kind: 'circle', cx: x, cy: stateCenterY, radius: 18, tone: state.tone, fillTone: null, dash: 'dashed', strokeWidth: 1, className: 'pinega-diagram-retired-halo' });
     elements.push(group(
       `${state.label}: ${state.description}`,
@@ -170,7 +171,7 @@ function layoutHorizontalReturn(model: LifecycleDiagram, profile: LifecycleLayou
       if (transition.guard) children.push({ kind: 'text', x: midpoint, y: stateCenterY + 25, text: transition.guard, role: 'code', anchor: 'middle', tone: 'muted' });
     }
     elements.push(group(
-      `${transition.label}: ${transition.from} to ${transition.to}${transition.guard ? ` when ${transition.guard}` : ''}`,
+      diagramMessage(messages, 'transition_accessible', { label: transition.label, from: transition.from, to: transition.to, guard: transition.guard ? diagramMessage(messages, 'transition_when', { guard: transition.guard }) : '' }),
       'transition', children,
       { semanticId: `transition-${transition.id}`, layer: 'relations' },
     ));

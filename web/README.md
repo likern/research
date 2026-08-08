@@ -134,6 +134,28 @@ behaviour. It does not publish machine-translated or placeholder Russian
 articles. Gate 3B owns translation, review, and activation of the Russian
 corpus.
 
+## Gate 3B Russian content corpus and review
+
+Gate 3B publishes reviewed Russian peers for all 18 canonical public pages:
+the homepage, Technology, Research, About, the documentation landing, and all
+13 nested documentation pages. The internal component laboratory remains
+English-only and outside the public corpus. The Russian 404 is updated to link
+to the published Russian entry points.
+
+The editorial and review contract lives in
+`content/localization-policy.md`; canonical Russian terminology is recorded in
+`content/terminology.ru.json`, and the initial review evidence is recorded in
+`content/localization-review.ru.md`. A Russian variant is activated only as a
+complete `pages/ru/` HTML source with localized registry metadata and a current
+`reviewed_revision`. The build then derives reciprocal `hreflang`, the Russian
+documentation manifest, navigation, breadcrumbs, related links, topic-filter
+cards, and sitemap inclusion from the same registry.
+
+The working brand line `Correctness under concurrency.` remains English and is
+marked `lang="en" translate="no"` on Russian pages. Code, commands, identifiers,
+API names, and project/product names remain unchanged; surrounding prose,
+metadata, captions, diagram accessibility text, and transcripts are Russian.
+
 Client JavaScript localizes interaction-only text such as copy state, theme
 controls, and missing-translation status. The status also has a fragment-based
 HTML/CSS fallback when JavaScript is unavailable. JavaScript does not translate

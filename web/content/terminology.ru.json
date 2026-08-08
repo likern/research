@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "locale": "ru",
+  "brand_line": {
+    "source": "Correctness under concurrency.",
+    "target": "Correctness under concurrency.",
+    "policy": "preserve",
+    "markup": "lang=en translate=no"
+  },
+  "terms": [
+    { "source": "available", "target": "доступно", "policy": "translate", "note": "A runnable or inspectable artefact exists." },
+    { "source": "design contract", "target": "проектный контракт", "policy": "translate", "note": "Accepted and validated model or contract; not necessarily a production implementation." },
+    { "source": "research", "target": "исследование", "policy": "translate", "note": "Actively investigated and subject to change with evidence." },
+    { "source": "decision", "target": "решение", "policy": "translate", "note": "Accepted project direction until explicitly superseded." },
+    { "source": "concurrency", "target": "конкурентное выполнение", "policy": "translate", "note": "Use «параллелизм» only for actual simultaneous execution or parallel architecture." },
+    { "source": "correctness", "target": "корректность", "policy": "translate", "note": "Do not weaken to quality or reliability." },
+    { "source": "linearizability", "target": "линеаризуемость", "policy": "translate", "note": "At first pedagogical use, the English term may follow in parentheses." },
+    { "source": "lock-free", "target": "lock-free", "policy": "preserve", "note": "Explain the progress guarantee in Russian prose when material." },
+    { "source": "wait-free", "target": "wait-free", "policy": "preserve", "note": "Explain the progress guarantee in Russian prose when material." },
+    { "source": "Safe Memory Reclamation", "target": "безопасная рекламация памяти", "policy": "bilingual-first-use", "note": "Use SMR after the first expanded occurrence." },
+    { "source": "out-of-place row versions", "target": "версии строк с размещением вне исходного положения", "policy": "translate", "note": "May be shortened to «внепозиционные версии строк» after definition." },
+    { "source": "shared buffer pool", "target": "общий буферный пул", "policy": "translate", "note": "Pinega owns this pool; do not imply PostgreSQL shared buffers." },
+    { "source": "Table Access Method", "target": "Table Access Method", "policy": "preserve", "note": "Use PostgreSQL term and optionally explain as API доступа к таблицам." },
+    { "source": "Write-Ahead Log", "target": "журнал предзаписи", "policy": "bilingual-first-use", "note": "Use WAL in technical text after first occurrence." },
+    { "source": "snapshot", "target": "снимок", "policy": "translate", "note": "Preserve identifiers such as S17." },
+    { "source": "visibility", "target": "видимость", "policy": "translate", "note": "Use for MVCC and memory-publication semantics." },
+    { "source": "publication", "target": "публикация", "policy": "translate", "note": "Use «атомарная публикация» where the atomic contract is material." },
+    { "source": "reclamation", "target": "рекламация", "policy": "translate", "note": "Distinguish retirement from reclamation/reuse." },
+    { "source": "topic filter", "target": "фильтр по темам", "policy": "translate", "note": "Do not call the current control full-text search." },
+    { "source": "Pinega", "target": "Pinega", "policy": "preserve", "note": "Master brand and programme." },
+    { "source": "Pinega Labs", "target": "Pinega Labs", "policy": "preserve", "note": "Working research/engineering and possible future company identity." },
+    { "source": "Pinega Engine", "target": "Pinega Engine", "policy": "preserve", "note": "First active implementation programme; not a current production release." },
+    { "source": "PostgreSQL", "target": "PostgreSQL", "policy": "preserve", "note": "Upstream project name." },
+    { "source": "YDMP", "target": "YDMP", "policy": "preserve", "note": "Research workflow and workspace name." },
+    { "source": "Pinega Strata", "target": "Pinega Strata", "policy": "preserve", "note": "Shared design system." },
+    { "source": "Scientific Diagram Language", "target": "Scientific Diagram Language", "policy": "preserve", "note": "Shared semantic diagram subsystem." }
+  ]
+}

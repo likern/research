@@ -18,9 +18,9 @@ import {
 import { layoutVersionChain } from './layout/version-chain.js';
 
 export function layoutDiagram(model: DiagramModel, options: DiagramLayoutOptions = {}): DiagramScene {
-  if (model.kind === 'history') return layoutHistory(model, resolveHistoryLayoutProfile(options.profile));
-  if (model.kind === 'version-chain') return layoutVersionChain(model, resolveVersionChainLayoutProfile(options.profile));
-  return layoutLifecycle(model, resolveLifecycleLayoutProfile(options.profile));
+  if (model.kind === 'history') return layoutHistory(model, resolveHistoryLayoutProfile(options.profile), options.messages);
+  if (model.kind === 'version-chain') return layoutVersionChain(model, resolveVersionChainLayoutProfile(options.profile), options.messages);
+  return layoutLifecycle(model, resolveLifecycleLayoutProfile(options.profile), options.messages);
 }
 
 export interface SceneGroupOptions {
