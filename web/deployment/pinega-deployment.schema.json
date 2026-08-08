@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pinega.example/schemas/pinega-deployment.schema.json",
+  "title": "Pinega Web deployment provenance",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "repository",
+    "pull_request",
+    "source_sha",
+    "base_sha",
+    "tested_sha",
+    "source_ref",
+    "base_ref",
+    "workflow_name",
+    "workflow_run_id",
+    "workflow_run_attempt",
+    "workflow_run_url",
+    "build_profile",
+    "provider",
+    "expected_environment"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
+    "pull_request": { "type": "integer", "minimum": 1 },
+    "source_sha": { "$ref": "#/$defs/commitSha" },
+    "base_sha": { "$ref": "#/$defs/commitSha" },
+    "tested_sha": { "$ref": "#/$defs/commitSha" },
+    "source_ref": { "$ref": "#/$defs/gitRef" },
+    "base_ref": { "$ref": "#/$defs/gitRef" },
+    "workflow_name": { "type": "string", "minLength": 1, "maxLength": 256 },
+    "workflow_run_id": { "type": "string", "pattern": "^[0-9]+$" },
+    "workflow_run_attempt": { "type": "integer", "minimum": 1 },
+    "workflow_run_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+    "build_profile": { "const": "cloudflare-pages-preview" },
+    "provider": { "const": "cloudflare-pages" },
+    "expected_environment": { "const": "preview" }
+  },
+  "$defs": {
+    "commitSha": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
+    "gitRef": { "type": "string", "minLength": 1, "maxLength": 256 }
+  }
+}

@@ -28,6 +28,12 @@ Version 0.4 implements **Gate 2 — Documentation Reorganisation and Review**:
   remain later gates;
 - Scientific Diagram Language families and accepted layouts remain unchanged.
 
+Delivery Gate 1 is a separate infrastructure contract rather than a public-site
+information-architecture version. It adds build-once/test/deploy-exact-artifact
+Cloudflare Pages commit previews, deployment provenance, artifact attestation,
+GitHub `View deployment`, and remote HTTPS/browser verification. Production
+delivery remains out of scope. See `docs/web-delivery-gate-1.md`.
+
 The working master-brand line remains:
 
 ```text
