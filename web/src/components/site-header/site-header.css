@@ -77,7 +77,9 @@
     background: var(--pinega-sys-color-surface-raised);
   }
 
-  .pinega-language-switcher a {
+  .pinega-language-option {
+    display: inline-flex;
+    align-items: center;
     padding: var(--pinega-ref-space-2xs) var(--pinega-ref-space-xs);
     color: var(--pinega-sys-color-text-secondary);
     font-size: 0.8rem;
@@ -86,14 +88,42 @@
     text-decoration: none;
   }
 
-  .pinega-language-switcher a + a {
+  .pinega-language-option + .pinega-language-option {
     border-inline-start: 1px solid var(--pinega-sys-color-border-subtle);
   }
 
   .pinega-language-switcher a:hover,
-  .pinega-language-switcher a[aria-current='page'] {
+  .pinega-language-option[aria-current='page'] {
     background: var(--pinega-sys-color-surface-canvas);
     color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-language-switcher a:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--pinega-sys-color-action-primary);
+    outline-offset: -2px;
+  }
+
+  .pinega-translation-notice {
+    display: none;
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    border-block-end: 1px solid color-mix(in oklab, var(--pinega-sys-color-action-primary) 35%, var(--pinega-sys-color-border-subtle));
+    background: color-mix(in oklab, var(--pinega-sys-color-action-primary) 9%, var(--pinega-sys-color-surface-raised));
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-translation-notice:target,
+  .pinega-translation-notice[data-visible] {
+    display: block;
+  }
+
+  .pinega-translation-notice p {
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin: 0 auto;
+    padding-block: var(--pinega-ref-space-s);
+    font-size: 0.9rem;
+    font-weight: var(--pinega-ref-font-weight-medium);
   }
 
   pinega-site-header [data-navigation-toggle] {
@@ -149,6 +179,15 @@
 
     pinega-site-header .pinega-cluster {
       gap: var(--pinega-ref-space-2xs);
+    }
+
+    .pinega-language-option {
+      padding-inline: var(--pinega-ref-space-2xs);
+      font-size: 0.75rem;
+    }
+
+    .pinega-translation-notice p {
+      inline-size: min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide));
     }
   }
 }

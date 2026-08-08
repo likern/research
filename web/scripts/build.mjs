@@ -311,6 +311,13 @@ function expandPages(index) {
       route: translation.route,
       canonical: translation.canonical,
     }));
+    const languages = Object.entries(index.site.locales).map(([languageLocale, languageMetadata]) => ({
+      locale: languageLocale,
+      lang: languageMetadata.lang,
+      direction: languageMetadata.direction,
+      label: languageMetadata.label,
+      route: entry.locales[languageLocale]?.route ?? null,
+    }));
     return {
       ...entry,
       ...localized,
@@ -324,6 +331,7 @@ function expandPages(index) {
       output: localized.output_path,
       primary_navigation: resolvePrimaryNavigation(index, locale),
       translations,
+      languages,
       documentation: entry.documentation ? { ...entry.documentation, ...localized.documentation } : undefined,
     };
   }));
@@ -345,6 +353,11 @@ async function loadLocaleMessages(locales) {
   for (const locale of Object.keys(locales)) {
     const messages = JSON.parse(await readFile(resolve(contentRoot, `messages/${locale}.json`), 'utf8'));
     if (messages.locale !== locale) throw new TypeError(`messages/${locale}.json must declare locale=${locale}`);
+    for (const targetLocale of Object.keys(locales)) {
+      if (typeof messages.navigation?.translation_unavailable?.[targetLocale] !== 'string') {
+        throw new TypeError(`messages/${locale}.json must define navigation.translation_unavailable.${targetLocale}`);
+      }
+    }
     catalogues.set(locale, messages);
   }
   return catalogues;
@@ -378,7 +391,7 @@ function validatePageSource(html, page) {
   } else if (page.documentation) {
     for (const marker of ['PINEGA_DOC_NAV', 'PINEGA_BREADCRUMBS', 'PINEGA_DOC_PROVENANCE']) if (!html.includes(`<!-- ${marker} -->`)) throw new TypeError(`${page.source}: missing ${marker} build marker`);
   }
-  if (page.translations.length > 1 && !html.includes('<!-- PINEGA_LANGUAGE_SWITCHER -->')) throw new TypeError(`${page.source}: translated pages must expose the language-switcher marker`);
+  if (!html.includes('<!-- PINEGA_LANGUAGE_SWITCHER -->')) throw new TypeError(`${page.source}: every registered page must expose the language-switcher marker`);
 }
 
 function replaceLocalePlaceholders(html, page) {
@@ -390,8 +403,11 @@ function replaceLocalePlaceholders(html, page) {
   });
   const metadata = renderLocaleMetadata(page);
   output = output.replace('<!-- PINEGA_PROJECT_META -->', `${metadata}${metadata ? '\n    ' : ''}<!-- PINEGA_PROJECT_META -->`);
-  if (output.includes('<!-- PINEGA_LANGUAGE_SWITCHER -->')) {
-    output = output.replace('<!-- PINEGA_LANGUAGE_SWITCHER -->', renderLanguageSwitcher(page));
+  output = output.replace('<!-- PINEGA_LANGUAGE_SWITCHER -->', renderLanguageSwitcher(page));
+  const notices = renderTranslationNotices(page);
+  if (notices) {
+    if (!output.includes('</pinega-site-header>')) throw new TypeError(`${page.source}: missing site-header boundary for translation notices`);
+    output = output.replace('</pinega-site-header>', `${notices}\n      </pinega-site-header>`);
   }
   if (/PINEGA_LANGUAGE_SWITCHER/u.test(output)) throw new TypeError(`${page.source}: unresolved language-switcher marker`);
   return output;
@@ -418,8 +434,30 @@ function renderLocaleMetadata(page) {
 
 function renderLanguageSwitcher(page) {
   const messages = messagesFor(page.locale);
-  const links = page.translations.map(translation => `<a href="${escapeHtml(translation.route)}" lang="${escapeHtml(translation.lang)}" hreflang="${escapeHtml(translation.lang)}"${translation.locale === page.locale ? ' aria-current="page"' : ''}>${escapeHtml(translation.label)}</a>`).join('');
-  return `<nav class="pinega-language-switcher" aria-label="${escapeHtml(messages.navigation.language)}">${links}</nav>`;
+  const options = page.languages.map(language => {
+    const label = `<span lang="${escapeHtml(language.lang)}" dir="${escapeHtml(language.direction)}" translate="no">${escapeHtml(language.label)}</span>`;
+    if (language.locale === page.locale) return `<span class="pinega-language-option" aria-current="page">${label}</span>`;
+    if (language.route) return `<a class="pinega-language-option" href="${escapeHtml(language.route)}" hreflang="${escapeHtml(language.lang)}">${label}</a>`;
+    const noticeId = translationNoticeId(language.locale);
+    return `<a class="pinega-language-option" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${label}</a>`;
+  }).join('');
+  return `<nav class="pinega-language-switcher" aria-label="${escapeHtml(messages.navigation.language)}">${options}</nav>`;
+}
+
+function renderTranslationNotices(page) {
+  const messages = messagesFor(page.locale);
+  return page.languages
+    .filter(language => language.locale !== page.locale && !language.route)
+    .map(language => {
+      const noticeId = translationNoticeId(language.locale);
+      const message = messages.navigation.translation_unavailable[language.locale];
+      return `<aside class="pinega-translation-notice" id="${noticeId}" data-translation-notice role="status" aria-live="polite" aria-atomic="true"><p data-translation-notice-message data-message="${escapeHtml(message)}">${escapeHtml(message)}</p></aside>`;
+    })
+    .join('');
+}
+
+function translationNoticeId(locale) {
+  return `pinega-translation-unavailable-${locale.toLocaleLowerCase()}`;
 }
 
 function replaceDocumentationPlaceholders(html, page, allPages) {

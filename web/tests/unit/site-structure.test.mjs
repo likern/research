@@ -104,9 +104,13 @@ test('registered locale variants preserve semantic HTML and registry metadata wi
   }
 });
 
-test('language variants are explicit peers and the switcher never targets a missing page', () => {
+test('language variants are explicit peers and every page reserves the persistent selector', () => {
   const notFound = entries.find(entry => entry.id === 'not-found');
   assert.deepEqual(Object.keys(notFound.locales), ['en', 'ru']);
+  for (const entry of variants) {
+    const html = sourceByRoute.get(entry.route);
+    assert.match(html, /<!-- PINEGA_LANGUAGE_SWITCHER -->/u, `${entry.route}: missing language selector slot`);
+  }
   for (const localized of Object.values(notFound.locales)) {
     const html = sourceByRoute.get(localized.route);
     assert.match(html, /<!-- PINEGA_LANGUAGE_SWITCHER -->/u);
@@ -193,6 +197,9 @@ test('build generates locale-aware discovery, navigation, SEO, and freshness che
   assert.match(build, /schema_version !== 3/u);
   assert.match(build, /reviewed_revision !== entry\.revision/u);
   assert.match(build, /renderLanguageSwitcher/u);
+  assert.match(build, /renderTranslationNotices/u);
+  assert.match(build, /data-translation-unavailable/u);
+  assert.match(build, /role="status"/u);
   assert.match(build, /hreflang/u);
   assert.match(build, /renderDocumentationCatalogue/u);
   assert.match(build, /content\/\$\{locale\}\/documentation-manifest\.json/u);

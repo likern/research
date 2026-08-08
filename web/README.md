@@ -120,9 +120,13 @@ Russian: /ru/, /ru/technology/, /ru/docs/...
 
 Every published canonical variant receives a self canonical, a self
 `hreflang`, and `x-default` for the default English variant. Cross-language
-`hreflang` and the visible language switcher are generated only when both
-variants are present in the registry. The server never redirects from
-`Accept-Language`; users and crawlers can select stable URLs directly.
+`hreflang` is generated only for a real registered peer. The visible language
+selector is always present, names every configured language in that language,
+and marks the current language explicitly. Selecting an unavailable variant
+keeps the current URL and content, then exposes a localized status banner below
+the top header; it never routes to placeholder or fallback article content.
+The server never redirects from `Accept-Language`; users and crawlers select
+stable URLs directly.
 
 Gate 3A supplies the schema, locale-aware build, localized UI catalogues,
 per-locale manifests, Russian not-found response, and shared component/runtime
@@ -130,8 +134,10 @@ behaviour. It does not publish machine-translated or placeholder Russian
 articles. Gate 3B owns translation, review, and activation of the Russian
 corpus.
 
-Client JavaScript localizes interaction-only text such as copy state and theme
-controls. It does not translate article content. Web Awesome Core loads its
+Client JavaScript localizes interaction-only text such as copy state, theme
+controls, and missing-translation status. The status also has a fragment-based
+HTML/CSS fallback when JavaScript is unavailable. JavaScript does not translate
+article content. Web Awesome Core loads its
 Russian translation module when `<html lang="ru">`; a purchased project is
 expected to expose the matching `translations/ru.js` beside its configured
 project module.

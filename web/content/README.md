@@ -72,9 +72,11 @@ owns repeated discovery/navigation chrome, not article prose.
 
 The registry declares `en` as the default unprefixed locale and reserves `/ru/`
 for Russian. The static build generates `<html lang>`/`dir`, self canonical,
-`og:locale`, and `hreflang` from registered variants. A language-switcher link
-is generated only for a real canonical counterpart. The development/static
-server does not use `Accept-Language` redirects.
+`og:locale`, and `hreflang` from registered variants. The language selector is
+generated for every registered page and always exposes every configured locale.
+A real counterpart is a locale link; an unavailable counterpart keeps the
+current page and reveals a status message from the current locale catalogue.
+The development/static server does not use `Accept-Language` redirects.
 
 Localized UI strings live in `messages/<locale>.json`. They are limited to
 shared navigation and component behaviour; article prose remains first-class

@@ -9,6 +9,7 @@ class PinegaSiteHeader extends HTMLElement {
   connectedCallback(): void {
     this.#controller?.abort();
     this.#controller = new AbortController();
+    this.addEventListener('click', this.#handleLanguageSelection, { signal: this.#controller.signal });
 
     const button = this.querySelector<HTMLElement>('[data-navigation-toggle]');
     const navigation = this.querySelector<HTMLElement>('nav[data-primary-navigation]');
@@ -43,6 +44,29 @@ class PinegaSiteHeader extends HTMLElement {
 
   #handleNavigationClick = (event: Event): void => {
     if (event.target instanceof Element && event.target.closest('a')) this.#setOpen(false);
+  };
+
+  #handleLanguageSelection = (event: Event): void => {
+    const control = event.target instanceof Element
+      ? event.target.closest<HTMLAnchorElement>('[data-translation-unavailable]')
+      : null;
+    if (!control || !this.contains(control)) return;
+
+    const noticeId = control.getAttribute('aria-controls');
+    const notice = noticeId ? document.getElementById(noticeId) : null;
+    if (!(notice instanceof HTMLElement) || !this.contains(notice)) return;
+    const message = notice.querySelector<HTMLElement>('[data-translation-notice-message]');
+    if (!message) return;
+
+    event.preventDefault();
+    this.querySelectorAll<HTMLElement>('[data-translation-notice][data-visible]').forEach(element => {
+      element.removeAttribute('data-visible');
+    });
+    message.textContent = '';
+    requestAnimationFrame(() => {
+      message.textContent = message.dataset.message ?? '';
+      notice.setAttribute('data-visible', '');
+    });
   };
 
   #setOpen(open: boolean): void {

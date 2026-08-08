@@ -8,9 +8,16 @@ async function open(page: Page, route: string) {
 
 test('homepage master-brand narrative and programme catalogue', async ({ page }) => {
   await open(page, '/');
+  await expect(page.locator('pinega-site-header')).toHaveScreenshot('home-language-selector.png');
   await expect(page.locator('pinega-hero')).toHaveScreenshot('home-master-brand-hero.png');
   await expect(page.locator('#programmes')).toHaveScreenshot('home-programmes.png');
   await expect(page.locator('#pinega-engine')).toHaveScreenshot('home-engine.png');
+});
+
+test('missing Russian translation is reported below the top header', async ({ page }) => {
+  await open(page, '/');
+  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' }).click();
+  await expect(page.locator('pinega-site-header')).toHaveScreenshot('home-translation-unavailable.png');
 });
 
 test('technology catalogue and Pinega Engine boundary', async ({ page }) => {

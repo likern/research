@@ -61,6 +61,10 @@ test('public navigation exposes the programme hierarchy and hides the component 
     await expect(navigation.locator('a[href="/about/"]')).toHaveText('About');
     await expect(navigation.locator('a[href="https://github.com/likern/research"]')).toHaveText('GitHub');
     await expect(navigation.locator('a[href="/component-lab/"]')).toHaveCount(0);
+    const language = page.getByRole('navigation', { name: 'Language' });
+    await expect(language).toBeVisible();
+    await expect(language.locator('[aria-current="page"]')).toHaveText('English');
+    await expect(language.getByRole('link', { name: 'Русский' })).toBeVisible();
   }
 });
 
@@ -218,8 +222,36 @@ test('Russian unknown routes use the Russian 404, locale messages, and peer swit
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Эта страница не входит в текущую модель.');
   const switcher = page.getByRole('navigation', { name: 'Язык' });
   await expect(switcher.getByRole('link', { name: 'English' })).toHaveAttribute('href', '/404.html');
-  await expect(switcher.getByRole('link', { name: 'Русский' })).toHaveAttribute('aria-current', 'page');
+  await expect(switcher.locator('[aria-current="page"]')).toHaveText('Русский');
+  await expect(page.locator('[data-translation-notice]')).toHaveCount(0);
   await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать тёмную тему');
+});
+
+test('selecting an unavailable language keeps the current page and announces localized status', async ({ page }) => {
+  await ready(page, '/');
+  const initialUrl = page.url();
+  const russian = page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' });
+  const notice = page.getByRole('status');
+  await expect(notice).toBeHidden();
+
+  await russian.focus();
+  await page.keyboard.press('Enter');
+
+  await expect(page).toHaveURL(initialUrl);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Correctness under concurrency.');
+  await expect(russian).toBeFocused();
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveText('A Russian translation of this page is not available. You are staying on the current page.');
+});
+
+test('missing-translation notice has a static fragment fallback', async ({ request }) => {
+  const response = await request.get('/');
+  const html = await response.text();
+  expect(html).toContain('href="#pinega-translation-unavailable-ru"');
+  expect(html).toContain('id="pinega-translation-unavailable-ru"');
+  expect(html).toContain('role="status"');
+  expect(html).toContain('A Russian translation of this page is not available.');
 });
 
 test('language selection is URL-owned and Accept-Language never redirects the default route', async ({ request }) => {

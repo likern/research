@@ -6,6 +6,10 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const diagramIds = ['buffer-frame-lifecycle', 'linearizability-overlap', 'version-chain-snapshot'];
 const contentIndex = JSON.parse(await readFile(resolve(root, 'content/content-index.json'), 'utf8'));
+const localeMessages = Object.fromEntries(await Promise.all(Object.keys(contentIndex.site.locales).map(async locale => [
+  locale,
+  JSON.parse(await readFile(resolve(root, `content/messages/${locale}.json`), 'utf8')),
+])));
 const variants = contentIndex.entries.flatMap(entry => Object.entries(entry.locales).map(([locale, localized]) => ({
   ...entry,
   ...localized,
@@ -60,6 +64,20 @@ for (const entry of variants) {
   assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${entry.output_path} must contain one h1`);
   assert.match(html, new RegExp(`<title>${escapeRegex(entry.canonical_title)}<\\/title>`, 'u'));
   assert.match(html, new RegExp(`<meta name="description" content="${escapeRegex(entry.summary)}">`, 'u'));
+  assert.match(html, new RegExp(`<nav class="pinega-language-switcher" aria-label="${escapeRegex(localeMessages[entry.locale].navigation.language)}">`, 'u'));
+  for (const [locale, metadata] of Object.entries(contentIndex.site.locales)) {
+    const label = `<span lang="${metadata.lang}" dir="${metadata.direction}" translate="no">${metadata.label}</span>`;
+    if (locale === entry.locale) {
+      assert.match(html, new RegExp(`<span class="pinega-language-option" aria-current="page">${escapeRegex(label)}<\/span>`, 'u'));
+    } else if (entry.translations[locale]) {
+      assert.match(html, new RegExp(`<a class="pinega-language-option" href="${escapeRegex(entry.translations[locale])}" hreflang="${escapeRegex(metadata.lang)}">${escapeRegex(label)}<\/a>`, 'u'));
+    } else {
+      const noticeId = `pinega-translation-unavailable-${locale}`;
+      const message = localeMessages[entry.locale].navigation.translation_unavailable[locale];
+      assert.match(html, new RegExp(`<a class="pinega-language-option" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${escapeRegex(label)}<\/a>`, 'u'));
+      assert.match(html, new RegExp(`<aside class="pinega-translation-notice" id="${noticeId}" data-translation-notice role="status"[^>]*>[\\s\\S]*${escapeRegex(message)}`, 'u'));
+    }
+  }
   if (entry.canonical) {
     assert.match(html, new RegExp(`<link rel="canonical" href="https:\/\/pinega\\.example${escapeRegex(entry.route)}">`, 'u'));
     for (const [locale, route] of Object.entries(entry.translations)) {
@@ -134,12 +152,16 @@ assert.doesNotMatch(sitemap, /component-lab|\/ru\//u);
 const home = await readFile(resolve(root, 'index.html'), 'utf8');
 assert.match(home, /<h1>Correctness under concurrency\.<\/h1>/u);
 assert.match(home, /Pinega Engine is\s+the first active implementation programme/u);
+assert.match(home, /href="#pinega-translation-unavailable-ru" data-translation-unavailable/u);
+assert.match(home, /A Russian translation of this page is not available\. You are staying on the current page\./u);
+assert.doesNotMatch(home, /<link rel="alternate" hreflang="ru"/u);
 
 const russianNotFound = await readFile(resolve(root, 'ru/404.html'), 'utf8');
 assert.match(russianNotFound, /<html\b[^>]*lang="ru"/u);
 assert.match(russianNotFound, /aria-label="Язык"/u);
-assert.match(russianNotFound, /href="\/404\.html" lang="en" hreflang="en"/u);
-assert.match(russianNotFound, /href="\/ru\/404\.html" lang="ru" hreflang="ru" aria-current="page"/u);
+assert.match(russianNotFound, /href="\/404\.html" hreflang="en"><span lang="en"/u);
+assert.match(russianNotFound, /aria-current="page"><span lang="ru"/u);
+assert.doesNotMatch(russianNotFound, /data-translation-unavailable/u);
 assert.match(russianNotFound, /Использовать тёмную тему/u);
 
 const architecture = await readFile(resolve(root, 'docs/concepts/pinega-engine-architecture/index.html'), 'utf8');

@@ -7,7 +7,11 @@
   "navigation": {
     "language": "Language",
     "documentation": "Documentation",
-    "breadcrumb": "Breadcrumb"
+    "breadcrumb": "Breadcrumb",
+    "translation_unavailable": {
+      "en": "An English translation of this page is not available. You are staying on the current page.",
+      "ru": "A Russian translation of this page is not available. You are staying on the current page."
+    }
   },
   "search": {
     "of": "of",
