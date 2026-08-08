@@ -231,7 +231,7 @@ test('selecting an unavailable language keeps the current page and announces loc
   await ready(page, '/');
   const initialUrl = page.url();
   const russian = page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' });
-  const notice = page.getByRole('status');
+  const notice = page.locator('[data-translation-notice]');
   await expect(notice).toBeHidden();
 
   await russian.focus();
