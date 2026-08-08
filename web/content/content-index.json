@@ -111,6 +111,21 @@
           "searchable": true,
           "structured_data_type": "WebSite",
           "canonical": true
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/",
+          "source_path": "pages/ru/home/index.html",
+          "output_path": "ru/index.html",
+          "canonical_title": "Pinega — корректность при конкурентном выполнении",
+          "navigation_title": "Главная",
+          "summary": "Pinega превращает исследования систем баз данных в высокопроизводительное программное обеспечение для хранения данных, транзакций, оптимизации, верификации и распределённого выполнения.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "WebSite",
+          "canonical": true
         }
       }
     },
@@ -147,6 +162,21 @@
           "navigation_title": "Technology",
           "summary": "Pinega technology programmes connect database research to measured, maintainable software, beginning with Pinega Engine.",
           "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/technology/",
+          "source_path": "pages/ru/technology/index.html",
+          "output_path": "ru/technology/index.html",
+          "canonical_title": "Технологии — Pinega",
+          "navigation_title": "Технологии",
+          "summary": "Технологические программы Pinega связывают исследования систем баз данных с измеримым и сопровождаемым программным обеспечением; первой такой программой является Pinega Engine.",
+          "updated_at": "2026-08-08",
           "reviewed_revision": 1,
           "sitemap": true,
           "searchable": true,
@@ -190,6 +220,21 @@
           "navigation_title": "Research",
           "summary": "The Pinega research programme covers storage, concurrency, transactions, distributed systems, optimisation, performance engineering, and verification.",
           "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/research/",
+          "source_path": "pages/ru/research/index.html",
+          "output_path": "ru/research/index.html",
+          "canonical_title": "Исследования — Pinega",
+          "navigation_title": "Исследования",
+          "summary": "Исследовательская программа Pinega охватывает хранение данных, конкурентное выполнение, транзакции, распределённые системы, оптимизацию, инженерию производительности и верификацию.",
+          "updated_at": "2026-08-08",
           "reviewed_revision": 1,
           "sitemap": true,
           "searchable": true,
@@ -245,6 +290,24 @@
           "documentation": {
             "applies_to": "Pinega public documentation corpus"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/",
+          "source_path": "pages/ru/docs/index.html",
+          "output_path": "ru/docs/index.html",
+          "canonical_title": "Документация — Pinega",
+          "navigation_title": "Документация",
+          "summary": "Документация Pinega организована в отдельные вводные материалы, практические руководства, объяснения, справочники и правила участия для программы на исследовательской стадии.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Публичный корпус документации Pinega"
+          }
         }
       }
     },
@@ -298,6 +361,24 @@
           "canonical": true,
           "documentation": {
             "applies_to": "Pinega research-stage documentation"
+          }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/getting-started/",
+          "source_path": "pages/ru/docs/getting-started/index.html",
+          "output_path": "ru/docs/getting-started/index.html",
+          "canonical_title": "Начало работы — документация Pinega",
+          "navigation_title": "Начало работы",
+          "summary": "Выберите раздел документации Pinega в зависимости от того, нужны ли вам ориентация, первый воспроизводимый запуск, процедура решения задачи, объяснение или точный справочный материал.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Документация Pinega на исследовательской стадии"
           }
         }
       }
@@ -355,6 +436,24 @@
           "documentation": {
             "applies_to": "Pinega programme and repository"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/start/project-overview/",
+          "source_path": "pages/ru/docs/start/project-overview/index.html",
+          "output_path": "ru/docs/start/project-overview/index.html",
+          "canonical_title": "Обзор проекта — документация Pinega",
+          "navigation_title": "Обзор проекта",
+          "summary": "Узнайте, что означают Pinega, Pinega Labs и Pinega Engine, какие артефакты уже есть в репозитории и какие продуктовые заявления пока относятся к будущей работе.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Программа Pinega и репозиторий"
+          }
         }
       }
     },
@@ -409,6 +508,24 @@
           "canonical": true,
           "documentation": {
             "applies_to": "YDMP Research Workspace"
+          }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/start/research-workspace/",
+          "source_path": "pages/ru/docs/start/research-workspace/index.html",
+          "output_path": "ru/docs/start/research-workspace/index.html",
+          "canonical_title": "Воспроизведение исследовательского рабочего пространства — документация Pinega",
+          "navigation_title": "Воспроизвести исследовательское рабочее пространство",
+          "summary": "Запустите зафиксированное исследовательское рабочее пространство Pinega из чистой рабочей копии, изучите зарегистрированные документы и соберите текущие артефакты Typst и YDMP.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Исследовательское рабочее пространство YDMP"
           }
         }
       }
@@ -465,6 +582,24 @@
           "documentation": {
             "applies_to": "Pinega Web workspace"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/how-to/build-the-site/",
+          "source_path": "pages/ru/docs/how-to/build-the-site/index.html",
+          "output_path": "ru/docs/how-to/build-the-site/index.html",
+          "canonical_title": "Сборка и проверка сайта — документация Pinega",
+          "navigation_title": "Собрать и проверить сайт",
+          "summary": "Соберите статический многостраничный сайт Pinega по зафиксированному файлу блокировки, запустите его локально и проверьте публичные и внутренние маршруты.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Рабочее пространство Pinega Web"
+          }
         }
       }
     },
@@ -519,6 +654,24 @@
           "canonical": true,
           "documentation": {
             "applies_to": "Pinega Web CI and local validation"
+          }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/how-to/run-validation/",
+          "source_path": "pages/ru/docs/how-to/run-validation/index.html",
+          "output_path": "ru/docs/how-to/run-validation/index.html",
+          "canonical_title": "Запуск проверки Web-платформы — документация Pinega",
+          "navigation_title": "Запустить проверку Web-платформы",
+          "summary": "Запустите проверки токенов, типов, unit-тестов, сборки, браузеров, доступности и визуальных регрессий Pinega Web с помощью зафиксированных команд и окружения Playwright.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "CI и локальная проверка Pinega Web"
           }
         }
       }
@@ -577,6 +730,24 @@
           "documentation": {
             "applies_to": "Pinega master programme"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/concepts/pinega-programme/",
+          "source_path": "pages/ru/docs/concepts/pinega-programme/index.html",
+          "output_path": "ru/docs/concepts/pinega-programme/index.html",
+          "canonical_title": "Модель программы Pinega — документация Pinega",
+          "navigation_title": "Модель программы Pinega",
+          "summary": "Разберитесь во взаимосвязи Pinega, Pinega Labs, технологических программ, исследовательской инфраструктуры и будущих продуктовых границ.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Мастер-программа Pinega"
+          }
         }
       }
     },
@@ -633,6 +804,24 @@
           "documentation": {
             "applies_to": "Pinega Engine architecture for PostgreSQL 19"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/concepts/pinega-engine-architecture/",
+          "source_path": "pages/ru/docs/concepts/pinega-engine-architecture/index.html",
+          "output_path": "ru/docs/concepts/pinega-engine-architecture/index.html",
+          "canonical_title": "Архитектура Pinega Engine — документация Pinega",
+          "navigation_title": "Архитектура Pinega Engine",
+          "summary": "Разберитесь в принятых границах Pinega Engine: интеграции с PostgreSQL, изменяемых версиях, общем буферном пуле и едином конвейере PostgreSQL WAL.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Архитектура Pinega Engine для PostgreSQL 19"
+          }
         }
       }
     },
@@ -688,6 +877,24 @@
           "canonical": true,
           "documentation": {
             "applies_to": "Pinega public claims and research artefacts"
+          }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/concepts/maturity-and-evidence-labels/",
+          "source_path": "pages/ru/docs/concepts/maturity-and-evidence-labels/index.html",
+          "output_path": "ru/docs/concepts/maturity-and-evidence-labels/index.html",
+          "canonical_title": "Метки зрелости и доказательств — документация Pinega",
+          "navigation_title": "Метки зрелости и доказательств",
+          "summary": "Разберитесь, как Pinega разделяет доступные артефакты, проектные контракты, исследования, решения, гипотезы и заявления о будущей реализации.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Публичные заявления и исследовательские артефакты Pinega"
           }
         }
       }
@@ -746,6 +953,24 @@
           "documentation": {
             "applies_to": "Pinega research and engineering programmes"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/concepts/research-to-product-workflow/",
+          "source_path": "pages/ru/docs/concepts/research-to-product-workflow/index.html",
+          "output_path": "ru/docs/concepts/research-to-product-workflow/index.html",
+          "canonical_title": "Процесс от исследования к продукту — документация Pinega",
+          "navigation_title": "Процесс от исследования к продукту",
+          "summary": "Разберитесь, как Pinega проводит работу от исследований и формализации через исполняемую верификацию, реализацию и измерения к доказательствам продуктовой готовности.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Исследовательский и инженерный процесс Pinega"
+          }
         }
       }
     },
@@ -803,6 +1028,24 @@
           "documentation": {
             "applies_to": "likern/research repository"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/reference/repository-layout/",
+          "source_path": "pages/ru/docs/reference/repository-layout/index.html",
+          "output_path": "ru/docs/reference/repository-layout/index.html",
+          "canonical_title": "Структура репозитория — документация Pinega",
+          "navigation_title": "Структура репозитория",
+          "summary": "Справочник по каталогам, точкам входа и границам генерируемых файлов в текущем общем репозитории исследований, дизайна и Web-платформы Pinega.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Репозиторий likern/research"
+          }
         }
       }
     },
@@ -859,6 +1102,24 @@
           "documentation": {
             "applies_to": "Pinega Web workspace and CI"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/reference/web-build-and-environment/",
+          "source_path": "pages/ru/docs/reference/web-build-and-environment/index.html",
+          "output_path": "ru/docs/reference/web-build-and-environment/index.html",
+          "canonical_title": "Сборка Web-платформы и окружение — документация Pinega",
+          "navigation_title": "Сборка Web-платформы и окружение",
+          "summary": "Справочник по текущему набору инструментов Pinega Web, сценариям пакета, генерируемым файлам и зафиксированному окружению проверки.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Инструменты Pinega Web и CI"
+          }
         }
       }
     },
@@ -913,6 +1174,24 @@
           "canonical": true,
           "documentation": {
             "applies_to": "Pinega Web content contract schema v3"
+          }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/reference/content-metadata-schema/",
+          "source_path": "pages/ru/docs/reference/content-metadata-schema/index.html",
+          "output_path": "ru/docs/reference/content-metadata-schema/index.html",
+          "canonical_title": "Схема метаданных контента — документация Pinega",
+          "navigation_title": "Схема метаданных контента",
+          "summary": "Справочник по схеме v3 логического реестра контента Pinega Web, вариантам локалей, отдельным манифестам документации и контрактам обнаружения.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Контракт контента Pinega Web, schema v3"
           }
         }
       }
@@ -970,6 +1249,24 @@
           "documentation": {
             "applies_to": "Pinega repository pull requests and release gates"
           }
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/docs/contributing/review-and-release-gates/",
+          "source_path": "pages/ru/docs/contributing/review-and-release-gates/index.html",
+          "output_path": "ru/docs/contributing/review-and-release-gates/index.html",
+          "canonical_title": "Правила проверки и выпуска — документация Pinega",
+          "navigation_title": "Правила проверки и выпуска",
+          "summary": "Следуйте правилу Pinega: реализация, тесты, визуальные артефакты, CI, метки доказательств и рецензирование должны согласовываться до признания Web- или исследовательского изменения готовым.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pull Request и правила выпуска в репозитории Pinega"
+          }
         }
       }
     },
@@ -1006,6 +1303,21 @@
           "navigation_title": "About",
           "summary": "Pinega is a master technology programme; Pinega Labs is its working research, engineering, and future company identity.",
           "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "AboutPage",
+          "canonical": true
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/about/",
+          "source_path": "pages/ru/about/index.html",
+          "output_path": "ru/about/index.html",
+          "canonical_title": "О Pinega и Pinega Labs",
+          "navigation_title": "О проекте",
+          "summary": "Pinega — мастер-программа технологий, а Pinega Labs — её рабочая исследовательская, инженерная и возможная будущая корпоративная идентичность.",
+          "updated_at": "2026-08-08",
           "reviewed_revision": 1,
           "sitemap": true,
           "searchable": true,

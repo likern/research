@@ -49,7 +49,7 @@ for (const page of pages) {
     projectUrl ? `<meta name="webawesome-project-url" content="${escapeHtml(projectUrl)}">` : '',
   );
   html = replaceDocumentationPlaceholders(html, page, pages);
-  html = replaceDiagramPlaceholders(html, diagrams.figures, page.source);
+  html = replaceDiagramPlaceholders(html, diagrams.figures, page.locale, page.source);
   const output = resolve(dist, page.output);
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, html, 'utf8');
@@ -152,12 +152,82 @@ async function buildSemanticDiagrams() {
     const model = renderer.validateDiagramModel(JSON.parse(await readFile(resolve(diagramModelRoot, entry.name), 'utf8')));
     const fileId = basename(entry.name, '.json');
     if (model.id !== fileId) throw new TypeError(`Diagram file ${entry.name} declares id ${JSON.stringify(model.id)}`);
-    if (figures.has(model.id)) throw new TypeError(`Duplicate diagram id: ${model.id}`);
-    figures.set(model.id, renderer.renderDiagramFigure(model));
+    if (ids.includes(model.id)) throw new TypeError(`Duplicate diagram id: ${model.id}`);
+    for (const locale of Object.keys(contentIndex.site.locales)) {
+      const localizedModel = locale === contentIndex.site.default_locale
+        ? model
+        : renderer.validateDiagramModel(JSON.parse(await readFile(resolve(contentRoot, `diagrams/${locale}/${entry.name}`), 'utf8')));
+      if (localizedModel.id !== model.id) throw new TypeError(`Localized diagram ${locale}/${entry.name} declares id ${JSON.stringify(localizedModel.id)}`);
+      assertEquivalentDiagramStructure(model, localizedModel, locale);
+      const modelHref = locale === contentIndex.site.default_locale
+        ? `/diagrams/models/${model.id}.json`
+        : `/content/diagrams/${locale}/${model.id}.json`;
+      figures.set(`${locale}:${model.id}`, renderer.renderDiagramFigure(localizedModel, {
+        messages: messagesFor(locale).diagram,
+        modelHref,
+      }));
+    }
     ids.push(model.id);
   }
   if (ids.length === 0) throw new TypeError('No semantic diagram models were found');
   return { figures, ids };
+}
+
+function assertEquivalentDiagramStructure(canonical, localized, locale) {
+  const project = model => {
+    if (model.kind === 'history') return {
+      schemaVersion: model.schemaVersion,
+      id: model.id,
+      kind: model.kind,
+      lanes: model.lanes.map(lane => lane.id),
+      operations: model.operations.map(operation => ({
+        id: operation.id,
+        lane: operation.lane,
+        call: operation.call,
+        start: operation.start,
+        end: operation.end ?? null,
+        result: operation.result ?? null,
+        linearization: operation.linearization ?? null,
+        tone: operation.tone,
+        object: operation.object ?? null,
+      })),
+      markers: model.markers.map(marker => ({ time: marker.time, tone: marker.tone, pattern: marker.pattern })),
+      witnesses: model.witnesses.map(witness => ({ operations: witness.operations, tone: witness.tone })),
+      precedence: model.precedence.map(edge => ({ from: edge.from, to: edge.to, tone: edge.tone })),
+      horizon: model.horizon,
+    };
+    if (model.kind === 'version-chain') return {
+      schemaVersion: model.schemaVersion,
+      id: model.id,
+      kind: model.kind,
+      subject: model.subject,
+      head: model.head,
+      snapshot: { id: model.snapshot.id, visibleVersion: model.snapshot.visibleVersion },
+      versions: model.versions.map(version => ({
+        id: version.id,
+        createdBy: version.createdBy,
+        deletedBy: version.deletedBy,
+        generation: version.generation,
+        state: version.state,
+      })),
+    };
+    return {
+      schemaVersion: model.schemaVersion,
+      id: model.id,
+      kind: model.kind,
+      initial: model.initial,
+      states: model.states.map(state => ({ id: state.id, tone: state.tone })),
+      transitions: model.transitions.map(transition => ({
+        id: transition.id,
+        from: transition.from,
+        to: transition.to,
+        tone: transition.tone,
+      })),
+    };
+  };
+  if (JSON.stringify(project(canonical)) !== JSON.stringify(project(localized))) {
+    throw new TypeError(`${locale}: diagram ${canonical.id} changes canonical structure or facts`);
+  }
 }
 
 function validateContentIndex(value) {
@@ -357,6 +427,9 @@ async function loadLocaleMessages(locales) {
       if (typeof messages.navigation?.translation_unavailable?.[targetLocale] !== 'string') {
         throw new TypeError(`messages/${locale}.json must define navigation.translation_unavailable.${targetLocale}`);
       }
+    }
+    if (!messages.diagram || typeof messages.diagram !== 'object' || Array.isArray(messages.diagram)) {
+      throw new TypeError(`messages/${locale}.json must define diagram messages`);
     }
     catalogues.set(locale, messages);
   }
@@ -577,9 +650,9 @@ function addUnique(values, value, label) {
   if (values.has(value)) throw new TypeError(`Duplicate ${label}: ${JSON.stringify(value)}`);
   values.add(value);
 }
-function replaceDiagramPlaceholders(html, figures, sourcePath) {
+function replaceDiagramPlaceholders(html, figures, locale, sourcePath) {
   const output = html.replace(/<!--\s*PINEGA_DIAGRAM:([a-z][a-z0-9-]*)\s*-->/gu, (_match, id) => {
-    const figure = figures.get(id);
+    const figure = figures.get(`${locale}:${id}`);
     if (!figure) throw new TypeError(`${sourcePath}: unknown semantic diagram ${JSON.stringify(id)}`);
     return figure;
   });

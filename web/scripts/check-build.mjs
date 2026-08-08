@@ -18,6 +18,7 @@ const variants = contentIndex.entries.flatMap(entry => Object.entries(entry.loca
   translations: Object.fromEntries(Object.entries(entry.locales).map(([translationLocale, translation]) => [translationLocale, translation.route])),
 })));
 const documentationEntries = variants.filter(entry => entry.locale === 'en' && entry.documentation && entry.documentation.section !== 'landing');
+const russianDocumentationEntries = variants.filter(entry => entry.locale === 'ru' && entry.documentation && entry.documentation.section !== 'landing');
 const required = [
   ...variants.map(entry => entry.output_path),
   'robots.txt',
@@ -29,6 +30,9 @@ const required = [
   'content/README.md',
   'content/content-index.json',
   'content/content.schema.json',
+  'content/localization-policy.md',
+  'content/localization-review.ru.md',
+  'content/terminology.ru.json',
   ...Object.keys(contentIndex.site.locales).flatMap(locale => [
     `content/messages/${locale}.json`,
     `content/${locale}/documentation-manifest.json`,
@@ -37,6 +41,7 @@ const required = [
   'diagrams/schema/diagram.schema.json',
   'diagrams/layouts/profiles.json',
   ...diagramIds.map(id => `diagrams/models/${id}.json`),
+  ...diagramIds.map(id => `content/diagrams/ru/${id}.json`),
 ];
 
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
@@ -119,8 +124,10 @@ for (const entry of englishDocsManifest.entries) {
 const russianDocsManifest = JSON.parse(await readFile(resolve(root, 'content/ru/documentation-manifest.json'), 'utf8'));
 assert.equal(russianDocsManifest.schema_version, 2);
 assert.equal(russianDocsManifest.locale, 'ru');
-assert.deepEqual(russianDocsManifest.sections, []);
-assert.deepEqual(russianDocsManifest.entries, []);
+assert.deepEqual(russianDocsManifest.sections.map(section => section.id), ['start', 'how-to', 'concepts', 'reference', 'contributing']);
+assert.deepEqual(russianDocsManifest.entries.map(entry => entry.id), russianDocumentationEntries.map(entry => entry.id));
+assert.deepEqual(russianDocsManifest.entries.map(entry => entry.route), russianDocumentationEntries.map(entry => entry.route));
+assert.equal(russianDocsManifest.entries.length, 13);
 
 const docsLanding = await readFile(resolve(root, 'docs/index.html'), 'utf8');
 assert.equal((docsLanding.match(/data-doc-card/gu) ?? []).length, 13);
@@ -138,23 +145,37 @@ for (const entry of documentationEntries) {
   assert.doesNotMatch(html, /<select[^>]*disabled/u, entry.route);
 }
 
+const russianDocsLanding = await readFile(resolve(root, 'ru/docs/index.html'), 'utf8');
+assert.equal((russianDocsLanding.match(/data-doc-card/gu) ?? []).length, 13);
+assert.equal((russianDocsLanding.match(/data-doc-group/gu) ?? []).length, 5);
+assert.match(russianDocsLanding, /13 страниц/u);
+assert.match(russianDocsLanding, /Фильтр по темам документации/u);
+
+for (const entry of russianDocumentationEntries) {
+  const html = await readFile(resolve(root, entry.output_path), 'utf8');
+  assert.match(html, /<nav class="pinega-doc-navigation" aria-label="Документация">/u, entry.route);
+  assert.match(html, /<nav class="pinega-breadcrumbs" aria-label="Навигационная цепочка">/u, entry.route);
+  assert.match(html, /data-doc-provenance/u, entry.route);
+  assert.match(html, /Стадия документации/u, entry.route);
+}
+
 const publicNavigation = manifest.site.locales.en.primaryNavigation.map(item => item.route ?? item.href);
 assert.deepEqual(publicNavigation, ['/technology/', '/research/', '/docs/', '/about/', 'https://github.com/likern/research']);
 assert.ok(!publicNavigation.includes('/component-lab/'));
-assert.ok(manifest.site.locales.ru.primaryNavigation.filter(item => item.entryId).every(item => item.route === null));
+assert.deepEqual(manifest.site.locales.ru.primaryNavigation.map(item => item.route ?? item.href), ['/ru/technology/', '/ru/research/', '/ru/docs/', '/ru/about/', 'https://github.com/likern/research']);
 
 const sitemap = await readFile(resolve(root, 'sitemap.xml'), 'utf8');
 for (const route of manifest.routes.filter(entry => entry.sitemap).map(entry => entry.route)) {
   assert.match(sitemap, new RegExp(`<loc>https:\/\/pinega\\.example${escapeRegex(route)}<\\/loc>`, 'u'));
 }
-assert.doesNotMatch(sitemap, /component-lab|\/ru\//u);
+assert.doesNotMatch(sitemap, /component-lab/u);
 
 const home = await readFile(resolve(root, 'index.html'), 'utf8');
 assert.match(home, /<h1>Correctness under concurrency\.<\/h1>/u);
 assert.match(home, /Pinega Engine is\s+the first active implementation programme/u);
-assert.match(home, /href="#pinega-translation-unavailable-ru" data-translation-unavailable/u);
-assert.match(home, /A Russian translation of this page is not available\. You are staying on the current page\./u);
-assert.doesNotMatch(home, /<link rel="alternate" hreflang="ru"/u);
+assert.match(home, /href="\/ru\/" hreflang="ru"/u);
+assert.doesNotMatch(home, /data-translation-unavailable/u);
+assert.match(home, /<link rel="alternate" hreflang="ru" href="https:\/\/pinega\.example\/ru\/">/u);
 
 const russianNotFound = await readFile(resolve(root, 'ru/404.html'), 'utf8');
 assert.match(russianNotFound, /<html\b[^>]*lang="ru"/u);
@@ -172,7 +193,14 @@ const research = await readFile(resolve(root, 'research/index.html'), 'utf8');
 assert.equal((research.match(/class="pinega-semantic-diagram"/gu) ?? []).length, 3);
 assert.equal((research.match(/role="img" aria-labelledby=/gu) ?? []).length, 3);
 
-console.log(`Validated ${files.length} build files; JavaScript ${javascript} B, CSS ${css} B, content items ${contentIndex.entries.length}, locale variants ${variants.length}, English docs ${documentationEntries.length}, diagrams ${diagramIds.length}.`);
+const russianResearch = await readFile(resolve(root, 'ru/research/index.html'), 'utf8');
+assert.equal((russianResearch.match(/class="pinega-semantic-diagram"/gu) ?? []).length, 3);
+assert.match(russianResearch, /Текстовое представление и семантическая модель/u);
+assert.match(russianResearch, /Скачать семантическую модель/u);
+assert.match(russianResearch, /href="\/content\/diagrams\/ru\/linearizability-overlap\.json"/u);
+assert.doesNotMatch(russianResearch, /Text representation and semantic model|Download semantic model/u);
+
+console.log(`Validated ${files.length} build files; JavaScript ${javascript} B, CSS ${css} B, content items ${contentIndex.entries.length}, locale variants ${variants.length}, English docs ${documentationEntries.length}, Russian docs ${russianDocumentationEntries.length}, diagrams ${diagramIds.length}.`);
 
 async function walk(directory) {
   const entries = await readdir(directory, { withFileTypes: true });

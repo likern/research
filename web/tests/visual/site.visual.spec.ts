@@ -14,10 +14,10 @@ test('homepage master-brand narrative and programme catalogue', async ({ page })
   await expect(page.locator('#pinega-engine')).toHaveScreenshot('home-engine.png');
 });
 
-test('missing Russian translation is reported below the top header', async ({ page }) => {
-  await open(page, '/');
-  await page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' }).click();
-  await expect(page.locator('pinega-site-header')).toHaveScreenshot('home-translation-unavailable.png');
+test('Russian homepage keeps the localized navigation and brand line coherent', async ({ page }) => {
+  await open(page, '/ru/');
+  await expect(page.locator('pinega-site-header')).toHaveScreenshot('home-ru-language-selector.png');
+  await expect(page.locator('pinega-hero')).toHaveScreenshot('home-ru-master-brand-hero.png');
 });
 
 test('technology catalogue and Pinega Engine boundary', async ({ page }) => {
@@ -31,6 +31,12 @@ test('documentation landing exposes the real corpus and metadata-backed filter',
   await expect(page.locator('.pinega-doc-hero')).toHaveScreenshot('docs-hero.png');
   await expect(page.locator('.pinega-doc-corpus-summary')).toHaveScreenshot('docs-model.png');
   await expect(page.locator('pinega-doc-search')).toHaveScreenshot('docs-corpus.png', { maxDiffPixelRatio: 0.02 });
+});
+
+test('Russian documentation landing exposes the localized corpus', async ({ page }) => {
+  await open(page, '/ru/docs/');
+  await expect(page.locator('.pinega-doc-hero')).toHaveScreenshot('docs-ru-hero.png');
+  await expect(page.locator('pinega-doc-search')).toHaveScreenshot('docs-ru-corpus.png', { maxDiffPixelRatio: 0.02 });
 });
 
 test('getting-started orientation shell', async ({ page }) => {
@@ -59,6 +65,11 @@ test('research catalogue and active studies', async ({ page }) => {
   await expect(page.locator('.pinega-research-hero')).toHaveScreenshot('research-hero.png');
   await expect(page.locator('#research-areas')).toHaveScreenshot('research-areas.png');
   await expect(page.locator('#concurrent-lifetimes')).toHaveScreenshot('research-lifetimes.png');
+});
+
+test('Russian research keeps localized semantic diagrams legible', async ({ page }) => {
+  await open(page, '/ru/research/');
+  await expect(page.locator('figure[data-diagram-id="buffer-frame-lifecycle"]')).toHaveScreenshot('research-ru-lifecycle.png', { maxDiffPixelRatio: 0.02 });
 });
 
 test('about and company-boundary narrative', async ({ page }) => {

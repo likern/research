@@ -35,8 +35,11 @@ absent; there is no `fallback`, `pending`, or partially translated state.
 
 English sources live under `pages/en/` while preserving their existing public
 URLs. Russian sources live under `pages/ru/` and can only publish under `/ru/`.
-The only Russian HTML committed by Gate 3A is the genuine localized 404 page;
-Gate 3B will add and review the Russian content corpus.
+Gate 3A committed the first genuine localized page, `/ru/404.html`; Gate 3B
+publishes reviewed Russian peers for every canonical public English page.
+`localization-policy.md` defines the publication/review rules,
+`terminology.ru.json` is the machine-readable Russian terminology ledger, and
+`localization-review.ru.md` records the initial technical and linguistic passes.
 
 ## Documentation metadata
 
@@ -81,6 +84,11 @@ The development/static server does not use `Accept-Language` redirects.
 Localized UI strings live in `messages/<locale>.json`. They are limited to
 shared navigation and component behaviour; article prose remains first-class
 HTML and is never translated in the browser.
+
+Semantic diagram facts remain renderer-independent. Locale-specific diagram
+models may translate human-readable fields and transcript text, but build-time
+validation requires their kind, identifiers, topology, values, states, tones,
+and ordering to remain structurally equivalent to the canonical model.
 
 ## Documentation provenance contract
 

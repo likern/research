@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "buffer-frame-lifecycle",
+  "kind": "lifecycle",
+  "title": "Жизненный цикл публикации и рекламации буферного фрейма",
+  "caption": "Фрейм можно использовать повторно только после отзыва публикации, прекращения успешной повторной проверки идентичности и исчезновения всех защит времени жизни.",
+  "description": "Сначала буферный фрейм свободен. Затем его резервируют с новым поколением, после инициализации и публикации с семантикой release он становится действительным, после удаления отображения и запрета новых фиксаций переходит к вытеснению, остаётся выведенным из обращения до исчезновения прежних защит, становится доступным для рекламации при отсутствии фиксаций и hazard-защит и, наконец, возвращается в свободное состояние с очередным увеличением поколения.",
+  "subject": "буферный фрейм",
+  "initial": "free",
+  "states": [
+    { "id": "free", "label": "Свободен", "description": "Опубликованной идентичности нет", "tone": "muted" },
+    { "id": "reserved", "label": "Зарезервирован", "description": "Слот захвачен; поколение увеличено", "tone": "warning" },
+    { "id": "valid", "label": "Действителен", "description": "Идентичность опубликована; фиксации разрешены", "tone": "inferred" },
+    { "id": "evicting", "label": "Вытесняется", "description": "Отображение удалено; новые фиксации запрещены", "tone": "event" },
+    { "id": "retired", "label": "Выведен", "description": "Прежние защиты могут сохраняться", "tone": "pending" },
+    { "id": "reclaimable", "label": "Готов к рекламации", "description": "Фиксаций и hazard-защит нет", "tone": "primary" }
+  ],
+  "transitions": [
+    { "id": "claim", "from": "free", "to": "reserved", "label": "захватить слот", "guard": "generation++", "tone": "warning" },
+    { "id": "publish", "from": "reserved", "to": "valid", "label": "опубликовать идентичность", "guard": "store-release", "tone": "inferred" },
+    { "id": "begin-eviction", "from": "valid", "to": "evicting", "label": "начать вытеснение", "guard": "удалить отображение", "tone": "event" },
+    { "id": "retire", "from": "evicting", "to": "retired", "label": "вывести поколение", "guard": "новые фиксации запрещены", "tone": "pending" },
+    { "id": "quiesce", "from": "retired", "to": "reclaimable", "label": "зафиксировать покой", "guard": "protectors = 0", "tone": "primary" },
+    { "id": "reuse", "from": "reclaimable", "to": "free", "label": "использовать память повторно", "guard": "generation++", "tone": "event" }
+  ]
+}

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ru" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="home">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pinega — корректность при конкурентном выполнении</title>
+    <meta name="description" content="Pinega превращает исследования систем баз данных в высокопроизводительное программное обеспечение для хранения данных, транзакций, оптимизации, верификации и распределённого выполнения.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/ru/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Pinega — корректность при конкурентном выполнении">
+    <meta property="og:description" content="Исследования и инженерия систем баз данных, направленные на создание высокопроизводительного и защищаемого программного обеспечения.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/ru/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Перейти к основному содержанию</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/ru/" aria-label="Главная Pinega" aria-current="page"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
+          <nav data-primary-navigation aria-label="Основная навигация"><ul><li><a href="/ru/technology/">Технологии</a></li><li><a href="/ru/research/">Исследования</a></li><li><a href="/ru/docs/">Документация</a></li><li><a href="/ru/about/">О проекте</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav>
+          <div class="pinega-cluster"><!-- PINEGA_LANGUAGE_SWITCHER --><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Использовать тёмную тему</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Меню</wa-button></div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1" class="pinega-site-main pinega-full-bleed">
+        <pinega-hero id="top" class="pinega-product-hero">
+          <section>
+            <div class="pinega-hero-copy">
+              <div class="pinega-cluster"><wa-badge variant="brand" appearance="filled-outlined" pill>Исследовательская и инженерная программа</wa-badge><span class="pinega-eyebrow">Системы баз данных · Pinega Labs</span></div>
+              <h1><span lang="en" translate="no">Correctness under concurrency.</span></h1>
+              <p>Pinega превращает исследования систем баз данных в высокопроизводительное программное обеспечение для хранения данных, транзакций, оптимизации, верификации и распределённого выполнения. Pinega Engine — первая активная программа реализации, но ещё не производственный выпуск.</p>
+              <div class="pinega-hero-actions"><a class="pinega-action pinega-action-primary" href="/ru/technology/">Изучить технологические программы</a><a class="pinega-action pinega-action-secondary" href="/ru/research/">Прочитать об исследовательской программе</a></div>
+            </div>
+            <div class="pinega-hero-stack" aria-hidden="true">
+              <div class="pinega-hero-layer"><div class="pinega-hero-layer-header"><span>Исследовательская модель</span><span>инварианты</span></div><div class="pinega-hero-trace"><div class="pinega-hero-trace-row"><span>READ</span><span class="pinega-hero-trace-line" style="--start: 7%; --length: 72%;"></span></div><div class="pinega-hero-trace-row"><span>VERIFY</span><span class="pinega-hero-trace-line" style="--start: 24%; --length: 61%; --tone: var(--pinega-research-color-confirmed);"></span></div></div></div>
+              <div class="pinega-hero-layer"><div class="pinega-hero-layer-header"><span>Инженерная платформа</span><span>воспроизводимость</span></div><div class="pinega-hero-trace"><div class="pinega-hero-trace-row"><span>CI</span><span class="pinega-hero-trace-line" style="--start: 8%; --length: 77%;"></span></div><div class="pinega-hero-trace-row"><span>MEASURE</span><span class="pinega-hero-trace-line" style="--start: 30%; --length: 54%; --tone: var(--pinega-research-color-external);"></span></div></div></div>
+              <div class="pinega-hero-layer"><div class="pinega-hero-layer-header"><span>Технологические программы</span><span>доказательства</span></div><div class="pinega-hero-trace"><div class="pinega-hero-trace-row"><span>ENGINE</span><span class="pinega-hero-trace-line" style="--start: 4%; --length: 68%; --tone: var(--pinega-research-color-confirmed);"></span></div><div class="pinega-hero-trace-row"><span>OPT</span><span class="pinega-hero-trace-line" style="--start: 27%; --length: 49%; --tone: var(--pinega-research-color-hypothesis);"></span></div><div class="pinega-hero-trace-row"><span>VERIFY</span><span class="pinega-hero-trace-line" style="--start: 56%; --length: 31%;"></span></div></div></div>
+            </div>
+          </section>
+        </pinega-hero>
+
+        <section class="pinega-home-status" aria-labelledby="status-title">
+          <h2 class="pinega-visually-hidden" id="status-title">Текущее состояние программы</h2>
+          <article class="pinega-status-card"><span class="pinega-status-kicker" data-status="available">Доступно сейчас</span><h3>Исследовательская и Web-платформа</h3><p>Версионируемые исследовательские артефакты, дизайн-токены Strata, семантические Web-страницы и воспроизводимые правила проверки.</p></article>
+          <article class="pinega-status-card"><span class="pinega-status-kicker" data-status="validated">Активная программа</span><h3>Pinega Engine</h3><p>Ориентированная на расширение PostgreSQL архитектура OLTP, находящаяся на стадии проектирования и проверки реализации.</p></article>
+          <article class="pinega-status-card"><span class="pinega-status-kicker" data-status="planned">Направление портфеля</span><h3>Оптимизация, верификация и распределённые системы</h3><p>Исследовательские направления с явным продуктовым потенциалом, но не выпущенные продукты и не заявления о производительности.</p></article>
+        </section>
+
+        <section class="pinega-section" id="why" aria-labelledby="why-title">
+          <header class="pinega-section-heading"><p class="pinega-eyebrow">Тезис программы</p><h2 id="why-title">Производительность имеет значение, только когда результат остаётся корректным и объяснимым.</h2><p class="pinega-muted">Pinega соединяет формальные рассуждения, системные эксперименты, производственную инженерию и коммерческий замысел. Цель — повторно используемая интеллектуальная собственность и измеримая ценность для клиента, а не изолированные демонстрации.</p></header>
+          <div class="pinega-grid pinega-principle-grid">
+            <wa-card><p class="pinega-card-index" aria-hidden="true">01</p><h3>Корректность при конкурентном выполнении</h3><p>Истории, видимость, публикация, защита времени жизни, долговечность и границы отказов рассматриваются как явные объекты проектирования.</p></wa-card>
+            <wa-card><p class="pinega-card-index" aria-hidden="true">02</p><h3>Производительность с доказательствами</h3><p>Поведение кешей, размещение NUMA, SIMD, носители данных и планирование запросов измеряются, а не рекламируются заранее.</p></wa-card>
+            <wa-card><p class="pinega-card-index" aria-hidden="true">03</p><h3>От исследования к продукту</h3><p>Статьи и гипотезы проходят через модели, верификацию, реализацию, бенчмарки и документированные продуктовые границы.</p></wa-card>
+          </div>
+        </section>
+
+        <section class="pinega-section pinega-section-contrast pinega-full-bleed" id="programmes" aria-labelledby="programmes-title"><div class="pinega-section-inner">
+          <header class="pinega-section-heading"><p class="pinega-eyebrow">Технологические программы</p><h2 id="programmes-title">Одна программа, несколько путей к защищаемому программному обеспечению баз данных.</h2><p class="pinega-muted">Метки программ обозначают активные исследовательские и инженерные границы, но не подразумевают коммерческую доступность.</p></header>
+          <div class="pinega-grid pinega-research-programme">
+            <article><span class="pinega-state-label" data-state="validated">Активный проект</span><h3>Pinega Engine</h3><p>Версионное OLTP-хранилище, собственный общий буферный пул Pinega, интеграция с PostgreSQL и единая граница PostgreSQL WAL.</p><a href="/ru/technology/#pinega-engine">Изучить программу движка</a></article>
+            <article><span class="pinega-state-label" data-state="research">Исследование</span><h3>Оптимизация запросов и ИИ</h3><p>Оценка кардинальности, преобразования запросов, выбор порядка соединений с MCTS/RL и низколатентный inference для будущих оптимизаторов.</p><a href="/ru/technology/#optimisation">Изучить направление оптимизации</a></article>
+            <article><span class="pinega-state-label" data-state="research">Исследовательская платформа</span><h3>Корректность и верификация</h3><p>Исполняемые модели, детерминированное тестирование, семантические диаграммы и инструменты проверки конкурентных и транзакционных систем.</p><a href="/ru/technology/#verification">Изучить направление верификации</a></article>
+          </div>
+        </div></section>
+
+        <section class="pinega-section" id="pinega-engine" aria-labelledby="engine-title">
+          <header class="pinega-section-heading"><p class="pinega-eyebrow">Основная активная программа</p><h2 id="engine-title">Pinega Engine: явный путь OLTP внутри PostgreSQL.</h2><p class="pinega-muted">Текущая архитектура разделяет интеграцию с PostgreSQL, изменяемые версии, время жизни общих фреймов и долговечность. Это принятое направление проектирования, проходящее проверку реализации, а не устанавливаемый выпуск.</p></header>
+          <figure class="pinega-architecture-figure" aria-labelledby="engine-caption"><ol class="pinega-architecture-layers">
+            <li><span class="pinega-architecture-number">01</span><div><strong>Интеграция с PostgreSQL</strong><span>Обратные вызовы Table AM, снимки, транзакции и видимое из SQL поведение</span></div><span class="pinega-architecture-state">цель</span></li>
+            <li><span class="pinega-architecture-number">02</span><div><strong>Изменяемое хранилище версий</strong><span>Внепозиционные кортежи, стабильные дескрипторы и явные метаданные видимости</span></div><span class="pinega-architecture-state">проект</span></li>
+            <li><span class="pinega-architecture-number">03</span><div><strong>Общий буферный пул</strong><span>Стабильные фреймы, protect/pin/revalidate, учитывающее кеши размещение и рекламация</span></div><span class="pinega-architecture-state">исследование</span></li>
+            <li><span class="pinega-architecture-number">04</span><div><strong>PostgreSQL WAL</strong><span>Единый журнал предзаписи и единая граница долговечности транзакций</span></div><span class="pinega-architecture-state">решение</span></li>
+          </ol><figcaption id="engine-caption">Предлагаемый OLTP-путь Pinega Engine. Область программы, решения и зрелость описаны на странице «Технологии».</figcaption></figure>
+        </section>
+
+        <section class="pinega-section" id="method" aria-labelledby="method-title"><header class="pinega-section-heading"><p class="pinega-eyebrow">Дисциплина перехода от исследования к продукту</p><h2 id="method-title">Заявления развиваются только вместе с доказательствами.</h2></header><div class="pinega-grid">
+          <pinega-evidence kind="external"><h3>Найти источники и формализовать</h3><p>Начинать со статей, стандартов, исходного кода, тестов и измеренного поведения системы; отделять внешние доказательства от выводов.</p></pinega-evidence>
+          <pinega-evidence kind="hypothesis"><h3>Создать прототип и опровергать</h3><p>Превращать архитектурные идеи в исполняемые модели, сфокусированные прототипы, детерминированные расписания и бенчмарки с явными критериями провала.</p></pinega-evidence>
+          <pinega-evidence kind="confirmed"><h3>Реализовать и превратить в продукт</h3><p>Продвигать в сопровождаемое ПО, лицензирование и клиентские заявления только проверенные возможности с документированными границами поддержки.</p></pinega-evidence>
+        </div></section>
+
+        <section class="pinega-section" id="roadmap" aria-labelledby="roadmap-title"><header class="pinega-section-heading"><p class="pinega-eyebrow">Реестр зрелости</p><h2 id="roadmap-title">Что существует, что проверяется и что пока остаётся предложением.</h2></header><div class="pinega-table-scroller" tabindex="0" role="region" aria-label="Таблица зрелости Pinega"><table class="pinega-roadmap-table"><thead><tr><th scope="col">Область</th><th scope="col">Текущее состояние</th><th scope="col">Граница доказательств</th></tr></thead><tbody>
+          <tr><th scope="row">Исследовательское рабочее пространство YDMP</th><td><span class="pinega-state-label" data-state="available">Доступно</span></td><td>Версионируемые заметки, артефакты MODEL/VERIFY, команды сборки и CI</td></tr>
+          <tr><th scope="row">Pinega Strata и Web-платформа</th><td><span class="pinega-state-label" data-state="available">Доступно</span></td><td>Канонические токены, Web Components, статические страницы, браузерные проверки и проверки доступности</td></tr>
+          <tr><th scope="row">Scientific Diagram Language</th><td><span class="pinega-state-label" data-state="available">Доступно</span></td><td>Канонические модели, визуализаторы для Web и Typst, профили компоновки и артефакты проверки</td></tr>
+          <tr><th scope="row">Архитектура Pinega Engine</th><td><span class="pinega-state-label" data-state="validated">Проверяется</span></td><td>Принятые решения и исполняемые образцы; производственного бинарного движка нет</td></tr>
+          <tr><th scope="row">Будущие продуктовые программы</th><td><span class="pinega-state-label" data-state="planned">Исследование</span></td><td>Коммерческая доступность и измеренные продуктовые заявления пока отсутствуют</td></tr>
+        </tbody></table></div></section>
+
+        <section class="pinega-section pinega-cta" aria-labelledby="cta-title"><div><p class="pinega-eyebrow">Начните с границ</p><h2 id="cta-title">Сначала разберитесь в программах, затем изучите доказательства.</h2><p class="pinega-muted">«Технологии» описывают, что строит Pinega; «Исследования» объясняют почему; «Документация» показывает, что уже можно воспроизвести.</p></div><div class="pinega-cluster"><a class="pinega-action pinega-action-primary" href="/ru/technology/">Технологии</a><a class="pinega-action pinega-action-secondary" href="/ru/about/">О Pinega</a></div></section>
+      </main>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/ru/" aria-label="Главная Pinega"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p><span lang="en" translate="no">Correctness under concurrency.</span> Исследования и инженерия систем баз данных от Pinega Labs.</p></div><nav aria-label="Навигация в подвале"><a href="/ru/technology/">Технологии</a><a href="/ru/research/">Исследования</a><a href="/ru/docs/">Документация</a><a href="/ru/about/">О проекте</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

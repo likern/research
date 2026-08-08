@@ -705,7 +705,40 @@ Deliverables:
 - documentation navigation and breadcrumbs derived consistently;
 - search readiness metadata.
 
-### Gate 3 — Blog Platform
+### Gate 3A — Locale Architecture
+
+Purpose: make multilingual publishing explicit without publishing incomplete
+or fallback translations.
+
+Deliverables:
+
+- English unprefixed routes and Russian `/ru/` route ownership;
+- independent static locale variants with no `Accept-Language` redirect;
+- self canonical, reciprocal-ready `hreflang`, locale metadata, and per-locale
+  discovery manifests;
+- persistent language selector with an accessible unavailable-translation
+  status;
+- build-time locale, route, freshness, navigation, and metadata contracts.
+
+Status: delivered by PR #24.
+
+### Gate 3B — Russian Content Corpus and Review
+
+Purpose: publish a complete, technically accurate, and editorially reviewed
+Russian corpus on top of Gate 3A.
+
+Deliverables:
+
+- Russian peers for all 18 canonical public pages and an updated Russian 404;
+- translation policy and canonical terminology glossary;
+- localized metadata, navigation, breadcrumbs, related content, topic filter,
+  captions, text alternatives, and diagram transcripts;
+- technical and linguistic review recorded against current logical revisions;
+- reciprocal locale links, Russian sitemap routes, and a complete Russian
+  documentation manifest;
+- unit, build, link, browser, accessibility, Cyrillic-filter, and visual gates.
+
+### Gate 4 — Blog Platform
 
 Purpose: establish Pinega's durable engineering and research communication channel.
 
@@ -718,7 +751,7 @@ Deliverables:
 - `BlogPosting`/`Article` structured data;
 - inclusion in sitemap and global navigation.
 
-### Gate 4 — Paper and Research-Artefact Integration
+### Gate 5 — Paper and Research-Artefact Integration
 
 Purpose: expose original papers, PDFs, metadata, YDMP artefacts, and optional web reading without maintaining a second hand-written article copy.
 
@@ -731,7 +764,7 @@ Deliverables:
 - research status, notes, MODEL, VERIFY, and implementation links;
 - copyright/licensing rules for third-party papers.
 
-### Gate 5 — Site-wide Static Search
+### Gate 6 — Site-wide Static Search
 
 Purpose: index the real corpus, not the current eight-card map.
 
@@ -743,7 +776,7 @@ Deliverables:
 - result snippets, type/status metadata, keyboard tests, and no-result behaviour;
 - component lab and duplicate representations excluded.
 
-### Gate 6 — Web Platform v1.0 Hardening
+### Gate 7 — Web Platform v1.0 Hardening
 
 Purpose: close the web-specific production milestone.
 

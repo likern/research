@@ -18,11 +18,13 @@ const variants = entries.flatMap(entry => Object.entries(entry.locales).map(([lo
 const routeMap = new Map(variants.map(variant => [variant.route, variant]));
 const sourceByRoute = new Map(await Promise.all(variants.map(async variant => [variant.route, await read(variant.source_path)])));
 const englishVariants = variants.filter(variant => variant.locale === 'en');
+const russianVariants = variants.filter(variant => variant.locale === 'ru');
 const publicVariants = variants.filter(variant => variant.public);
 const englishNavigation = contentIndex.site.locales.en.primary_navigation.map(item => (
   item.entry_id ? entries.find(entry => entry.id === item.entry_id)?.locales.en.route : item.href
 ));
 const docsEntries = englishVariants.filter(entry => entry.documentation && entry.documentation.section !== 'landing');
+const russianDocsEntries = russianVariants.filter(entry => entry.documentation && entry.documentation.section !== 'landing');
 const expectedDocumentationRoutes = [
   '/docs/getting-started/',
   '/docs/start/project-overview/',
@@ -39,6 +41,7 @@ const expectedDocumentationRoutes = [
   '/docs/contributing/review-and-release-gates/',
 ];
 const expectedPublicRoutes = ['/', '/technology/', '/research/', '/docs/', ...expectedDocumentationRoutes, '/about/'];
+const expectedRussianPublicRoutes = expectedPublicRoutes.map(route => route === '/' ? '/ru/' : `/ru${route}`);
 const expectedPrimaryNavigation = ['/technology/', '/research/', '/docs/', '/about/', 'https://github.com/likern/research'];
 
 test('content registry v3 is the logical multilingual route and discovery contract', async () => {
@@ -53,14 +56,17 @@ test('content registry v3 is the logical multilingual route and discovery contra
   assert.equal(contentIndex.site.tagline, 'Correctness under concurrency.');
   assert.deepEqual(englishNavigation, expectedPrimaryNavigation);
   assert.equal(entries.length, 20);
-  assert.equal(variants.length, 21);
+  assert.equal(variants.length, 39);
   assert.equal(new Set(entries.map(entry => entry.id)).size, entries.length);
   assert.equal(new Set(variants.map(entry => entry.route)).size, variants.length);
   assert.equal(new Set(variants.map(entry => entry.source_path)).size, variants.length);
   assert.equal(new Set(variants.map(entry => entry.output_path)).size, variants.length);
-  assert.deepEqual(variants.filter(entry => entry.sitemap).map(entry => entry.route), expectedPublicRoutes);
-  assert.deepEqual(variants.filter(entry => entry.searchable).map(entry => entry.route), expectedPublicRoutes);
-  assert.equal(variants.filter(entry => entry.locale === 'ru' && entry.canonical).length, 0, 'Gate 3A must not activate an incomplete Russian corpus');
+  assert.deepEqual(variants.filter(entry => entry.sitemap).map(entry => entry.route).toSorted(), [...expectedPublicRoutes, ...expectedRussianPublicRoutes].toSorted());
+  assert.deepEqual(variants.filter(entry => entry.searchable).map(entry => entry.route).toSorted(), [...expectedPublicRoutes, ...expectedRussianPublicRoutes].toSorted());
+  assert.equal(russianVariants.filter(entry => entry.canonical).length, 18, 'Gate 3B publishes the complete Russian public corpus');
+  for (const entry of entries.filter(entry => entry.public && entry.id !== 'not-found')) {
+    assert.deepEqual(Object.keys(entry.locales), ['en', 'ru'], `${entry.id}: every canonical public page must have both reviewed variants`);
+  }
   for (const entry of entries) {
     for (const localized of Object.values(entry.locales)) assert.equal(localized.reviewed_revision, entry.revision);
   }
@@ -70,19 +76,21 @@ test('content registry v3 is the logical multilingual route and discovery contra
   }
 });
 
-test('documentation corpus contains real English pages with localized scope metadata', () => {
+test('documentation corpus contains complete English and Russian pages with localized scope metadata', () => {
   assert.equal(docsEntries.length, 13);
   assert.deepEqual(docsEntries.map(entry => entry.route), expectedDocumentationRoutes);
+  assert.equal(russianDocsEntries.length, 13);
+  assert.deepEqual(russianDocsEntries.map(entry => entry.route), expectedDocumentationRoutes.map(route => `/ru${route}`));
   assert.deepEqual([...new Set(docsEntries.map(entry => entry.documentation.section))], ['start', 'how-to', 'concepts', 'reference', 'contributing']);
   assert.ok(!docsEntries.some(entry => entry.documentation.section === 'tutorials'), 'do not publish an empty Tutorials hierarchy');
-  for (const entry of docsEntries) {
+  for (const entry of [...docsEntries, ...russianDocsEntries]) {
     assert.ok(entry.documentation.purpose !== 'index');
     assert.ok(entry.documentation.applies_to.length > 0);
     assert.ok(Array.isArray(entry.documentation.related));
     assert.equal(entry.public, true);
     assert.equal(entry.canonical, true);
     assert.equal(entry.searchable, true);
-    assert.match(entry.source_path, /^pages\/en\/docs\//u);
+    assert.match(entry.source_path, new RegExp(`^pages/${entry.locale}/docs/`, 'u'));
   }
 });
 
@@ -138,12 +146,15 @@ test('all author-written internal routes and fragments resolve to registered dur
   }
 });
 
-test('public English navigation expresses the Pinega master-brand hierarchy', () => {
+test('public navigation expresses the Pinega master-brand hierarchy in each locale', () => {
   for (const entry of publicVariants) {
     const html = sourceByRoute.get(entry.route);
     const navigation = html.match(/<nav\b[^>]*data-primary-navigation[^>]*>[\s\S]*?<\/nav>/u)?.[0];
     assert.ok(navigation, `${entry.route} must have primary navigation`);
-    for (const destination of expectedPrimaryNavigation) assert.match(navigation, new RegExp(`href="${escapeRegex(destination)}"`, 'u'));
+    const expected = entry.locale === 'ru'
+      ? ['/ru/technology/', '/ru/research/', '/ru/docs/', '/ru/about/', 'https://github.com/likern/research']
+      : expectedPrimaryNavigation;
+    for (const destination of expected) assert.match(navigation, new RegExp(`href="${escapeRegex(destination)}"`, 'u'));
     assert.doesNotMatch(navigation, /\/component-lab\//u);
   }
 });
@@ -163,7 +174,7 @@ test('documentation landing is generated from locale metadata rather than hard-c
 });
 
 test('nested documentation sources expose build-time navigation, breadcrumb, and provenance slots', () => {
-  for (const entry of docsEntries) {
+  for (const entry of [...docsEntries, ...russianDocsEntries]) {
     const html = sourceByRoute.get(entry.route);
     assert.match(html, /<!-- PINEGA_DOC_NAV -->/u, entry.route);
     assert.match(html, /<!-- PINEGA_BREADCRUMBS -->/u, entry.route);
@@ -204,6 +215,22 @@ test('build generates locale-aware discovery, navigation, SEO, and freshness che
   assert.match(build, /renderDocumentationCatalogue/u);
   assert.match(build, /content\/\$\{locale\}\/documentation-manifest\.json/u);
   assert.match(build, /translations: Object\.fromEntries/u);
+  assert.match(build, /assertEquivalentDiagramStructure/u);
+});
+
+test('Russian corpus is governed by a terminology and review policy', async () => {
+  const policy = await read('content/localization-policy.md');
+  const review = await read('content/localization-review.ru.md');
+  const terminology = JSON.parse(await read('content/terminology.ru.json'));
+  assert.match(policy, /complete article body/u);
+  assert.match(policy, /technical review/u);
+  assert.match(policy, /linguistic review/u);
+  assert.match(review, /## Technical review/u);
+  assert.match(review, /## Linguistic review/u);
+  assert.equal(terminology.locale, 'ru');
+  assert.equal(terminology.brand_line.source, 'Correctness under concurrency.');
+  assert.equal(terminology.brand_line.policy, 'preserve');
+  assert.ok(terminology.terms.length >= 20);
 });
 
 test('research and programme surfaces retain Gate 1 boundaries', () => {

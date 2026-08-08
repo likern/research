@@ -3,22 +3,23 @@ import { layoutDiagram } from './scene.js';
 import { renderDiagramTranscriptText } from './text.js';
 import { escapeAttribute, escapeText, renderSceneAuthoringSvg, renderSceneSvg } from './svg.js';
 import { validateDiagramModel } from './validate.js';
+import { diagramMessage } from './i18n.js';
 
 export function renderDiagramFigure(value: unknown, options: DiagramLayoutOptions = {}): string {
   const model = validateDiagramModel(value);
   const scene = layoutDiagram(model, options);
-  const transcript = renderDiagramTranscriptText(model);
+  const transcript = renderDiagramTranscriptText(model, options.messages);
   const figureId = `pinega-figure-${model.id}`;
   return [
     `<figure class="pinega-semantic-diagram" id="${escapeAttribute(figureId)}" data-diagram-id="${escapeAttribute(model.id)}" data-diagram-kind="${escapeAttribute(model.kind)}" data-layout-profile="${escapeAttribute(scene.layoutProfile)}">`,
-    `<div class="pinega-diagram-viewport" tabindex="0" role="region" aria-label="${escapeAttribute(`${model.title} diagram viewport`)}">`,
+    `<div class="pinega-diagram-viewport" tabindex="0" role="region" aria-label="${escapeAttribute(diagramMessage(options.messages, 'viewport', { title: model.title }))}">`,
     renderSceneSvg(scene),
     '</div>',
     `<figcaption>${escapeText(model.caption)}</figcaption>`,
     '<details class="pinega-diagram-transcript">',
-    '<summary>Text representation and semantic model</summary>',
+    `<summary>${escapeText(diagramMessage(options.messages, 'transcript_summary'))}</summary>`,
     `<pre tabindex="0"><code>${escapeText(transcript)}</code></pre>`,
-    `<a href="/diagrams/models/${escapeAttribute(model.id)}.json" download>Download semantic model</a>`,
+    `<a href="${escapeAttribute(options.modelHref ?? `/diagrams/models/${model.id}.json`)}" download>${escapeText(diagramMessage(options.messages, 'download_model'))}</a>`,
     '</details>',
     '</figure>',
   ].join('');
