@@ -61,6 +61,10 @@ test('public navigation exposes the programme hierarchy and hides the component 
     await expect(navigation.locator('a[href="/about/"]')).toHaveText('About');
     await expect(navigation.locator('a[href="https://github.com/likern/research"]')).toHaveText('GitHub');
     await expect(navigation.locator('a[href="/component-lab/"]')).toHaveCount(0);
+    const language = page.getByRole('navigation', { name: 'Language' });
+    await expect(language).toBeVisible();
+    await expect(language.locator('[aria-current="page"]')).toHaveText('English');
+    await expect(language.getByRole('link', { name: 'Русский' })).toBeVisible();
   }
 });
 
@@ -133,7 +137,7 @@ test('nested documentation exposes generated navigation, breadcrumb and provenan
   await expect(breadcrumb).toContainText('Concepts');
   await expect(page.locator('[data-doc-provenance]')).toContainText('Design contract');
   await expect(page.locator('[data-doc-provenance]')).toContainText('Pinega Engine architecture for PostgreSQL 19');
-  await expect(page.locator('[data-doc-provenance] a[href*="/blob/main/web/pages/docs/"]')).toHaveCount(1);
+  await expect(page.locator('[data-doc-provenance] a[href*="/blob/main/web/pages/en/docs/"]')).toHaveCount(1);
   await expect(page.locator('select[disabled]')).toHaveCount(0);
 });
 
@@ -165,25 +169,36 @@ test('generated discovery files expose the complete documentation corpus', async
   const manifest = await request.get('/site-manifest.json');
   expect(manifest.ok()).toBeTruthy();
   const payload = await manifest.json() as {
-    site: { tagline: string };
-    routes: Array<{ id: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; documentation?: unknown }>;
+    schemaVersion: number;
+    site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
+    routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; documentation?: unknown }>;
   };
+  expect(payload.schemaVersion).toBe(3);
   expect(payload.site.tagline).toBe('Correctness under concurrency.');
+  expect(payload.site.defaultLocale).toBe('en');
+  expect(payload.site.locales.ru?.pathPrefix).toBe('/ru');
   expect(payload.routes.filter(entry => entry.sitemap).map(entry => entry.route)).toEqual(publicRoutes);
   expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route)).toEqual(publicRoutes);
   expect(payload.routes.filter(entry => entry.documentation && entry.route !== '/docs/')).toHaveLength(13);
+  expect(payload.routes.filter(entry => entry.locale === 'ru').map(entry => entry.route)).toEqual(['/ru/404.html']);
 
   const registry = await request.get('/content/content-index.json');
   const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };
-  expect(registryPayload.schema_version).toBe(2);
+  expect(registryPayload.schema_version).toBe(3);
   expect(registryPayload.entries).toHaveLength(20);
 
-  const docsManifest = await request.get('/content/documentation-manifest.json');
+  const docsManifest = await request.get('/content/en/documentation-manifest.json');
   expect(docsManifest.ok()).toBeTruthy();
-  const docsPayload = await docsManifest.json() as { schema_version: number; sections: Array<{ id: string }>; entries: Array<{ route: string }> };
-  expect(docsPayload.schema_version).toBe(1);
+  const docsPayload = await docsManifest.json() as { schema_version: number; locale: string; sections: Array<{ id: string }>; entries: Array<{ route: string }> };
+  expect(docsPayload.schema_version).toBe(2);
+  expect(docsPayload.locale).toBe('en');
   expect(docsPayload.sections.map(section => section.id)).toEqual(['start', 'how-to', 'concepts', 'reference', 'contributing']);
   expect(docsPayload.entries.map(entry => entry.route)).toEqual(documentationRoutes);
+
+  const russianDocsManifest = await request.get('/content/ru/documentation-manifest.json');
+  expect(russianDocsManifest.ok()).toBeTruthy();
+  const russianDocsPayload = await russianDocsManifest.json() as { schema_version: number; locale: string; sections: unknown[]; entries: unknown[] };
+  expect(russianDocsPayload).toEqual({ schema_version: 2, locale: 'ru', sections: [], entries: [] });
 
   const sitemap = await request.get('/sitemap.xml');
   const sitemapText = await sitemap.text();
@@ -198,8 +213,65 @@ test('unknown routes return the accessible not-found page with HTTP 404', async 
   await expect(page.getByRole('heading', { level: 1 })).toContainText('not part of the current model');
 });
 
+test('Russian unknown routes use the Russian 404, locale messages, and peer switcher', async ({ page }) => {
+  const response = await page.goto('/ru/missing-stratum', { waitUntil: 'commit' });
+  expect(response?.status()).toBe(404);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-locale', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-webawesome-locale', 'ru');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Эта страница не входит в текущую модель.');
+  const switcher = page.getByRole('navigation', { name: 'Язык' });
+  await expect(switcher.getByRole('link', { name: 'English' })).toHaveAttribute('href', '/404.html');
+  await expect(switcher.locator('[aria-current="page"]')).toHaveText('Русский');
+  await expect(page.locator('[data-translation-notice]')).toHaveCount(0);
+  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать тёмную тему');
+});
+
+test('selecting an unavailable language keeps the current page and announces localized status', async ({ page }) => {
+  await ready(page, '/');
+  const initialUrl = page.url();
+  const russian = page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' });
+  const notice = page.locator('[data-translation-notice]');
+  await expect(notice).toBeHidden();
+
+  await russian.focus();
+  await page.keyboard.press('Enter');
+
+  await expect(page).toHaveURL(initialUrl);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Correctness under concurrency.');
+  await expect(russian).toBeFocused();
+  await expect(notice).toBeVisible();
+  await expect(notice).toHaveText('A Russian translation of this page is not available. You are staying on the current page.');
+});
+
+test('missing-translation notice has a static fragment fallback', async ({ request }) => {
+  const response = await request.get('/');
+  const html = await response.text();
+  expect(html).toContain('href="#pinega-translation-unavailable-ru"');
+  expect(html).toContain('id="pinega-translation-unavailable-ru"');
+  expect(html).toContain('role="status"');
+  expect(html).toContain('A Russian translation of this page is not available.');
+});
+
+test('language selection is URL-owned and Accept-Language never redirects the default route', async ({ request }) => {
+  const response = await request.get('/', { headers: { 'Accept-Language': 'ru-RU,ru;q=0.9,en;q=0.8' }, maxRedirects: 0 });
+  expect(response.status()).toBe(200);
+  expect(response.url()).toMatch(/\/$/u);
+  expect(await response.text()).toContain('<html lang="en"');
+});
+
+test('canonical pages emit static self-canonical and reciprocal-ready locale metadata', async ({ request }) => {
+  const response = await request.get('/docs/');
+  const html = await response.text();
+  expect(html).toContain('<link rel="canonical" href="https://pinega.example/docs/">');
+  expect(html).toContain('<link rel="alternate" hreflang="en" href="https://pinega.example/docs/">');
+  expect(html).toContain('<link rel="alternate" hreflang="x-default" href="https://pinega.example/docs/">');
+  expect(html).toContain('<meta property="og:locale" content="en_GB">');
+});
+
 test('core public pages have no serious or critical axe violations', async ({ page }) => {
-  for (const route of [...corePublicRoutes, '/docs/concepts/pinega-engine-architecture/', '/docs/how-to/run-validation/']) {
+  for (const route of [...corePublicRoutes, '/docs/concepts/pinega-engine-architecture/', '/docs/how-to/run-validation/', '/ru/404.html']) {
     await ready(page, route);
     await page.addScriptTag({ path: axePath });
     const results = await page.evaluate(async () => {

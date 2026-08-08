@@ -1,4 +1,5 @@
 import { defineCustomElement } from '../../internal/define.js';
+import { getMessages } from '../../i18n/messages.js';
 import { onWebAwesomeProReady } from '../../vendor/webawesome/runtime.js';
 
 let benchmarkChartSequence = 0;
@@ -45,6 +46,7 @@ class PinegaBenchmark extends HTMLElement {
   }
 
   #renderFallback(data: BenchmarkData): void {
+    const messages = getMessages();
     let container = this.querySelector<HTMLElement>('[data-benchmark-visual]');
     if (!container) {
       container = document.createElement('div');
@@ -52,17 +54,18 @@ class PinegaBenchmark extends HTMLElement {
       this.prepend(container);
     }
     container.replaceChildren(buildLineChartSvg(data, {
-      title: this.dataset.chartTitle ?? 'Benchmark result',
-      description: this.dataset.chartDescription ?? 'Line chart generated from the adjacent data table.',
+      title: this.dataset.chartTitle ?? messages.benchmark.title,
+      description: this.dataset.chartDescription ?? messages.benchmark.fallback_description,
       xLabel: this.dataset.xLabel ?? '',
       yLabel: this.dataset.yLabel ?? '',
     }));
     this.dataset.renderer = 'svg-fallback';
     const label = this.querySelector<HTMLElement>('[data-renderer-label]');
-    if (label) label.textContent = 'Native SVG fallback';
+    if (label) label.textContent = messages.benchmark.fallback_label;
   }
 
   #upgradeToProChart(): void {
+    const messages = getMessages();
     if (!this.#data || customElements.get('wa-line-chart') === undefined) return;
     const visual = this.querySelector<HTMLElement>('[data-benchmark-visual]');
     if (!visual) return;
@@ -73,8 +76,8 @@ class PinegaBenchmark extends HTMLElement {
       visual.append(chart);
     }
 
-    chart.setAttribute('label', this.dataset.chartTitle ?? 'Benchmark result');
-    chart.setAttribute('description', this.dataset.chartDescription ?? 'Benchmark data rendered as a line chart.');
+    chart.setAttribute('label', this.dataset.chartTitle ?? messages.benchmark.title);
+    chart.setAttribute('description', this.dataset.chartDescription ?? messages.benchmark.chart_description);
     chart.setAttribute('legend-position', 'bottom');
     chart.setAttribute('grid', 'x y');
     if (this.dataset.xLabel) chart.setAttribute('x-label', this.dataset.xLabel);
@@ -92,7 +95,7 @@ class PinegaBenchmark extends HTMLElement {
     if (fallback) fallback.setAttribute('hidden', '');
     this.dataset.renderer = 'webawesome-pro';
     const label = this.querySelector<HTMLElement>('[data-renderer-label]');
-    if (label) label.textContent = 'Web Awesome Pro';
+    if (label) label.textContent = messages.benchmark.pro_label;
   }
 }
 

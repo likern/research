@@ -115,7 +115,7 @@ async function handleRequest(request, response, { root, liveReload, clients }) {
     }
   }
 
-  const notFound = resolve(root, '404.html');
+  const notFound = resolve(root, requested === '/ru' || requested.startsWith('/ru/') ? 'ru/404.html' : '404.html');
   if (await isFile(notFound)) {
     await sendFile(notFound, method, response, 404, liveReload);
     return;

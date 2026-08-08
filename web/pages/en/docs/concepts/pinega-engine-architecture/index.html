@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-engine-architecture">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pinega Engine architecture — Pinega Documentation</title>
+    <meta name="description" content="Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/concepts/pinega-engine-architecture/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Pinega Engine architecture — Pinega Documentation">
+    <meta property="og:description" content="The accepted PostgreSQL integration, mutable version store, shared buffer-pool, and WAL boundaries for Pinega Engine.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/concepts/pinega-engine-architecture/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><!-- PINEGA_LANGUAGE_SWITCHER --><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">Explanation · Design contract</p>
+              <h1>Pinega Engine architecture</h1>
+              <p class="pinega-article-lede">This page explains accepted architectural boundaries. It is not an installation guide and does not imply that every mechanism below is already implemented or benchmarked.</p>
+            </header>
+
+            <wa-callout variant="warning" appearance="filled-outlined"><strong>Target boundary:</strong> PostgreSQL 19, extension-only Table Access Method direction, no core patch requirement for the current engine programme.</wa-callout>
+
+            <section id="integration" aria-labelledby="integration-title">
+              <h2 id="integration-title">PostgreSQL integration</h2>
+              <p>Pinega Engine is designed to enter PostgreSQL through extension APIs, especially the Table Access Method boundary. PostgreSQL remains responsible for SQL-visible transaction identity, snapshots, and surrounding executor/catalogue integration. The extension side should keep a narrow explicit C ABI around Rust/pgrx and <code>pg_sys</code> interactions.</p>
+            </section>
+
+            <section id="versions" aria-labelledby="versions-title">
+              <h2 id="versions-title">Mutable version store</h2>
+              <p>The OLTP path uses out-of-place row versions in Pinega-owned persistent files rather than PostgreSQL heap blocks. Visibility metadata is explicit so version evaluation, handles, and later SIMD processing can be designed around the engine's own representation.</p>
+              <p>The analytical immutable Vortex-based direction is a later programme layer and is not merged into the OLTP MVP.</p>
+            </section>
+
+            <section id="buffer-pool" aria-labelledby="buffer-pool-title">
+              <h2 id="buffer-pool-title">Pinega-owned shared buffer pool</h2>
+              <p>Because the mutable store uses custom persistent files rather than PostgreSQL blocks, Pinega owns the corresponding shared-memory buffer pool. The research direction includes stable frames, generation/version handles, protect-or-pin plus revalidate, explicit retirement/reclamation, and cache/coherence/NUMA-aware placement.</p>
+              <p>Lock-free and wait-free mechanisms are research and implementation targets, not a blanket claim that the production buffer manager already satisfies those progress guarantees.</p>
+            </section>
+
+            <section id="wal" aria-labelledby="wal-title">
+              <h2 id="wal-title">Durability: one PostgreSQL WAL</h2>
+              <pinega-evidence kind="confirmed">
+                <h3>Accepted decision</h3>
+                <p>PostgreSQL WAL remains the single write-ahead logging and commit boundary. The MVP may log complete tuple images; logical replication is in scope, while physical standby and aggressive GC/space reuse may follow after the core path is validated.</p>
+              </pinega-evidence>
+              <p>This prevents a second independent WAL-like commit protocol from becoming an accidental distributed durability problem inside the extension.</p>
+            </section>
+
+            <section id="evidence" aria-labelledby="evidence-title">
+              <h2 id="evidence-title">Architecture is not performance evidence</h2>
+              <p>The architecture proposes mechanisms intended to improve OLTP behaviour and make concurrency lifetimes explicit. Performance, scalability, crash-safety, and PostgreSQL-compatibility claims require implementation plus benchmark and correctness evidence before they can be promoted.</p>
+              <p>The public <a href="/technology/#engine-architecture">Technology summary</a> owns the portfolio-level view; the <a href="/research/">Research catalogue</a> owns active questions and evidence.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#integration">PostgreSQL</a></li><li><a href="#versions">Versions</a></li><li><a href="#buffer-pool">Buffer pool</a></li><li><a href="#wal">WAL</a></li><li><a href="#evidence">Evidence</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

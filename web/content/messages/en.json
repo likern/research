@@ -1,0 +1,96 @@
+{
+  "locale": "en",
+  "theme": {
+    "use_light": "Use light theme",
+    "use_dark": "Use dark theme"
+  },
+  "navigation": {
+    "language": "Language",
+    "documentation": "Documentation",
+    "breadcrumb": "Breadcrumb",
+    "translation_unavailable": {
+      "en": "An English translation of this page is not available. You are staying on the current page.",
+      "ru": "A Russian translation of this page is not available. You are staying on the current page."
+    }
+  },
+  "search": {
+    "of": "of",
+    "page_forms": {
+      "one": "page",
+      "other": "pages"
+    }
+  },
+  "code": {
+    "copy": "Copy code",
+    "success": "Code copied",
+    "error": "Copy failed"
+  },
+  "benchmark": {
+    "title": "Benchmark result",
+    "fallback_description": "Line chart generated from the adjacent data table.",
+    "chart_description": "Benchmark data rendered as a line chart.",
+    "fallback_label": "Native SVG fallback",
+    "pro_label": "Web Awesome Pro"
+  },
+  "runtime": {
+    "project_pro": "Web Awesome project + Pro chart",
+    "project": "Web Awesome project",
+    "core": "Pinned Web Awesome Core 3.11.0"
+  },
+  "documentation": {
+    "stage_label": "Documentation stage",
+    "stage_value": "Research-stage corpus",
+    "all": "All documentation",
+    "applies_to": "Applies to",
+    "updated": "Updated",
+    "page_provenance": "Page provenance",
+    "contract": "Documentation contract",
+    "purpose": "Purpose",
+    "evidence_status": "Evidence status",
+    "owner": "Owner",
+    "registry_id": "Registry ID",
+    "view_source": "View source",
+    "edit_github": "Edit on GitHub",
+    "related_content": "Related content",
+    "sections": {
+      "start": {
+        "label": "Start",
+        "description": "Orientation and reproducible first paths through the Pinega programme and workspaces."
+      },
+      "tutorials": {
+        "label": "Tutorials",
+        "description": "Learning-oriented walkthroughs that build familiarity by doing."
+      },
+      "how-to": {
+        "label": "How-to",
+        "description": "Goal-oriented procedures for concrete repository and Web tasks."
+      },
+      "concepts": {
+        "label": "Concepts",
+        "description": "Explanations of programme boundaries, architecture, evidence, and engineering rationale."
+      },
+      "reference": {
+        "label": "Reference",
+        "description": "Exact repository, environment, command, and metadata contracts."
+      },
+      "contributing": {
+        "label": "Contributing",
+        "description": "Review, validation, and release gates for changes to the shared programme workspace."
+      }
+    },
+    "purposes": {
+      "start": "Start",
+      "tutorial": "Tutorial",
+      "how-to": "How-to",
+      "explanation": "Explanation",
+      "reference": "Reference",
+      "contributing": "Contributing"
+    },
+    "maturity": {
+      "available": "Available",
+      "validated": "Design contract",
+      "research": "Research",
+      "decision": "Decision"
+    }
+  }
+}

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="docs-run-validation">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Run the Web validation gate — Pinega Documentation</title>
+    <meta name="description" content="Run Pinega Web token, type, unit, build, browser, accessibility, and visual-regression checks using the repository's pinned commands and Playwright environment.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/how-to/run-validation/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Run the Web validation gate — Pinega Documentation">
+    <meta property="og:description" content="Run the complete Pinega Web validation path before review or release.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/how-to/run-validation/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed"><header><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><nav data-primary-navigation aria-label="Primary navigation"><ul><li><a href="/technology/">Technology</a></li><li><a href="/research/">Research</a></li><li><a href="/docs/" aria-current="page">Documentation</a></li><li><a href="/about/">About</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav><div class="pinega-cluster"><!-- PINEGA_LANGUAGE_SWITCHER --><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button></div></header></pinega-site-header>
+
+      <div class="pinega-doc-shell">
+<!-- PINEGA_DOC_NAV -->
+        <main id="main-content" tabindex="-1" class="pinega-doc-main">
+<!-- PINEGA_BREADCRUMBS -->
+          <article class="pinega-prose">
+            <header class="pinega-article-header">
+              <p class="pinega-eyebrow">How-to</p>
+              <h1>Run the Web validation gate</h1>
+              <p class="pinega-article-lede">Use this procedure after a Web change is implemented. A passing build alone is insufficient: source contracts, browsers, accessibility, and committed visual baselines are separate parts of the gate.</p>
+            </header>
+
+            <section id="fast" aria-labelledby="fast-title">
+              <h2 id="fast-title">Run deterministic non-browser checks</h2>
+              <pinega-code-example><header><span>Nushell · non-browser gate</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>cd web
+^npm run tokens:check
+^npm run typecheck
+^npm run test:unit
+^npm run build
+^npm run check:build</code></pre></pinega-code-example>
+              <p>These checks verify generated design-token adapters, TypeScript, architecture/content contracts, static output, discovery metadata, and bundle budgets.</p>
+            </section>
+
+            <section id="browser" aria-labelledby="browser-title">
+              <h2 id="browser-title">Run browser and accessibility checks</h2>
+              <pinega-code-example><header><span>Nushell · browser gate</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run test:browser</code></pre></pinega-code-example>
+              <p>The configured matrix covers Chromium desktop/mobile, Firefox, and WebKit, including navigation behaviour, route integrity, no-overflow checks, keyboard interaction, and blocking axe findings.</p>
+              <p>On RHEL, run the browser step inside the Playwright image matching the lockfile version. For the current Web package that means Playwright <code>1.62.1</code> and the corresponding <code>mcr.microsoft.com/playwright:v1.62.1-noble</code> image rather than host-installed Ubuntu browser binaries.</p>
+            </section>
+
+            <section id="visual" aria-labelledby="visual-title">
+              <h2 id="visual-title">Verify visual baselines</h2>
+              <pinega-code-example><header><span>Nushell · visual gate</span><div><button type="button" data-native-copy>Copy code</button><wa-copy-button></wa-copy-button></div></header><pre tabindex="0"><code>^npm run test:visual</code></pre></pinega-code-example>
+              <p>Do not update snapshots merely to make CI green. Generate new baselines only when the visual change is intentional, inspect the resulting images or GitHub Actions artefact, and commit the reviewed corpus as an explicit change.</p>
+            </section>
+
+            <section id="ready" aria-labelledby="ready-title">
+              <h2 id="ready-title">Treat CI as evidence, not as the whole review</h2>
+              <p>A pull request is ready only when the required checks pass on its current head, expected visual artefacts exist, stale or cancelled runs have been diagnosed, and the public claims still match implementation maturity. See <a href="/docs/contributing/review-and-release-gates/">Review and release gates</a> for the full contract.</p>
+            </section>
+
+<!-- PINEGA_DOC_PROVENANCE -->
+          </article>
+        </main>
+        <aside class="pinega-doc-toc" aria-label="On this page"><p>On this page</p><ol><li><a href="#fast">Non-browser</a></li><li><a href="#browser">Browsers</a></li><li><a href="#visual">Visual</a></li><li><a href="#ready">Ready</a></li></ol></aside>
+      </div>
+
+      <footer class="pinega-site-footer pinega-full-bleed"><div class="pinega-site-footer-inner"><div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div><nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav></div></footer>
+    </div>
+  </body>
+</html>

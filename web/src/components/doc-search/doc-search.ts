@@ -1,4 +1,5 @@
 import { defineCustomElement } from '../../internal/define.js';
+import { currentLocale, formatPageCount, getMessages, type PinegaLocale } from '../../i18n/messages.js';
 
 type SearchControl = HTMLElement & { value?: string };
 
@@ -9,6 +10,7 @@ class PinegaDocSearch extends HTMLElement {
   #groups: HTMLElement[] = [];
   #status: HTMLElement | undefined;
   #empty: HTMLElement | undefined;
+  #locale: PinegaLocale = currentLocale();
 
   connectedCallback(): void {
     this.#controller?.abort();
@@ -38,11 +40,11 @@ class PinegaDocSearch extends HTMLElement {
   };
 
   #filter(): void {
-    const query = normalize(this.#control?.value ?? this.#control?.getAttribute('value') ?? '');
+    const query = normalize(this.#control?.value ?? this.#control?.getAttribute('value') ?? '', this.#locale);
     let visible = 0;
 
     for (const card of this.#cards) {
-      const haystack = normalize(`${card.dataset.search ?? ''} ${card.textContent ?? ''}`);
+      const haystack = normalize(`${card.dataset.search ?? ''} ${card.textContent ?? ''}`, this.#locale);
       const matches = query.length === 0 || query.split(/\s+/u).every(term => haystack.includes(term));
       card.hidden = !matches;
       if (matches) visible += 1;
@@ -54,16 +56,17 @@ class PinegaDocSearch extends HTMLElement {
     }
 
     if (this.#status) {
+      const messages = getMessages(this.#locale);
       this.#status.textContent = query
-        ? `${visible} of ${this.#cards.length} pages`
-        : `${this.#cards.length} pages`;
+        ? `${visible} ${messages.search.of} ${formatPageCount(this.#cards.length, this.#locale)}`
+        : formatPageCount(this.#cards.length, this.#locale);
     }
     if (this.#empty) this.#empty.hidden = visible !== 0;
   }
 }
 
-function normalize(value: string): string {
-  return value.normalize('NFKC').trim().toLocaleLowerCase();
+function normalize(value: string, locale: PinegaLocale): string {
+  return value.normalize('NFKC').trim().toLocaleLowerCase(locale);
 }
 
 defineCustomElement('pinega-doc-search', PinegaDocSearch);

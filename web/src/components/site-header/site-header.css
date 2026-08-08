@@ -43,11 +43,11 @@
     box-shadow: inset 0 0 0 1px color-mix(in oklab, white 30%, transparent);
   }
 
-  pinega-site-header nav {
+  pinega-site-header nav[data-primary-navigation] {
     justify-self: end;
   }
 
-  pinega-site-header nav ul {
+  pinega-site-header nav[data-primary-navigation] ul {
     display: flex;
     align-items: center;
     gap: clamp(var(--pinega-ref-space-s), 2vi, var(--pinega-ref-space-xl));
@@ -56,7 +56,7 @@
     list-style: none;
   }
 
-  pinega-site-header nav a {
+  pinega-site-header nav[data-primary-navigation] a {
     color: var(--pinega-sys-color-text-secondary);
     font-size: 0.9rem;
     font-weight: var(--pinega-ref-font-weight-medium);
@@ -64,9 +64,66 @@
     white-space: nowrap;
   }
 
-  pinega-site-header nav a:hover,
-  pinega-site-header nav a[aria-current='page'] {
+  pinega-site-header nav[data-primary-navigation] a:hover,
+  pinega-site-header nav[data-primary-navigation] a[aria-current='page'] {
     color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-language-switcher {
+    display: inline-flex;
+    overflow: hidden;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-control);
+    background: var(--pinega-sys-color-surface-raised);
+  }
+
+  .pinega-language-option {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--pinega-ref-space-2xs) var(--pinega-ref-space-xs);
+    color: var(--pinega-sys-color-text-secondary);
+    font-size: 0.8rem;
+    font-weight: var(--pinega-ref-font-weight-medium);
+    line-height: 1.5;
+    text-decoration: none;
+  }
+
+  .pinega-language-option + .pinega-language-option {
+    border-inline-start: 1px solid var(--pinega-sys-color-border-subtle);
+  }
+
+  .pinega-language-switcher a:hover,
+  .pinega-language-option[aria-current='page'] {
+    background: var(--pinega-sys-color-surface-canvas);
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-language-switcher a:focus-visible {
+    position: relative;
+    z-index: 1;
+    outline: 2px solid var(--pinega-sys-color-action-primary);
+    outline-offset: -2px;
+  }
+
+  .pinega-translation-notice {
+    display: none;
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    border-block-end: 1px solid color-mix(in oklab, var(--pinega-sys-color-action-primary) 35%, var(--pinega-sys-color-border-subtle));
+    background: color-mix(in oklab, var(--pinega-sys-color-action-primary) 9%, var(--pinega-sys-color-surface-raised));
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-translation-notice:target,
+  .pinega-translation-notice[data-visible] {
+    display: block;
+  }
+
+  .pinega-translation-notice p {
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
+    margin: 0 auto;
+    padding-block: var(--pinega-ref-space-s);
+    font-size: 0.9rem;
+    font-weight: var(--pinega-ref-font-weight-medium);
   }
 
   pinega-site-header [data-navigation-toggle] {
@@ -87,29 +144,29 @@
       display: none;
     }
 
-    pinega-site-header nav {
+    pinega-site-header nav[data-primary-navigation] {
       grid-column: 1 / -1;
       justify-self: stretch;
       padding-block-end: var(--pinega-ref-space-m);
     }
 
-    pinega-site-header[data-enhanced]:not([data-open]) nav {
+    pinega-site-header[data-enhanced]:not([data-open]) nav[data-primary-navigation] {
       display: none;
     }
 
-    pinega-site-header nav ul {
+    pinega-site-header nav[data-primary-navigation] ul {
       align-items: stretch;
       flex-direction: column;
       gap: var(--pinega-ref-space-2xs);
     }
 
-    pinega-site-header nav a {
+    pinega-site-header nav[data-primary-navigation] a {
       display: block;
       border-radius: var(--pinega-sys-radius-control);
       padding: var(--pinega-ref-space-s) var(--pinega-ref-space-m);
     }
 
-    pinega-site-header nav a:hover {
+    pinega-site-header nav[data-primary-navigation] a:hover {
       background: var(--pinega-sys-color-surface-raised);
     }
   }
@@ -122,6 +179,15 @@
 
     pinega-site-header .pinega-cluster {
       gap: var(--pinega-ref-space-2xs);
+    }
+
+    .pinega-language-option {
+      padding-inline: var(--pinega-ref-space-2xs);
+      font-size: 0.75rem;
+    }
+
+    .pinega-translation-notice p {
+      inline-size: min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide));
     }
   }
 }

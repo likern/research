@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import test from 'node:test';
@@ -48,4 +48,25 @@ test('ordinary serve mode does not alter built HTML', async t => {
   const page = await fetch(`${server.url}/`);
   assert.equal(page.status, 200);
   assert.equal(await page.text(), html);
+});
+
+test('not-found responses follow the requested locale prefix', async t => {
+  const root = await mkdtemp(resolve(tmpdir(), 'pinega-web-server-'));
+  await mkdir(resolve(root, 'ru'));
+  await writeFile(resolve(root, '404.html'), '<!doctype html><html lang="en"><body>English not found</body></html>\n', 'utf8');
+  await writeFile(resolve(root, 'ru/404.html'), '<!doctype html><html lang="ru"><body>Страница не найдена</body></html>\n', 'utf8');
+
+  const server = await startPinegaServer({ root, port: 0, liveReload: false, log: false });
+  t.after(async () => {
+    await server.close();
+    await rm(root, { recursive: true, force: true });
+  });
+
+  const english = await fetch(`${server.url}/missing`);
+  assert.equal(english.status, 404);
+  assert.match(await english.text(), /lang="en"/u);
+
+  const russian = await fetch(`${server.url}/ru/missing`);
+  assert.equal(russian.status, 404);
+  assert.match(await russian.text(), /lang="ru"/u);
 });

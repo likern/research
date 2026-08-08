@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" class="pinega-light wa-light wa-theme-pinega-strata wa-palette-pinega" data-page="documentation">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Documentation — Pinega</title>
+    <meta name="description" content="Pinega documentation organised into real start, how-to, explanation, reference, and contributing pages for the current research-stage programme.">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#f7f2e8">
+    <link rel="canonical" href="{{SITE_ORIGIN}}/docs/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Documentation — Pinega">
+    <meta property="og:description" content="Real start, how-to, explanation, reference, and contributing pages for the Pinega research-stage programme.">
+    <meta property="og:url" content="{{SITE_ORIGIN}}/docs/">
+    <!-- PINEGA_PROJECT_META -->
+    <link rel="stylesheet" href="/assets/main.css">
+    <script type="module" src="/assets/main.js"></script>
+  </head>
+  <body>
+    <a class="pinega-skip-link" href="#main-content">Skip to main content</a>
+
+    <div class="pinega-page">
+      <pinega-site-header class="pinega-full-bleed">
+        <header>
+          <a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
+          <nav data-primary-navigation aria-label="Primary navigation">
+            <ul>
+              <li><a href="/technology/">Technology</a></li>
+              <li><a href="/research/">Research</a></li>
+              <li><a href="/docs/" aria-current="page">Documentation</a></li>
+              <li><a href="/about/">About</a></li>
+              <li><a href="https://github.com/likern/research">GitHub</a></li>
+            </ul>
+          </nav>
+          <div class="pinega-cluster">
+            <!-- PINEGA_LANGUAGE_SWITCHER -->
+            <wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Use dark theme</wa-button>
+            <wa-button data-navigation-toggle appearance="outlined" size="s">Menu</wa-button>
+          </div>
+        </header>
+      </pinega-site-header>
+
+      <main id="main-content" tabindex="-1" class="pinega-docs-landing">
+        <section class="pinega-doc-hero" aria-labelledby="docs-title">
+          <div>
+            <div class="pinega-cluster">
+              <wa-badge variant="brand" appearance="filled-outlined" pill>Documentation Gate 2</wa-badge>
+              <span class="pinega-eyebrow">Research-stage corpus</span>
+            </div>
+            <h1 id="docs-title">Use the documentation for the job you are doing now.</h1>
+            <p>
+              The documentation is now a real corpus rather than a map of anchors. Start pages orient you, how-to guides solve concrete tasks, explanations build understanding, reference pages define exact contracts, and contributing pages describe review gates.
+            </p>
+          </div>
+          <wa-callout variant="brand" appearance="filled-outlined">
+            <strong>Scope boundary:</strong> these pages document the Pinega programme, research workspace, Web platform, and accepted architecture. They do not claim that Pinega Engine is an installable production release.
+          </wa-callout>
+        </section>
+
+        <section class="pinega-section pinega-doc-corpus-summary" aria-labelledby="corpus-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Documentation model</p>
+            <h2 id="corpus-title">Purpose, evidence maturity, and applicability are independent.</h2>
+            <p class="pinega-muted">A how-to can describe an available Web task while an explanation can document a design contract that is accepted but not yet implemented. Every nested page exposes both dimensions and its applicable programme or workspace.</p>
+          </header>
+          <dl class="pinega-doc-maturity">
+            <div><dt>Start / Tutorial</dt><dd>Orientation and guided first runs that help a reader become productive in the current workspace.</dd></div>
+            <div><dt>How-to</dt><dd>Goal-oriented procedures with prerequisites, commands, expected outcomes, and failure boundaries.</dd></div>
+            <div><dt>Explanation</dt><dd>Concepts, architecture, trade-offs, programme relationships, and the reasoning behind accepted boundaries.</dd></div>
+            <div><dt>Reference</dt><dd>Exact repository, environment, command, schema, and metadata contracts intended for lookup.</dd></div>
+          </dl>
+        </section>
+
+        <pinega-doc-search aria-labelledby="doc-filter-title">
+          <div class="pinega-doc-search-heading">
+            <div>
+              <p class="pinega-eyebrow">Current corpus</p>
+              <h2 id="doc-filter-title">Filter documentation topics</h2>
+              <p class="pinega-muted">This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.</p>
+            </div>
+            <p data-doc-search-status aria-live="polite"><!-- PINEGA_DOC_COUNT --> pages</p>
+          </div>
+          <wa-input data-doc-search-input type="search" label="Filter documentation topics" placeholder="Try engine architecture, Web validation, metadata, or research workspace"></wa-input>
+
+<!-- PINEGA_DOC_CATALOGUE -->
+          <p data-doc-search-empty hidden>No documentation pages match this filter.</p>
+        </pinega-doc-search>
+
+        <section class="pinega-section" aria-labelledby="path-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Recommended first path</p>
+            <h2 id="path-title">Orient first; execute only after the boundary is clear.</h2>
+          </header>
+          <ol class="pinega-reading-path">
+            <li><span>01</span><div><strong><a href="/docs/start/project-overview/">Project overview</a></strong><p>Understand what Pinega is, what exists today, and what remains a future implementation or product claim.</p></div></li>
+            <li><span>02</span><div><strong><a href="/docs/start/research-workspace/">Reproduce the research workspace</a></strong><p>Run the pinned toolchain and build registered research artefacts from a clean checkout.</p></div></li>
+            <li><span>03</span><div><strong><a href="/docs/concepts/pinega-engine-architecture/">Understand Pinega Engine architecture</a></strong><p>Read the PostgreSQL, version-store, buffer-pool, and WAL boundaries as an explanation rather than a setup guide.</p></div></li>
+            <li><span>04</span><div><strong><a href="/docs/contributing/review-and-release-gates/">Review and release gates</a></strong><p>Use the validation and evidence contracts before declaring a change or public claim ready.</p></div></li>
+          </ol>
+        </section>
+
+        <section class="pinega-section pinega-doc-maturity" aria-labelledby="maturity-title">
+          <header class="pinega-section-heading">
+            <p class="pinega-eyebrow">Evidence maturity</p>
+            <h2 id="maturity-title">The label describes evidence, not the type of page.</h2>
+          </header>
+          <dl>
+            <div><dt><span data-state="available">Available</span></dt><dd>A runnable or inspectable artefact exists in the repository.</dd></div>
+            <div><dt><span data-state="validated">Design contract</span></dt><dd>The architecture or contract is documented and tested as a model/specimen, not necessarily implemented as a production system.</dd></div>
+            <div><dt><span data-state="research">Research</span></dt><dd>The topic is actively investigated and may change with evidence.</dd></div>
+            <div><dt><span data-state="decision">Decision</span></dt><dd>A project direction is accepted unless later evidence explicitly supersedes it.</dd></div>
+          </dl>
+        </section>
+      </main>
+
+      <footer class="pinega-site-footer pinega-full-bleed">
+        <div class="pinega-site-footer-inner">
+          <div><a class="pinega-brand" href="/" aria-label="Pinega home"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a><p>Correctness under concurrency. Database systems research and engineering by Pinega Labs.</p></div>
+          <nav aria-label="Footer navigation"><a href="/technology/">Technology</a><a href="/research/">Research</a><a href="/docs/">Documentation</a><a href="/about/">About</a><a href="https://github.com/likern/research">GitHub</a></nav>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
