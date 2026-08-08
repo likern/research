@@ -15,24 +15,30 @@ export interface WebAwesomeRuntimeResult {
 export async function initializeWebAwesome(): Promise<WebAwesomeRuntimeResult> {
   document.documentElement.dataset.webawesome = 'loading';
   const configuredProjectUrl = readProjectUrl();
+  const locale = document.documentElement.lang.toLocaleLowerCase().split('-')[0] ?? 'en';
   let source: WebAwesomeRuntimeResult['source'] = 'npm';
 
   if (configuredProjectUrl) {
+    let projectLoaded = false;
     try {
       await loadProject(configuredProjectUrl);
+      projectLoaded = true;
+      await loadProjectTranslation(configuredProjectUrl, locale);
       source = 'project';
     } catch (error) {
+      if (projectLoaded) throw new Error(`Pinega loaded the Web Awesome project but could not load its ${locale} translation module.`, { cause: error });
       console.error('Pinega could not load the configured Web Awesome project. Falling back to the pinned Core package.', error);
-      await import('./core.js');
+      await loadCore(locale);
       source = 'npm-fallback';
     }
   } else {
-    await import('./core.js');
+    await loadCore(locale);
   }
 
   await Promise.all(coreComponentTags.map(tag => customElements.whenDefined(tag)));
   const proLineChart = customElements.get('wa-line-chart') !== undefined;
   document.documentElement.dataset.webawesome = source;
+  document.documentElement.dataset.webawesomeLocale = locale;
 
   const result: WebAwesomeRuntimeResult = {
     source,
@@ -85,6 +91,41 @@ function loadProject(url: string): Promise<void> {
     script.type = 'module';
     script.src = url;
     script.dataset.pinegaWebawesomeProject = '';
+    script.addEventListener('load', () => {
+      script.dataset.loaded = 'true';
+      resolve();
+    }, { once: true });
+    script.addEventListener('error', () => reject(new Error(`Failed to load ${url}`)), { once: true });
+    document.head.append(script);
+  });
+}
+
+async function loadCore(locale: string): Promise<void> {
+  await import('./core.js');
+  if (locale === 'ru') await import('@awesome.me/webawesome/dist/translations/ru.js');
+}
+
+async function loadProjectTranslation(projectUrl: string, locale: string): Promise<void> {
+  if (locale === 'en') return;
+  const translationUrl = new URL(`translations/${locale}.js`, projectUrl).href;
+  await loadExternalModule(translationUrl, 'data-pinega-webawesome-translation');
+}
+
+function loadExternalModule(url: string, marker: string): Promise<void> {
+  const existing = document.querySelector<HTMLScriptElement>(`script[${marker}]`);
+  if (existing) {
+    if (existing.dataset.loaded === 'true') return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error(`Failed to load ${url}`)), { once: true });
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.src = url;
+    script.setAttribute(marker, '');
     script.addEventListener('load', () => {
       script.dataset.loaded = 'true';
       resolve();

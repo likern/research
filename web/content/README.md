@@ -1,28 +1,44 @@
 # Pinega Web content contract
 
-`content-index.json` is the versioned registry for public routes, internal web
-surfaces, page identity, navigation, maturity, audience, discovery metadata, and
-the documentation information architecture. It does not own article body
-content: native HTML remains the durable semantic source for each page.
+`content-index.json` is the versioned logical content registry for public
+routes, internal web surfaces, navigation, maturity, audience, discovery
+metadata, locale variants, and the documentation information architecture. It
+does not own article body content: native HTML remains the durable semantic
+source for each localized page.
 
 The build validates that every registered page agrees with the registry on:
 
-- route, source, and output identity;
+- BCP 47 locale, route prefix, source, and output identity;
 - document title and meta description;
 - canonical URL policy;
 - one visible `h1`;
 - `data-page` identity;
-- public-navigation destinations;
+- locale-specific public-navigation destinations;
 - sitemap and searchability flags;
+- reviewed logical revision freshness;
 - documentation section, purpose, order, applicability, and related-content
-  references for `/docs/` routes.
+  references for locale-specific documentation routes.
 
 The registry is intentionally useful beyond the current build. Later gates may
 consume the same metadata to generate blog indexes, RSS/Atom feeds, paper
 catalogues, JSON-LD, related-content links, and a static full-text search index.
 Those systems must not introduce a second manually maintained route catalogue.
 
-## Schema v2 documentation metadata
+## Schema v3 logical and localized fields
+
+Each entry has a stable `id`, shared classification/discovery fields, a logical
+`revision`, and a `locales` object. A locale variant contains all fields that
+must be authored and reviewed in that language: route, source/output path,
+title, summary, dates, publication flags, `reviewed_revision`, and localized
+documentation applicability. Variants are either complete and publishable or
+absent; there is no `fallback`, `pending`, or partially translated state.
+
+English sources live under `pages/en/` while preserving their existing public
+URLs. Russian sources live under `pages/ru/` and can only publish under `/ru/`.
+The only Russian HTML committed by Gate 3A is the genuine localized 404 page;
+Gate 3B will add and review the Russian content corpus.
+
+## Documentation metadata
 
 Every `/docs/` route has a `documentation` record:
 
@@ -30,7 +46,7 @@ Every `/docs/` route has a `documentation` record:
 section      landing | start | tutorials | how-to | concepts | reference | contributing
 purpose      index | start | tutorial | how-to | explanation | reference | contributing
 order        stable integer ordering within the section
-applies_to   visible scope/version boundary for the page
+applies_to   locale-specific visible scope/version boundary
 related      content IDs of real related documentation pages
 ```
 
@@ -45,12 +61,24 @@ At build time this metadata generates:
 - documentation side navigation with `aria-current`;
 - hierarchical breadcrumbs;
 - the visible provenance block on every nested docs page;
-- `dist/content/documentation-manifest.json`, which is the search-ready docs
-  projection for later publishing/search gates;
-- the `documentation` field in each `site-manifest.json` route record.
+- `dist/content/<locale>/documentation-manifest.json`, the locale-specific
+  search-ready docs projection for later publishing/search gates;
+- the `documentation` field in each localized `site-manifest.json` variant.
 
 The page body remains authored as semantic HTML. Build-time metadata generation
 owns repeated discovery/navigation chrome, not article prose.
+
+## Locale and discovery contract
+
+The registry declares `en` as the default unprefixed locale and reserves `/ru/`
+for Russian. The static build generates `<html lang>`/`dir`, self canonical,
+`og:locale`, and `hreflang` from registered variants. A language-switcher link
+is generated only for a real canonical counterpart. The development/static
+server does not use `Accept-Language` redirects.
+
+Localized UI strings live in `messages/<locale>.json`. They are limited to
+shared navigation and component behaviour; article prose remains first-class
+HTML and is never translated in the browser.
 
 ## Documentation provenance contract
 

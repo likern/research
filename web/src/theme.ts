@@ -1,3 +1,5 @@
+import { getMessages } from './i18n/messages.js';
+
 const storageKey = 'pinega-color-scheme';
 type ColorScheme = 'light' | 'dark';
 
@@ -24,6 +26,7 @@ export function initializeTheme(): void {
 }
 
 function applyScheme(scheme: ColorScheme): void {
+  const messages = getMessages();
   const root = document.documentElement;
   const dark = scheme === 'dark';
   root.classList.toggle('pinega-dark', dark);
@@ -34,7 +37,7 @@ function applyScheme(scheme: ColorScheme): void {
 
   document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach(button => {
     button.setAttribute('aria-pressed', String(dark));
-    button.textContent = dark ? 'Use light theme' : 'Use dark theme';
+    button.textContent = dark ? messages.theme.use_light : messages.theme.use_dark;
   });
 
   window.dispatchEvent(new CustomEvent('pinega:theme-change', { detail: { scheme } }));

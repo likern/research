@@ -8,6 +8,7 @@ import './components/benchmark/benchmark.js';
 import './components/doc-search/doc-search.js';
 
 import { initializeTheme } from './theme.js';
+import { getMessages } from './i18n/messages.js';
 import { initializeWebAwesome } from './vendor/webawesome/runtime.js';
 
 initializeTheme();
@@ -15,14 +16,15 @@ void initialize();
 
 async function initialize(): Promise<void> {
   try {
+    const messages = getMessages();
     const runtime = await initializeWebAwesome();
     document.documentElement.dataset.pinegaReady = 'true';
     document.querySelectorAll<HTMLElement>('[data-runtime-source]').forEach(element => {
       element.textContent = runtime.proLineChart
-        ? 'Web Awesome project + Pro chart'
+        ? messages.runtime.project_pro
         : runtime.source === 'project'
-          ? 'Web Awesome project'
-          : 'Pinned Web Awesome Core 3.11.0';
+          ? messages.runtime.project
+          : messages.runtime.core;
     });
   } catch (error) {
     document.documentElement.dataset.pinegaReady = 'error';

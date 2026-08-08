@@ -66,3 +66,8 @@ test('homepage dark mode remains coherent', async ({ page }) => {
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(page.locator('.pinega-home-status')).toHaveScreenshot('home-status-dark.png');
 });
+
+test('Russian not-found foundation keeps localized controls and language navigation legible', async ({ page }) => {
+  await open(page, '/ru/404.html');
+  await expect(page.locator('.pinega-page')).toHaveScreenshot('not-found-ru.png', { maxDiffPixelRatio: 0.02 });
+});

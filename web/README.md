@@ -68,20 +68,28 @@ versions exist.
 
 ## Content and route contract
 
-`content/content-index.json` is the versioned route and discovery registry. Gate
-2 uses schema version 2 and adds per-documentation-page metadata:
+`content/content-index.json` is the versioned logical content and discovery
+registry. Gate 3A uses schema version 3: stable logical fields live on each
+entry, while authored, route-bearing fields live in explicit locale variants.
+There is no implicit content fallback between languages.
 
 ```text
+entry.id + entry.revision + shared discovery metadata
+entry.locales.en.route + source + title + summary + reviewed_revision
+entry.locales.ru.route + source + title + summary + reviewed_revision
 documentation.section
 documentation.purpose
 documentation.order
-documentation.applies_to
 documentation.related
+entry.locales.*.documentation.applies_to
 ```
 
-Native HTML under `pages/` remains the durable semantic article body. The build
-checks that each page agrees with the registry on title, description,
-`data-page`, canonical URL policy, one `h1`, and public navigation.
+Native HTML under `pages/<locale>/` remains the durable semantic article body.
+English retains the existing unprefixed public routes; Russian routes are
+reserved under `/ru/`. The build checks BCP 47 locale identity, locale-specific
+source and output paths, title, description, `data-page`, canonical policy, one
+`h1`, public navigation, and translation freshness. A published variant must
+review the current logical entry revision.
 
 For documentation, build-time generation owns repeated discovery/navigation
 chrome rather than prose:
@@ -91,15 +99,42 @@ content/content-index.json
         ↓ validation
 registered native HTML pages
         ↓ static build
-cards + docs navigation + breadcrumbs + provenance
+locale-specific cards + docs navigation + breadcrumbs + provenance
         ↓
-site-manifest.json + content/documentation-manifest.json + sitemap
+site-manifest.json + content/<locale>/documentation-manifest.json + sitemap
 ```
 
-`content/documentation-manifest.json` is the current search-readiness projection
-for the docs corpus. It exposes stable metadata that later Blog, paper/PDF, and
-site-wide-search gates can consume without adding a second manually maintained
-route catalogue.
+`content/en/documentation-manifest.json` and
+`content/ru/documentation-manifest.json` are locale-specific search-readiness
+projections. The Russian projection is deliberately empty until Gate 3B
+publishes reviewed Russian documents.
+
+## Gate 3A multilingual publishing foundation
+
+The URL and discovery contract is explicit:
+
+```text
+English: /, /technology/, /docs/...
+Russian: /ru/, /ru/technology/, /ru/docs/...
+```
+
+Every published canonical variant receives a self canonical, a self
+`hreflang`, and `x-default` for the default English variant. Cross-language
+`hreflang` and the visible language switcher are generated only when both
+variants are present in the registry. The server never redirects from
+`Accept-Language`; users and crawlers can select stable URLs directly.
+
+Gate 3A supplies the schema, locale-aware build, localized UI catalogues,
+per-locale manifests, Russian not-found response, and shared component/runtime
+behaviour. It does not publish machine-translated or placeholder Russian
+articles. Gate 3B owns translation, review, and activation of the Russian
+corpus.
+
+Client JavaScript localizes interaction-only text such as copy state and theme
+controls. It does not translate article content. Web Awesome Core loads its
+Russian translation module when `<html lang="ru">`; a purchased project is
+expected to expose the matching `translations/ru.js` beside its configured
+project module.
 
 ## Topic filter versus search
 
@@ -249,7 +284,7 @@ with-env {
 ^npm run test:visual
 ```
 
-Tests cover registered routes and fragments, content-registry v2 contracts,
+Tests cover registered routes and fragments, content-registry v3 contracts,
 master-brand and maturity claims, public navigation, component-lab isolation,
 documentation decomposition and generated discovery surfaces, no-JavaScript
 catalogue completeness, browser behaviour, keyboard interaction, accessibility,

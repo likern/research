@@ -1,576 +1,1107 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "site": {
     "name": "Pinega",
     "organization": "Pinega Labs",
     "tagline": "Correctness under concurrency.",
-    "summary": "Pinega is a research and engineering programme that turns database-systems research into high-performance software."
+    "default_locale": "en",
+    "locales": {
+      "en": {
+        "lang": "en",
+        "format_locale": "en-GB",
+        "path_prefix": "",
+        "direction": "ltr",
+        "label": "English",
+        "og_locale": "en_GB",
+        "summary": "Pinega is a research and engineering programme that turns database-systems research into high-performance software.",
+        "primary_navigation": [
+          {
+            "label": "Technology",
+            "entry_id": "technology"
+          },
+          {
+            "label": "Research",
+            "entry_id": "research"
+          },
+          {
+            "label": "Documentation",
+            "entry_id": "documentation"
+          },
+          {
+            "label": "About",
+            "entry_id": "about"
+          },
+          {
+            "label": "GitHub",
+            "href": "https://github.com/likern/research",
+            "external": true
+          }
+        ]
+      },
+      "ru": {
+        "lang": "ru",
+        "format_locale": "ru-RU",
+        "path_prefix": "/ru",
+        "direction": "ltr",
+        "label": "Русский",
+        "og_locale": "ru_RU",
+        "summary": "Pinega — исследовательская и инженерная программа, которая превращает исследования систем баз данных в высокопроизводительное программное обеспечение.",
+        "primary_navigation": [
+          {
+            "label": "Технологии",
+            "entry_id": "technology"
+          },
+          {
+            "label": "Исследования",
+            "entry_id": "research"
+          },
+          {
+            "label": "Документация",
+            "entry_id": "documentation"
+          },
+          {
+            "label": "О проекте",
+            "entry_id": "about"
+          },
+          {
+            "label": "GitHub",
+            "href": "https://github.com/likern/research",
+            "external": true
+          }
+        ]
+      }
+    }
   },
-  "primary_navigation": [
-    { "label": "Technology", "route": "/technology/" },
-    { "label": "Research", "route": "/research/" },
-    { "label": "Documentation", "route": "/docs/" },
-    { "label": "About", "route": "/about/" },
-    { "label": "GitHub", "href": "https://github.com/likern/research", "external": true }
-  ],
   "entries": [
     {
       "id": "home",
-      "route": "/",
-      "source_path": "pages/home/index.html",
-      "output_path": "index.html",
       "content_type": "landing",
-      "canonical_title": "Pinega — correctness under concurrency",
-      "navigation_title": "Home",
-      "summary": "Pinega turns database-systems research into high-performance software across storage, transactions, optimisation, verification, and distributed execution.",
-      "audience": ["prospective-partner", "database-engineer", "researcher"],
+      "audience": [
+        "prospective-partner",
+        "database-engineer",
+        "researcher"
+      ],
       "programme": "pinega",
       "research_area": null,
-      "topics": ["database-systems", "high-performance-computing", "correctness", "commercialisation"],
+      "topics": [
+        "database-systems",
+        "high-performance-computing",
+        "correctness",
+        "commercialisation"
+      ],
       "maturity_status": "research",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "WebSite",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/",
+          "source_path": "pages/en/home/index.html",
+          "output_path": "index.html",
+          "canonical_title": "Pinega — correctness under concurrency",
+          "navigation_title": "Home",
+          "summary": "Pinega turns database-systems research into high-performance software across storage, transactions, optimisation, verification, and distributed execution.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "WebSite",
+          "canonical": true
+        }
+      }
     },
     {
       "id": "technology",
-      "route": "/technology/",
-      "source_path": "pages/technology/index.html",
-      "output_path": "technology/index.html",
       "content_type": "technology-catalogue",
-      "canonical_title": "Technology — Pinega",
-      "navigation_title": "Technology",
-      "summary": "Pinega technology programmes connect database research to measured, maintainable software, beginning with Pinega Engine.",
-      "audience": ["prospective-partner", "database-engineer", "researcher"],
+      "audience": [
+        "prospective-partner",
+        "database-engineer",
+        "researcher"
+      ],
       "programme": "pinega",
       "research_area": null,
-      "topics": ["pinega-engine", "query-optimisation", "verification", "distributed-systems"],
+      "topics": [
+        "pinega-engine",
+        "query-optimisation",
+        "verification",
+        "distributed-systems"
+      ],
       "maturity_status": "research",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "CollectionPage",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/technology/",
+          "source_path": "pages/en/technology/index.html",
+          "output_path": "technology/index.html",
+          "canonical_title": "Technology — Pinega",
+          "navigation_title": "Technology",
+          "summary": "Pinega technology programmes connect database research to measured, maintainable software, beginning with Pinega Engine.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true
+        }
+      }
     },
     {
       "id": "research",
-      "route": "/research/",
-      "source_path": "pages/research/index.html",
-      "output_path": "research/index.html",
       "content_type": "research-catalogue",
-      "canonical_title": "Research — Pinega",
-      "navigation_title": "Research",
-      "summary": "The Pinega research programme covers storage, concurrency, transactions, distributed systems, optimisation, performance engineering, and verification.",
-      "audience": ["database-engineer", "researcher", "contributor"],
+      "audience": [
+        "database-engineer",
+        "researcher",
+        "contributor"
+      ],
       "programme": "pinega-research",
       "research_area": null,
-      "topics": ["storage", "concurrency", "transactions", "distributed-systems", "optimisation", "verification"],
+      "topics": [
+        "storage",
+        "concurrency",
+        "transactions",
+        "distributed-systems",
+        "optimisation",
+        "verification"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "CollectionPage",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/research/",
+          "source_path": "pages/en/research/index.html",
+          "output_path": "research/index.html",
+          "canonical_title": "Research — Pinega",
+          "navigation_title": "Research",
+          "summary": "The Pinega research programme covers storage, concurrency, transactions, distributed systems, optimisation, performance engineering, and verification.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true
+        }
+      }
     },
     {
       "id": "documentation",
-      "route": "/docs/",
-      "source_path": "pages/docs/index.html",
-      "output_path": "docs/index.html",
       "content_type": "documentation-landing",
-      "canonical_title": "Documentation — Pinega",
-      "navigation_title": "Documentation",
-      "summary": "Pinega documentation organised into real start, how-to, explanation, reference, and contributing pages for the current research-stage programme.",
-      "audience": ["database-engineer", "contributor", "researcher"],
+      "audience": [
+        "database-engineer",
+        "contributor",
+        "researcher"
+      ],
       "programme": "pinega-platform",
       "research_area": null,
-      "topics": ["documentation", "workspace", "architecture", "contributing"],
+      "topics": [
+        "documentation",
+        "workspace",
+        "architecture",
+        "contributing"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "CollectionPage",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "landing",
         "purpose": "index",
         "order": 0,
-        "applies_to": "Pinega public documentation corpus",
         "related": []
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/",
+          "source_path": "pages/en/docs/index.html",
+          "output_path": "docs/index.html",
+          "canonical_title": "Documentation — Pinega",
+          "navigation_title": "Documentation",
+          "summary": "Pinega documentation organised into real start, how-to, explanation, reference, and contributing pages for the current research-stage programme.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "CollectionPage",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega public documentation corpus"
+          }
+        }
       }
     },
     {
       "id": "getting-started",
-      "route": "/docs/getting-started/",
-      "source_path": "pages/docs/getting-started/index.html",
-      "output_path": "docs/getting-started/index.html",
       "content_type": "documentation-start",
-      "canonical_title": "Getting started — Pinega Documentation",
-      "navigation_title": "Getting started",
-      "summary": "Choose the Pinega documentation path that matches whether you need orientation, a reproducible first run, a task procedure, an explanation, or exact reference material.",
-      "audience": ["contributor", "database-engineer", "researcher"],
+      "audience": [
+        "contributor",
+        "database-engineer",
+        "researcher"
+      ],
       "programme": "pinega-platform",
       "research_area": null,
-      "topics": ["getting-started", "documentation", "orientation", "contributor"],
+      "topics": [
+        "getting-started",
+        "documentation",
+        "orientation",
+        "contributor"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "start",
         "purpose": "start",
         "order": 0,
-        "applies_to": "Pinega research-stage documentation",
-        "related": ["docs-project-overview", "docs-research-workspace", "docs-pinega-programme"]
+        "related": [
+          "docs-project-overview",
+          "docs-research-workspace",
+          "docs-pinega-programme"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/getting-started/",
+          "source_path": "pages/en/docs/getting-started/index.html",
+          "output_path": "docs/getting-started/index.html",
+          "canonical_title": "Getting started — Pinega Documentation",
+          "navigation_title": "Getting started",
+          "summary": "Choose the Pinega documentation path that matches whether you need orientation, a reproducible first run, a task procedure, an explanation, or exact reference material.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega research-stage documentation"
+          }
+        }
       }
     },
     {
       "id": "docs-project-overview",
-      "route": "/docs/start/project-overview/",
-      "source_path": "pages/docs/start/project-overview/index.html",
-      "output_path": "docs/start/project-overview/index.html",
       "content_type": "documentation-start",
-      "canonical_title": "Project overview — Pinega Documentation",
-      "navigation_title": "Project overview",
-      "summary": "Understand what Pinega, Pinega Labs, and Pinega Engine mean, what repository artefacts exist today, and which product claims remain future work.",
-      "audience": ["contributor", "database-engineer", "researcher"],
+      "audience": [
+        "contributor",
+        "database-engineer",
+        "researcher"
+      ],
       "programme": "pinega-platform",
       "research_area": null,
-      "topics": ["project-overview", "status", "pinega", "pinega-labs", "pinega-engine", "repository"],
+      "topics": [
+        "project-overview",
+        "status",
+        "pinega",
+        "pinega-labs",
+        "pinega-engine",
+        "repository"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "start",
         "purpose": "start",
         "order": 10,
-        "applies_to": "Pinega programme and repository",
-        "related": ["docs-pinega-programme", "docs-maturity-evidence", "technology"]
+        "related": [
+          "docs-pinega-programme",
+          "docs-maturity-evidence",
+          "technology"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/start/project-overview/",
+          "source_path": "pages/en/docs/start/project-overview/index.html",
+          "output_path": "docs/start/project-overview/index.html",
+          "canonical_title": "Project overview — Pinega Documentation",
+          "navigation_title": "Project overview",
+          "summary": "Understand what Pinega, Pinega Labs, and Pinega Engine mean, what repository artefacts exist today, and which product claims remain future work.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega programme and repository"
+          }
+        }
       }
     },
     {
       "id": "docs-research-workspace",
-      "route": "/docs/start/research-workspace/",
-      "source_path": "pages/docs/start/research-workspace/index.html",
-      "output_path": "docs/start/research-workspace/index.html",
       "content_type": "documentation-tutorial",
-      "canonical_title": "Reproduce the research workspace — Pinega Documentation",
-      "navigation_title": "Reproduce the research workspace",
-      "summary": "Run the pinned Pinega research workspace from a clean checkout, inspect the registered documents, and build the current Typst and YDMP artefacts.",
-      "audience": ["contributor", "researcher"],
+      "audience": [
+        "contributor",
+        "researcher"
+      ],
       "programme": "pinega-research",
       "research_area": null,
-      "topics": ["research-workspace", "ydmp", "typst", "nushell", "reproducibility", "build"],
+      "topics": [
+        "research-workspace",
+        "ydmp",
+        "typst",
+        "nushell",
+        "reproducibility",
+        "build"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "start",
         "purpose": "tutorial",
         "order": 20,
-        "applies_to": "YDMP Research Workspace",
-        "related": ["docs-repository-layout", "docs-review-release-gates", "research"]
+        "related": [
+          "docs-repository-layout",
+          "docs-review-release-gates",
+          "research"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/start/research-workspace/",
+          "source_path": "pages/en/docs/start/research-workspace/index.html",
+          "output_path": "docs/start/research-workspace/index.html",
+          "canonical_title": "Reproduce the research workspace — Pinega Documentation",
+          "navigation_title": "Reproduce the research workspace",
+          "summary": "Run the pinned Pinega research workspace from a clean checkout, inspect the registered documents, and build the current Typst and YDMP artefacts.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "YDMP Research Workspace"
+          }
+        }
       }
     },
     {
       "id": "docs-build-site",
-      "route": "/docs/how-to/build-the-site/",
-      "source_path": "pages/docs/how-to/build-the-site/index.html",
-      "output_path": "docs/how-to/build-the-site/index.html",
       "content_type": "documentation-how-to",
-      "canonical_title": "Build and inspect the website — Pinega Documentation",
-      "navigation_title": "Build and inspect the website",
-      "summary": "Build the Pinega static multi-page website from the committed lockfile, serve it locally, and inspect public and internal validation routes.",
-      "audience": ["contributor", "web-maintainer"],
+      "audience": [
+        "contributor",
+        "web-maintainer"
+      ],
       "programme": "pinega-web",
       "research_area": null,
-      "topics": ["web", "build", "serve", "npm", "component-lab", "static-site"],
+      "topics": [
+        "web",
+        "build",
+        "serve",
+        "npm",
+        "component-lab",
+        "static-site"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "how-to",
         "purpose": "how-to",
         "order": 10,
-        "applies_to": "Pinega Web workspace",
-        "related": ["docs-web-build-environment", "docs-run-validation", "docs-content-metadata-schema"]
+        "related": [
+          "docs-web-build-environment",
+          "docs-run-validation",
+          "docs-content-metadata-schema"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/how-to/build-the-site/",
+          "source_path": "pages/en/docs/how-to/build-the-site/index.html",
+          "output_path": "docs/how-to/build-the-site/index.html",
+          "canonical_title": "Build and inspect the website — Pinega Documentation",
+          "navigation_title": "Build and inspect the website",
+          "summary": "Build the Pinega static multi-page website from the committed lockfile, serve it locally, and inspect public and internal validation routes.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega Web workspace"
+          }
+        }
       }
     },
     {
       "id": "docs-run-validation",
-      "route": "/docs/how-to/run-validation/",
-      "source_path": "pages/docs/how-to/run-validation/index.html",
-      "output_path": "docs/how-to/run-validation/index.html",
       "content_type": "documentation-how-to",
-      "canonical_title": "Run the Web validation gate — Pinega Documentation",
-      "navigation_title": "Run the Web validation gate",
-      "summary": "Run Pinega Web token, type, unit, build, browser, accessibility, and visual-regression checks using the repository's pinned commands and Playwright environment.",
-      "audience": ["contributor", "web-maintainer"],
+      "audience": [
+        "contributor",
+        "web-maintainer"
+      ],
       "programme": "pinega-web",
       "research_area": null,
-      "topics": ["validation", "playwright", "accessibility", "visual-regression", "typecheck", "ci"],
+      "topics": [
+        "validation",
+        "playwright",
+        "accessibility",
+        "visual-regression",
+        "typecheck",
+        "ci"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "how-to",
         "purpose": "how-to",
         "order": 20,
-        "applies_to": "Pinega Web CI and local validation",
-        "related": ["docs-build-site", "docs-web-build-environment", "docs-review-release-gates"]
+        "related": [
+          "docs-build-site",
+          "docs-web-build-environment",
+          "docs-review-release-gates"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/how-to/run-validation/",
+          "source_path": "pages/en/docs/how-to/run-validation/index.html",
+          "output_path": "docs/how-to/run-validation/index.html",
+          "canonical_title": "Run the Web validation gate — Pinega Documentation",
+          "navigation_title": "Run the Web validation gate",
+          "summary": "Run Pinega Web token, type, unit, build, browser, accessibility, and visual-regression checks using the repository's pinned commands and Playwright environment.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega Web CI and local validation"
+          }
+        }
       }
     },
     {
       "id": "docs-pinega-programme",
-      "route": "/docs/concepts/pinega-programme/",
-      "source_path": "pages/docs/concepts/pinega-programme/index.html",
-      "output_path": "docs/concepts/pinega-programme/index.html",
       "content_type": "documentation-explanation",
-      "canonical_title": "Pinega programme model — Pinega Documentation",
-      "navigation_title": "Pinega programme model",
-      "summary": "Understand the relationship among Pinega, Pinega Labs, technology programmes, research infrastructure, and future product boundaries.",
-      "audience": ["contributor", "database-engineer", "researcher", "prospective-partner"],
+      "audience": [
+        "contributor",
+        "database-engineer",
+        "researcher",
+        "prospective-partner"
+      ],
       "programme": "pinega",
       "research_area": null,
-      "topics": ["pinega", "pinega-labs", "programme", "brand", "technology", "product-boundary"],
+      "topics": [
+        "pinega",
+        "pinega-labs",
+        "programme",
+        "brand",
+        "technology",
+        "product-boundary"
+      ],
       "maturity_status": "decision",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "concepts",
         "purpose": "explanation",
         "order": 10,
-        "applies_to": "Pinega master programme",
-        "related": ["docs-project-overview", "docs-research-to-product", "about"]
+        "related": [
+          "docs-project-overview",
+          "docs-research-to-product",
+          "about"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/concepts/pinega-programme/",
+          "source_path": "pages/en/docs/concepts/pinega-programme/index.html",
+          "output_path": "docs/concepts/pinega-programme/index.html",
+          "canonical_title": "Pinega programme model — Pinega Documentation",
+          "navigation_title": "Pinega programme model",
+          "summary": "Understand the relationship among Pinega, Pinega Labs, technology programmes, research infrastructure, and future product boundaries.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega master programme"
+          }
+        }
       }
     },
     {
       "id": "docs-engine-architecture",
-      "route": "/docs/concepts/pinega-engine-architecture/",
-      "source_path": "pages/docs/concepts/pinega-engine-architecture/index.html",
-      "output_path": "docs/concepts/pinega-engine-architecture/index.html",
       "content_type": "documentation-explanation",
-      "canonical_title": "Pinega Engine architecture — Pinega Documentation",
-      "navigation_title": "Pinega Engine architecture",
-      "summary": "Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.",
-      "audience": ["database-engineer", "researcher", "contributor"],
+      "audience": [
+        "database-engineer",
+        "researcher",
+        "contributor"
+      ],
       "programme": "pinega-engine",
       "research_area": "storage-and-execution",
-      "topics": ["pinega-engine", "postgresql-19", "table-access-method", "mvcc", "buffer-pool", "wal"],
+      "topics": [
+        "pinega-engine",
+        "postgresql-19",
+        "table-access-method",
+        "mvcc",
+        "buffer-pool",
+        "wal"
+      ],
       "maturity_status": "validated",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "concepts",
         "purpose": "explanation",
         "order": 20,
-        "applies_to": "Pinega Engine architecture for PostgreSQL 19",
-        "related": ["technology", "docs-maturity-evidence", "research"]
+        "related": [
+          "technology",
+          "docs-maturity-evidence",
+          "research"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/concepts/pinega-engine-architecture/",
+          "source_path": "pages/en/docs/concepts/pinega-engine-architecture/index.html",
+          "output_path": "docs/concepts/pinega-engine-architecture/index.html",
+          "canonical_title": "Pinega Engine architecture — Pinega Documentation",
+          "navigation_title": "Pinega Engine architecture",
+          "summary": "Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega Engine architecture for PostgreSQL 19"
+          }
+        }
       }
     },
     {
       "id": "docs-maturity-evidence",
-      "route": "/docs/concepts/maturity-and-evidence-labels/",
-      "source_path": "pages/docs/concepts/maturity-and-evidence-labels/index.html",
-      "output_path": "docs/concepts/maturity-and-evidence-labels/index.html",
       "content_type": "documentation-explanation",
-      "canonical_title": "Maturity and evidence labels — Pinega Documentation",
-      "navigation_title": "Maturity and evidence labels",
-      "summary": "Understand how Pinega separates available artefacts, design contracts, research, decisions, hypotheses, and future implementation claims.",
-      "audience": ["contributor", "researcher", "database-engineer"],
+      "audience": [
+        "contributor",
+        "researcher",
+        "database-engineer"
+      ],
       "programme": "pinega-platform",
       "research_area": "verification-and-testing",
-      "topics": ["maturity", "evidence", "status", "claims", "research", "decision"],
+      "topics": [
+        "maturity",
+        "evidence",
+        "status",
+        "claims",
+        "research",
+        "decision"
+      ],
       "maturity_status": "decision",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "concepts",
         "purpose": "explanation",
         "order": 30,
-        "applies_to": "Pinega public claims and research artefacts",
-        "related": ["docs-project-overview", "docs-research-to-product", "research"]
+        "related": [
+          "docs-project-overview",
+          "docs-research-to-product",
+          "research"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/concepts/maturity-and-evidence-labels/",
+          "source_path": "pages/en/docs/concepts/maturity-and-evidence-labels/index.html",
+          "output_path": "docs/concepts/maturity-and-evidence-labels/index.html",
+          "canonical_title": "Maturity and evidence labels — Pinega Documentation",
+          "navigation_title": "Maturity and evidence labels",
+          "summary": "Understand how Pinega separates available artefacts, design contracts, research, decisions, hypotheses, and future implementation claims.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega public claims and research artefacts"
+          }
+        }
       }
     },
     {
       "id": "docs-research-to-product",
-      "route": "/docs/concepts/research-to-product-workflow/",
-      "source_path": "pages/docs/concepts/research-to-product-workflow/index.html",
-      "output_path": "docs/concepts/research-to-product-workflow/index.html",
       "content_type": "documentation-explanation",
-      "canonical_title": "Research-to-product workflow — Pinega Documentation",
-      "navigation_title": "Research-to-product workflow",
-      "summary": "Understand how Pinega moves work from sourced research and formalisation through executable verification, implementation, measurement, and product evidence.",
-      "audience": ["contributor", "researcher", "prospective-partner"],
+      "audience": [
+        "contributor",
+        "researcher",
+        "prospective-partner"
+      ],
       "programme": "pinega",
       "research_area": null,
-      "topics": ["research", "formalisation", "model", "verify", "implement", "benchmark", "product"],
+      "topics": [
+        "research",
+        "formalisation",
+        "model",
+        "verify",
+        "implement",
+        "benchmark",
+        "product"
+      ],
       "maturity_status": "decision",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "concepts",
         "purpose": "explanation",
         "order": 40,
-        "applies_to": "Pinega research and engineering programmes",
-        "related": ["docs-pinega-programme", "docs-maturity-evidence", "docs-review-release-gates"]
+        "related": [
+          "docs-pinega-programme",
+          "docs-maturity-evidence",
+          "docs-review-release-gates"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/concepts/research-to-product-workflow/",
+          "source_path": "pages/en/docs/concepts/research-to-product-workflow/index.html",
+          "output_path": "docs/concepts/research-to-product-workflow/index.html",
+          "canonical_title": "Research-to-product workflow — Pinega Documentation",
+          "navigation_title": "Research-to-product workflow",
+          "summary": "Understand how Pinega moves work from sourced research and formalisation through executable verification, implementation, measurement, and product evidence.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega research and engineering programmes"
+          }
+        }
       }
     },
     {
       "id": "docs-repository-layout",
-      "route": "/docs/reference/repository-layout/",
-      "source_path": "pages/docs/reference/repository-layout/index.html",
-      "output_path": "docs/reference/repository-layout/index.html",
       "content_type": "documentation-reference",
-      "canonical_title": "Repository layout — Pinega Documentation",
-      "navigation_title": "Repository layout",
-      "summary": "Reference the current likern/research directory boundaries for research artefacts, design assets, Web sources, generated outputs, tests, and GitHub workflows.",
-      "audience": ["contributor", "web-maintainer", "researcher"],
+      "audience": [
+        "contributor",
+        "web-maintainer",
+        "researcher"
+      ],
       "programme": "pinega-platform",
       "research_area": null,
-      "topics": ["repository", "layout", "directories", "web", "design", "ydmp", "github-actions"],
+      "topics": [
+        "repository",
+        "layout",
+        "directories",
+        "web",
+        "design",
+        "ydmp",
+        "github-actions"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 2,
       "documentation": {
         "section": "reference",
         "purpose": "reference",
         "order": 10,
-        "applies_to": "likern/research repository",
-        "related": ["docs-research-workspace", "docs-build-site", "docs-content-metadata-schema"]
+        "related": [
+          "docs-research-workspace",
+          "docs-build-site",
+          "docs-content-metadata-schema"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/reference/repository-layout/",
+          "source_path": "pages/en/docs/reference/repository-layout/index.html",
+          "output_path": "docs/reference/repository-layout/index.html",
+          "canonical_title": "Repository layout — Pinega Documentation",
+          "navigation_title": "Repository layout",
+          "summary": "Reference the current likern/research directory boundaries for research artefacts, design assets, Web sources, generated outputs, tests, and GitHub workflows.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "likern/research repository"
+          }
+        }
       }
     },
     {
       "id": "docs-web-build-environment",
-      "route": "/docs/reference/web-build-and-environment/",
-      "source_path": "pages/docs/reference/web-build-and-environment/index.html",
-      "output_path": "docs/reference/web-build-and-environment/index.html",
       "content_type": "documentation-reference",
-      "canonical_title": "Web build and environment — Pinega Documentation",
-      "navigation_title": "Web build and environment",
-      "summary": "Reference the Pinega Web package scripts, pinned Node and Playwright expectations, build outputs, local server, and CI validation commands.",
-      "audience": ["contributor", "web-maintainer"],
+      "audience": [
+        "contributor",
+        "web-maintainer"
+      ],
       "programme": "pinega-web",
       "research_area": null,
-      "topics": ["node", "npm", "playwright", "build", "scripts", "environment", "ci"],
+      "topics": [
+        "node",
+        "npm",
+        "playwright",
+        "build",
+        "scripts",
+        "environment",
+        "ci"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 2,
       "documentation": {
         "section": "reference",
         "purpose": "reference",
         "order": 20,
-        "applies_to": "Pinega Web workspace and CI",
-        "related": ["docs-build-site", "docs-run-validation", "docs-review-release-gates"]
+        "related": [
+          "docs-build-site",
+          "docs-run-validation",
+          "docs-review-release-gates"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/reference/web-build-and-environment/",
+          "source_path": "pages/en/docs/reference/web-build-and-environment/index.html",
+          "output_path": "docs/reference/web-build-and-environment/index.html",
+          "canonical_title": "Web build and environment — Pinega Documentation",
+          "navigation_title": "Web build and environment",
+          "summary": "Reference the Pinega Web package scripts, pinned Node and Playwright expectations, build outputs, local server, and CI validation commands.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega Web workspace and CI"
+          }
+        }
       }
     },
     {
       "id": "docs-content-metadata-schema",
-      "route": "/docs/reference/content-metadata-schema/",
-      "source_path": "pages/docs/reference/content-metadata-schema/index.html",
-      "output_path": "docs/reference/content-metadata-schema/index.html",
       "content_type": "documentation-reference",
-      "canonical_title": "Content metadata schema — Pinega Documentation",
-      "navigation_title": "Content metadata schema",
-      "summary": "Reference the versioned Pinega Web content registry, documentation metadata fields, generated documentation manifest, and discovery contracts used by later publishing and search gates.",
-      "audience": ["contributor", "web-maintainer"],
+      "audience": [
+        "contributor",
+        "web-maintainer"
+      ],
       "programme": "pinega-web",
       "research_area": null,
-      "topics": ["content-registry", "metadata", "schema", "search", "sitemap", "documentation-manifest"],
+      "topics": [
+        "content-registry",
+        "metadata",
+        "schema",
+        "search",
+        "sitemap",
+        "documentation-manifest"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 2,
       "documentation": {
         "section": "reference",
         "purpose": "reference",
         "order": 30,
-        "applies_to": "Pinega Web content contract schema v2",
-        "related": ["docs-repository-layout", "documentation", "docs-research-to-product"]
+        "related": [
+          "docs-repository-layout",
+          "documentation",
+          "docs-research-to-product"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/reference/content-metadata-schema/",
+          "source_path": "pages/en/docs/reference/content-metadata-schema/index.html",
+          "output_path": "docs/reference/content-metadata-schema/index.html",
+          "canonical_title": "Content metadata schema — Pinega Documentation",
+          "navigation_title": "Content metadata schema",
+          "summary": "Reference the Pinega Web logical content registry schema v3, locale variants, per-locale documentation manifests, and discovery contracts.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 2,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega Web content contract schema v3"
+          }
+        }
       }
     },
     {
       "id": "docs-review-release-gates",
-      "route": "/docs/contributing/review-and-release-gates/",
-      "source_path": "pages/docs/contributing/review-and-release-gates/index.html",
-      "output_path": "docs/contributing/review-and-release-gates/index.html",
       "content_type": "documentation-contributing",
-      "canonical_title": "Review and release gates — Pinega Documentation",
-      "navigation_title": "Review and release gates",
-      "summary": "Follow the Pinega contribution rule that implementation, tests, visual artefacts, CI, evidence labels, and review all have to agree before a Web or research change is ready.",
-      "audience": ["contributor", "web-maintainer", "researcher"],
+      "audience": [
+        "contributor",
+        "web-maintainer",
+        "researcher"
+      ],
       "programme": "pinega-platform",
       "research_area": "verification-and-testing",
-      "topics": ["contributing", "pull-request", "ci", "visual-review", "artifacts", "release-gate"],
+      "topics": [
+        "contributing",
+        "pull-request",
+        "ci",
+        "visual-review",
+        "artifacts",
+        "release-gate"
+      ],
       "maturity_status": "available",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "TechArticle",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true,
+      "revision": 1,
       "documentation": {
         "section": "contributing",
         "purpose": "contributing",
         "order": 10,
-        "applies_to": "Pinega repository pull requests and release gates",
-        "related": ["docs-run-validation", "docs-research-workspace", "docs-research-to-product"]
+        "related": [
+          "docs-run-validation",
+          "docs-research-workspace",
+          "docs-research-to-product"
+        ]
+      },
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/docs/contributing/review-and-release-gates/",
+          "source_path": "pages/en/docs/contributing/review-and-release-gates/index.html",
+          "output_path": "docs/contributing/review-and-release-gates/index.html",
+          "canonical_title": "Review and release gates — Pinega Documentation",
+          "navigation_title": "Review and release gates",
+          "summary": "Follow the Pinega contribution rule that implementation, tests, visual artefacts, CI, evidence labels, and review all have to agree before a Web or research change is ready.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "TechArticle",
+          "canonical": true,
+          "documentation": {
+            "applies_to": "Pinega repository pull requests and release gates"
+          }
+        }
       }
     },
     {
       "id": "about",
-      "route": "/about/",
-      "source_path": "pages/about/index.html",
-      "output_path": "about/index.html",
       "content_type": "about",
-      "canonical_title": "About Pinega and Pinega Labs",
-      "navigation_title": "About",
-      "summary": "Pinega is a master technology programme; Pinega Labs is its working research, engineering, and future company identity.",
-      "audience": ["prospective-partner", "future-employee", "researcher"],
+      "audience": [
+        "prospective-partner",
+        "future-employee",
+        "researcher"
+      ],
       "programme": "pinega",
       "research_area": null,
-      "topics": ["pinega-labs", "principles", "company", "commercialisation"],
+      "topics": [
+        "pinega-labs",
+        "principles",
+        "company",
+        "commercialisation"
+      ],
       "maturity_status": "research",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": true,
-      "searchable": true,
-      "structured_data_type": "AboutPage",
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": true,
-      "canonical": true
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/about/",
+          "source_path": "pages/en/about/index.html",
+          "output_path": "about/index.html",
+          "canonical_title": "About Pinega and Pinega Labs",
+          "navigation_title": "About",
+          "summary": "Pinega is a master technology programme; Pinega Labs is its working research, engineering, and future company identity.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": true,
+          "searchable": true,
+          "structured_data_type": "AboutPage",
+          "canonical": true
+        }
+      }
     },
     {
       "id": "component-lab",
-      "route": "/component-lab/",
-      "source_path": "component-lab/index.html",
-      "output_path": "component-lab/index.html",
       "content_type": "internal-validation",
-      "canonical_title": "Pinega Strata component laboratory",
-      "navigation_title": "Component laboratory",
-      "summary": "Internal validation surface for Pinega Strata components, Web Awesome integration, accessibility, and visual regression work.",
-      "audience": ["web-maintainer"],
+      "audience": [
+        "web-maintainer"
+      ],
       "programme": "pinega-platform",
       "research_area": null,
-      "topics": ["design-system", "components", "visual-regression"],
+      "topics": [
+        "design-system",
+        "components",
+        "visual-regression"
+      ],
       "maturity_status": "internal",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": false,
-      "searchable": false,
-      "structured_data_type": null,
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": false,
-      "canonical": false
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/component-lab/",
+          "source_path": "component-lab/index.html",
+          "output_path": "component-lab/index.html",
+          "canonical_title": "Pinega Strata component laboratory",
+          "navigation_title": "Component laboratory",
+          "summary": "Internal validation surface for Pinega Strata components, Web Awesome integration, accessibility, and visual regression work.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": false,
+          "searchable": false,
+          "structured_data_type": null,
+          "canonical": false
+        }
+      }
     },
     {
       "id": "not-found",
-      "route": "/404.html",
-      "source_path": "pages/404.html",
-      "output_path": "404.html",
       "content_type": "system",
-      "canonical_title": "Page not found — Pinega",
-      "navigation_title": "Page not found",
-      "summary": "The requested Pinega page could not be found.",
-      "audience": ["all"],
+      "audience": [
+        "all"
+      ],
       "programme": "pinega-web",
       "research_area": null,
-      "topics": ["not-found"],
+      "topics": [
+        "not-found"
+      ],
       "maturity_status": "system",
       "published_at": null,
-      "updated_at": "2026-08-07",
-      "authors": ["Pinega Labs"],
-      "sitemap": false,
-      "searchable": false,
-      "structured_data_type": null,
+      "authors": [
+        "Pinega Labs"
+      ],
       "public": false,
-      "canonical": false
+      "revision": 1,
+      "locales": {
+        "en": {
+          "status": "published",
+          "route": "/404.html",
+          "source_path": "pages/en/404.html",
+          "output_path": "404.html",
+          "canonical_title": "Page not found — Pinega",
+          "navigation_title": "Page not found",
+          "summary": "The requested Pinega page could not be found.",
+          "updated_at": "2026-08-07",
+          "reviewed_revision": 1,
+          "sitemap": false,
+          "searchable": false,
+          "structured_data_type": null,
+          "canonical": false
+        },
+        "ru": {
+          "status": "published",
+          "route": "/ru/404.html",
+          "source_path": "pages/ru/404.html",
+          "output_path": "ru/404.html",
+          "canonical_title": "Страница не найдена — Pinega",
+          "navigation_title": "Страница не найдена",
+          "summary": "Запрошенная страница Pinega не найдена.",
+          "updated_at": "2026-08-08",
+          "reviewed_revision": 1,
+          "sitemap": false,
+          "searchable": false,
+          "structured_data_type": null,
+          "canonical": false
+        }
+      }
     }
   ]
 }
