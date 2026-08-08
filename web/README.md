@@ -193,6 +193,20 @@ with-env { PINEGA_SITE_ORIGIN: 'https://www.example.com' } {
 }
 ```
 
+## Cloudflare commit previews
+
+Pull requests are prepared for preview-only Cloudflare Pages Direct Upload.
+GitHub Actions builds `web/dist` once, validates that exact directory, embeds
+`/.well-known/pinega-deployment.json`, archives it deterministically, records
+SHA-256, attests the archive, deploys it without a second checkout or build, and
+then tests the immutable HTTPS URL.
+
+The live path is controlled by `CLOUDFLARE_PREVIEW_ENABLED` and remains disabled
+until the GitHub Environment is configured. Production deployment is not part
+of this workflow. The complete delivery, trust-boundary, configuration, and
+retention contract is documented in
+[`docs/web-delivery-gate-1.md`](../docs/web-delivery-gate-1.md).
+
 ## Purchased Web Awesome Pro project
 
 The public repository contains no project URL, license key, kit code, or Pro

@@ -4,19 +4,28 @@ on:
   push:
     branches:
       - main
-      - "agent/**"
     paths:
       - "design/**"
       - "web/**"
       - "docs/web-foundation.md"
+      - "docs/web-delivery-gate-1.md"
       - ".github/workflows/check-web-foundation.yml"
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
     paths:
       - "design/**"
       - "web/**"
       - "docs/web-foundation.md"
+      - "docs/web-delivery-gate-1.md"
       - ".github/workflows/check-web-foundation.yml"
   workflow_dispatch:
+
+concurrency:
+  group: check-pinega-website-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -25,21 +34,55 @@ jobs:
   validate:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      artifact-name: ${{ steps.preview-identity.outputs.artifact-name }}
+      artifact-sha256: ${{ steps.package-preview.outputs.artifact-sha256 }}
+      preview-branch: ${{ steps.preview-identity.outputs.preview-branch }}
+      source-sha: ${{ steps.preview-identity.outputs.source-sha }}
+      base-sha: ${{ steps.preview-identity.outputs.base-sha }}
+      tested-sha: ${{ steps.preview-identity.outputs.tested-sha }}
 
     defaults:
       run:
         working-directory: web
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
+      - name: Check out the tested repository snapshot
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "26.7.0"
           cache: npm
           cache-dependency-path: web/package-lock.json
+
+      - name: Resolve pull-request and tested commit identities
+        if: github.event_name == 'pull_request'
+        id: preview-identity
+        shell: bash
+        env:
+          PULL_REQUEST: ${{ github.event.pull_request.number }}
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TESTED_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          checked_out_sha="$(git rev-parse HEAD)"
+          if [[ "$checked_out_sha" != "$TESTED_SHA" ]]; then
+            echo "Checked out $checked_out_sha, but GitHub identifies $TESTED_SHA as the tested snapshot." >&2
+            exit 1
+          fi
+          preview_branch="pr-${PULL_REQUEST}-${SOURCE_SHA:0:8}-m-${TESTED_SHA:0:8}"
+          {
+            echo "artifact-name=pinega-web-preview-${TESTED_SHA}"
+            echo "preview-branch=${preview_branch}"
+            echo "source-sha=${SOURCE_SHA}"
+            echo "base-sha=${BASE_SHA}"
+            echo "tested-sha=${TESTED_SHA}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Install exact dependencies
         run: npm ci --ignore-scripts
@@ -53,43 +96,367 @@ jobs:
       - name: Run token and architecture tests
         run: npm run test:unit
 
-      - name: Build the multi-page website
+      - name: Build the multi-page website once
         run: npm run build
 
       - name: Enforce build and performance budgets
         run: npm run check:build
 
+      - name: Add deployment provenance to the tested build
+        if: github.event_name == 'pull_request'
+        env:
+          PINEGA_DEPLOYMENT_REPOSITORY: ${{ github.repository }}
+          PINEGA_DEPLOYMENT_PULL_REQUEST: ${{ github.event.pull_request.number }}
+          PINEGA_DEPLOYMENT_SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+          PINEGA_DEPLOYMENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PINEGA_DEPLOYMENT_TESTED_SHA: ${{ github.sha }}
+          PINEGA_DEPLOYMENT_SOURCE_REF: ${{ github.event.pull_request.head.ref }}
+          PINEGA_DEPLOYMENT_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PINEGA_DEPLOYMENT_WORKFLOW_NAME: ${{ github.workflow }}
+          PINEGA_DEPLOYMENT_WORKFLOW_RUN_ID: ${{ github.run_id }}
+          PINEGA_DEPLOYMENT_WORKFLOW_RUN_ATTEMPT: ${{ github.run_attempt }}
+          PINEGA_DEPLOYMENT_SERVER_URL: ${{ github.server_url }}
+        run: npm run deployment:manifest
+
       - name: Install Playwright browsers
         run: npx --no-install playwright install --with-deps chromium firefox webkit
 
-      - name: Run browser and accessibility tests
+      - name: Run browser and accessibility tests against the exact build
         run: npm run test:browser
 
-      - name: Verify committed visual baselines
+      - name: Verify committed visual baselines against the exact build
         run: npm run test:visual
 
-      - name: Record artifact checksums
+      - name: Package the exact tested preview artifact
+        if: github.event_name == 'pull_request'
+        id: package-preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/preview
+          tar \
+            --sort=name \
+            --mtime='UTC 1970-01-01' \
+            --owner=0 \
+            --group=0 \
+            --numeric-owner \
+            --format=gnu \
+            -cf - \
+            dist \
+            | gzip -n > artifacts/preview/pinega-web-dist.tar.gz
+          (
+            cd artifacts/preview
+            sha256sum pinega-web-dist.tar.gz > SHA256SUMS.txt
+            sha256sum --check SHA256SUMS.txt
+          )
+          artifact_sha256="$(cut -d ' ' -f 1 artifacts/preview/SHA256SUMS.txt)"
+          echo "artifact-sha256=${artifact_sha256}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the deployable preview artifact
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ steps.preview-identity.outputs.artifact-name }}
+          path: web/artifacts/preview
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Record diagnostic checksums
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p artifacts
+          mkdir -p artifacts/diagnostics
           { find dist tests/visual -type f -print0 2>/dev/null || true; } \
             | sort -z \
             | xargs -0 -r sha256sum \
-            > artifacts/SHA256SUMS.txt
+            > artifacts/diagnostics/SHA256SUMS.txt
 
-      - name: Upload the validated website
+      - name: Upload diagnostics and visual evidence
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: pinega-website-v0.2-${{ github.event_name }}
+          name: pinega-website-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            web/dist
             web/package-lock.json
             web/tests/visual
             web/test-results
             web/playwright-report
-            web/artifacts/SHA256SUMS.txt
+            web/artifacts/diagnostics/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+  attest:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.CLOUDFLARE_PREVIEW_ENABLED == 'true'
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+
+    steps:
+      - name: Download the exact tested artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.validate.outputs.artifact-name }}
+          path: preview-artifact
+
+      - name: Verify the artifact checksum before attestation
+        working-directory: preview-artifact
+        run: sha256sum --check SHA256SUMS.txt
+
+      - name: Attest the deterministic preview archive
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: preview-artifact/pinega-web-dist.tar.gz
+
+  deploy:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      vars.CLOUDFLARE_PREVIEW_ENABLED == 'true'
+    needs:
+      - validate
+      - attest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      deployments: write
+    environment:
+      name: cloudflare-preview
+      url: ${{ steps.deploy-pages.outputs.deployment-url }}
+    outputs:
+      deployment-id: ${{ steps.deploy-pages.outputs.pages-deployment-id }}
+      deployment-url: ${{ steps.deploy-pages.outputs.deployment-url }}
+      deployment-alias-url: ${{ steps.deploy-pages.outputs.pages-deployment-alias-url }}
+
+    steps:
+      - name: Download the attested artifact only
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.validate.outputs.artifact-name }}
+          path: preview-artifact
+
+      - name: Verify and extract the exact artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd preview-artifact
+            sha256sum --check SHA256SUMS.txt
+          )
+          actual_sha256="$(sha256sum preview-artifact/pinega-web-dist.tar.gz | cut -d ' ' -f 1)"
+          if [[ "$actual_sha256" != "${{ needs.validate.outputs.artifact-sha256 }}" ]]; then
+            echo "Artifact checksum does not match the validate job output." >&2
+            exit 1
+          fi
+          mkdir deployed
+          tar -xzf preview-artifact/pinega-web-dist.tar.gz -C deployed
+          test -f deployed/dist/.well-known/pinega-deployment.json
+
+      - name: Verify Cloudflare preview configuration
+        shell: bash
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          CLOUDFLARE_PRODUCTION_BRANCH: ${{ vars.CLOUDFLARE_PRODUCTION_BRANCH }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          PREVIEW_BRANCH: ${{ needs.validate.outputs.preview-branch }}
+        run: |
+          set -euo pipefail
+          for variable in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_PAGES_PROJECT CLOUDFLARE_PRODUCTION_BRANCH CLOUDFLARE_API_TOKEN; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "GitHub Environment cloudflare-preview does not define ${variable}." >&2
+              exit 1
+            fi
+          done
+          if [[ "$PREVIEW_BRANCH" == "$CLOUDFLARE_PRODUCTION_BRANCH" ]]; then
+            echo "Refusing to deploy preview content to the configured production branch." >&2
+            exit 1
+          fi
+
+      - name: Direct Upload the exact tested artifact to Cloudflare Pages
+        id: deploy-pages
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4.120.0"
+          workingDirectory: deployed
+          packageManager: npm
+          command: >-
+            pages deploy dist
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+            --branch=${{ needs.validate.outputs.preview-branch }}
+            --commit-hash=${{ needs.validate.outputs.tested-sha }}
+            --commit-message="PR #${{ github.event.pull_request.number }}; source ${{ needs.validate.outputs.source-sha }}; tested merge ${{ needs.validate.outputs.tested-sha }}"
+            --commit-dirty=false
+
+      - name: Assert Cloudflare created a preview deployment
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy-pages.outputs.pages-deployment-id }}
+          DEPLOYMENT_URL: ${{ steps.deploy-pages.outputs.deployment-url }}
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.deploy-pages.outputs.pages-environment }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOYMENT_ID"
+          test -n "$DEPLOYMENT_URL"
+          if [[ "$DEPLOYMENT_ENVIRONMENT" != "preview" ]]; then
+            echo "Cloudflare reported environment '${DEPLOYMENT_ENVIRONMENT}', expected 'preview'." >&2
+            exit 1
+          fi
+          if [[ ! "$DEPLOYMENT_URL" =~ ^https://[a-z0-9]+\.[a-z0-9-]+\.pages\.dev/?$ ]]; then
+            echo "Cloudflare did not return an immutable pages.dev deployment URL: ${DEPLOYMENT_URL}" >&2
+            exit 1
+          fi
+
+      - name: Verify the real HTTPS deployment without executing PR code
+        shell: bash
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy-pages.outputs.deployment-url }}
+        run: |
+          set -euo pipefail
+          curl_options=(--silent --show-error --location --retry 8 --retry-all-errors --retry-delay 2)
+          curl "${curl_options[@]}" --fail --dump-header root-headers.txt --output root.html "${DEPLOYMENT_URL}/"
+          grep -Eiq '^x-robots-tag:.*noindex' root-headers.txt
+          curl "${curl_options[@]}" --fail --output docs.html "${DEPLOYMENT_URL}/docs/"
+          curl "${curl_options[@]}" --fail --output remote-manifest.json "${DEPLOYMENT_URL}/.well-known/pinega-deployment.json"
+          cmp deployed/dist/.well-known/pinega-deployment.json remote-manifest.json
+          missing_status="$(curl "${curl_options[@]}" --output missing.html --write-out '%{http_code}' "${DEPLOYMENT_URL}/missing-cloudflare-preview-route")"
+          if [[ "$missing_status" != "404" ]]; then
+            echo "Expected a real HTTP 404, received ${missing_status}." >&2
+            exit 1
+          fi
+
+      - name: Record provider deployment identity
+        shell: bash
+        env:
+          DEPLOYMENT_ID: ${{ steps.deploy-pages.outputs.pages-deployment-id }}
+          DEPLOYMENT_URL: ${{ steps.deploy-pages.outputs.deployment-url }}
+          DEPLOYMENT_ALIAS_URL: ${{ steps.deploy-pages.outputs.pages-deployment-alias-url }}
+          ARTIFACT_SHA256: ${{ needs.validate.outputs.artifact-sha256 }}
+          SOURCE_SHA: ${{ needs.validate.outputs.source-sha }}
+          BASE_SHA: ${{ needs.validate.outputs.base-sha }}
+          TESTED_SHA: ${{ needs.validate.outputs.tested-sha }}
+          PREVIEW_BRANCH: ${{ needs.validate.outputs.preview-branch }}
+          PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+        run: |
+          set -euo pipefail
+          mkdir deployment-record
+          jq -n \
+            --arg provider "cloudflare-pages" \
+            --arg project "$PAGES_PROJECT" \
+            --arg deployment_id "$DEPLOYMENT_ID" \
+            --arg environment "preview" \
+            --arg immutable_url "$DEPLOYMENT_URL" \
+            --arg alias_url "$DEPLOYMENT_ALIAS_URL" \
+            --arg artifact_sha256 "$ARTIFACT_SHA256" \
+            --arg source_sha "$SOURCE_SHA" \
+            --arg base_sha "$BASE_SHA" \
+            --arg tested_sha "$TESTED_SHA" \
+            --arg preview_branch "$PREVIEW_BRANCH" \
+            '{
+              schema_version: 1,
+              provider: $provider,
+              project: $project,
+              deployment_id: $deployment_id,
+              environment: $environment,
+              immutable_url: $immutable_url,
+              alias_url: $alias_url,
+              artifact_sha256: $artifact_sha256,
+              source_sha: $source_sha,
+              base_sha: $base_sha,
+              tested_sha: $tested_sha,
+              preview_branch: $preview_branch
+            }' > deployment-record/cloudflare-deployment.json
+          {
+            echo "### Cloudflare Pages commit preview"
+            echo
+            echo "- Immutable URL: ${DEPLOYMENT_URL}"
+            echo "- Alias URL: ${DEPLOYMENT_ALIAS_URL}"
+            echo "- Deployment ID: ${DEPLOYMENT_ID}"
+            echo "- Tested merge: ${TESTED_SHA}"
+            echo "- Artifact SHA-256: ${ARTIFACT_SHA256}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the provider deployment record
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pinega-cloudflare-deployment-${{ needs.validate.outputs.tested-sha }}
+          path: deployment-record/cloudflare-deployment.json
+          if-no-files-found: error
+          retention-days: 30
+
+  remote-smoke:
+    if: needs.deploy.result == 'success'
+    needs:
+      - validate
+      - deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out the same tested snapshot without persisted credentials
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "26.7.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install exact dependencies
+        working-directory: web
+        run: npm ci --ignore-scripts
+
+      - name: Download and verify the exact deployed artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.validate.outputs.artifact-name }}
+          path: preview-artifact
+
+      - name: Extract the expected deployment content
+        shell: bash
+        run: |
+          set -euo pipefail
+          (
+            cd preview-artifact
+            sha256sum --check SHA256SUMS.txt
+          )
+          mkdir expected-deployment
+          tar -xzf preview-artifact/pinega-web-dist.tar.gz -C expected-deployment
+
+      - name: Install deployment smoke browser
+        working-directory: web
+        run: npx --no-install playwright install --with-deps chromium
+
+      - name: Run remote Chromium and accessibility smoke tests
+        working-directory: web
+        env:
+          PINEGA_PREVIEW_URL: ${{ needs.deploy.outputs.deployment-url }}
+          PINEGA_EXPECTED_DIST: ${{ github.workspace }}/expected-deployment/dist
+        run: npm run test:deployment
+
+      - name: Upload remote smoke diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: pinega-cloudflare-smoke-${{ needs.validate.outputs.tested-sha }}
+          path: |
+            web/test-results-deployment
+            web/playwright-report-deployment
           if-no-files-found: warn
           retention-days: 30
