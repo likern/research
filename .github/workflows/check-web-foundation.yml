@@ -190,8 +190,7 @@ jobs:
   attest:
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      vars.CLOUDFLARE_PREVIEW_ENABLED == 'true'
+      github.event.pull_request.head.repo.full_name == github.repository
     needs: validate
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -219,8 +218,7 @@ jobs:
   deploy:
     if: >-
       github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      vars.CLOUDFLARE_PREVIEW_ENABLED == 'true'
+      github.event.pull_request.head.repo.full_name == github.repository
     needs:
       - validate
       - attest
@@ -230,7 +228,7 @@ jobs:
       contents: read
       deployments: write
     environment:
-      name: cloudflare-preview
+      name: Pinega Preview
       url: ${{ steps.deploy-pages.outputs.deployment-url }}
     outputs:
       deployment-id: ${{ steps.deploy-pages.outputs.pages-deployment-id }}
@@ -273,7 +271,7 @@ jobs:
           set -euo pipefail
           for variable in CLOUDFLARE_ACCOUNT_ID CLOUDFLARE_PAGES_PROJECT CLOUDFLARE_PRODUCTION_BRANCH CLOUDFLARE_API_TOKEN; do
             if [[ -z "${!variable:-}" ]]; then
-              echo "GitHub Environment cloudflare-preview does not define ${variable}." >&2
+              echo "GitHub Environment 'Pinega Preview' does not define ${variable}." >&2
               exit 1
             fi
           done

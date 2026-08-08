@@ -201,10 +201,11 @@ GitHub Actions builds `web/dist` once, validates that exact directory, embeds
 SHA-256, attests the archive, deploys it without a second checkout or build, and
 then tests the immutable HTTPS URL.
 
-The live path is controlled by `CLOUDFLARE_PREVIEW_ENABLED` and remains disabled
-until the GitHub Environment is configured. Production deployment is not part
-of this workflow. The complete delivery, trust-boundary, configuration, and
-retention contract is documented in
+The live path uses the `Pinega Preview` GitHub Environment and deploys
+same-repository pull requests to the `pinega` Pages project. Fork pull requests
+remain validation-only. Production deployment is not part of this workflow.
+The complete delivery, trust-boundary, configuration, and retention contract is
+documented in
 [`docs/web-delivery-gate-1.md`](../docs/web-delivery-gate-1.md).
 
 ## Purchased Web Awesome Pro project

@@ -2,16 +2,16 @@
 
 ## Status
 
-Implementation: complete, live activation pending.
+Implementation and live activation: complete.
 
 Provider: Cloudflare Pages Direct Upload.
 
 Production deployment: explicitly out of scope.
 
 The repository contains the complete validation, provenance, attestation,
-preview deployment, and remote verification path. Cloudflare writes remain
-disabled until the repository-level `CLOUDFLARE_PREVIEW_ENABLED` variable is
-set to `true` and the named GitHub Environment contains the required values.
+preview deployment, and remote verification path. Same-repository pull
+requests deploy automatically after validation; fork pull requests never
+receive deployment authority.
 
 ## Delivery invariant
 
@@ -171,16 +171,10 @@ a newer tested merge.
 
 ## Required GitHub configuration
 
-Repository variable, available before environment selection:
+GitHub Environment:
 
 ```text
-CLOUDFLARE_PREVIEW_ENABLED = true
-```
-
-GitHub Environment (initial implementation name):
-
-```text
-cloudflare-preview
+Pinega Preview
 ```
 
 Environment secret:
@@ -192,9 +186,9 @@ CLOUDFLARE_API_TOKEN
 Environment variables:
 
 ```text
-CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_PAGES_PROJECT
-CLOUDFLARE_PRODUCTION_BRANCH
+CLOUDFLARE_ACCOUNT_ID = configured in GitHub; not committed
+CLOUDFLARE_PAGES_PROJECT = pinega
+CLOUDFLARE_PRODUCTION_BRANCH = main
 ```
 
 If the Environment restricts deployment branches, it must permit pull-request
@@ -217,15 +211,10 @@ commit identity. Cloudflare documents the latest-per-branch deletion constraint:
 
 ## Activation and rollback
 
-Activation is a separate configuration commit after the exact existing
-Environment names and values are confirmed. Until then, absence of
-`CLOUDFLARE_PREVIEW_ENABLED=true` makes every Cloudflare-write job skip.
-
-Rollback is immediate and does not change source code:
-
-```text
-CLOUDFLARE_PREVIEW_ENABLED = false
-```
+This configuration commit activates commit previews for same-repository pull
+requests. The activation boundary is explicit in version control: rollback is
+performed by reverting the activation commit, which restores skipped
+Cloudflare-write jobs without changing the regular validation path.
 
 The regular Web validation path remains active on pull requests and `main`; no
 merge in this gate can publish production content.
