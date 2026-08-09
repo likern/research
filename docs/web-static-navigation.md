@@ -6,7 +6,7 @@ Gate 4.1 status: **ACCEPTED BASELINE**, merged as PR #28.
 
 Gate 4.2 implementation status: **ACCEPTED BASELINE**, merged as PR #29.
 
-Gate 4.2 closure status: **COMPLETE AFTER MERGE OF THIS CLOSURE CHANGE**. The
+Gate 4.2 closure status: **COMPLETE AFTER MERGE OF PR #30**. The
 closure adds the missing busy, locale-consistency, long-history, cancellation,
 accessibility, malformed-feature, and persistent-fallback proofs and makes a
 retried browser test a failure instead of evidence. This document does not
