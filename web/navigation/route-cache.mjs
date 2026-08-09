@@ -40,7 +40,22 @@ export class NativeRouteCache {
     if (weightBytes > this.maxWeightBytes) {
       return { stored: false, evictedKeys: [] };
     }
-    this.#entries.set(key, { value, weightBytes });
+    this.#entries.set(key, { value, weightBytes, speculative: false });
+    this.#weightBytes += weightBytes;
+    const evictedKeys = this.#enforceBounds();
+    return { stored: this.#entries.has(key), evictedKeys };
+  }
+
+  insertSpeculative(key, value, weightBytes) {
+    assertKey(key);
+    assertNonNegativeInteger(weightBytes, 'weightBytes');
+    const existing = this.#entries.get(key);
+    if (existing && !existing.speculative) return { stored: true, evictedKeys: [] };
+    this.#remove(key);
+    if (weightBytes > this.maxWeightBytes) {
+      return { stored: false, evictedKeys: [] };
+    }
+    this.#entries.set(key, { value, weightBytes, speculative: true });
     this.#weightBytes += weightBytes;
     const evictedKeys = this.#enforceBounds();
     return { stored: this.#entries.has(key), evictedKeys };
@@ -52,7 +67,7 @@ export class NativeRouteCache {
     this.#activeKey = key;
     this.#remove(key, { preserveActive: true });
     if (weightBytes <= this.maxWeightBytes) {
-      this.#entries.set(key, { value, weightBytes });
+      this.#entries.set(key, { value, weightBytes, speculative: false });
       this.#weightBytes += weightBytes;
     }
     const evictedKeys = this.#enforceBounds();
@@ -66,6 +81,7 @@ export class NativeRouteCache {
     if (!entry) return { activated: false, evictedKeys: [] };
     this.#activeKey = key;
     this.#entries.delete(key);
+    entry.speculative = false;
     this.#entries.set(key, entry);
     return { activated: true, evictedKeys: this.#enforceBounds() };
   }
@@ -96,13 +112,18 @@ export class NativeRouteCache {
       maxWeightBytes: this.maxWeightBytes,
       activeKey: this.#activeKey ?? null,
       keys: Object.freeze([...this.#entries.keys()]),
+      speculativeKeys: Object.freeze([...this.#entries]
+        .filter(([, entry]) => entry.speculative)
+        .map(([key]) => key)),
     });
   }
 
   #enforceBounds() {
     const evictedKeys = [];
     while (this.#entries.size > this.maxEntries || this.#weightBytes > this.maxWeightBytes) {
-      const candidate = [...this.#entries.keys()].find(key => key !== this.#activeKey);
+      const candidate = [...this.#entries]
+        .find(([key, entry]) => key !== this.#activeKey && entry.speculative)?.[0]
+        ?? [...this.#entries.keys()].find(key => key !== this.#activeKey);
       if (candidate === undefined) break;
       this.#remove(candidate);
       evictedKeys.push(candidate);
@@ -137,6 +158,20 @@ export class InFlightRoutePreparations {
     });
     this.#entries.set(key, { controller, promise: tracked });
     return { promise: tracked, reused: false };
+  }
+
+  has(key) {
+    assertKey(key);
+    return this.#entries.has(key);
+  }
+
+  abort(key) {
+    assertKey(key);
+    const entry = this.#entries.get(key);
+    if (!entry) return false;
+    this.#entries.delete(key);
+    entry.controller.abort();
+    return true;
   }
 
   abortExcept(retainedKey) {

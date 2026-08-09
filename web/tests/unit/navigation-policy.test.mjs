@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { classifyNavigationIntent } from '../../navigation/policy.mjs';
+import { classifyNavigationIntent, classifyPrefetchIntent } from '../../navigation/policy.mjs';
 
 const ordinaryLink = Object.freeze({
   currentUrl: 'https://pinega.example/',
@@ -100,6 +100,59 @@ test('hard-fallback guard leaves the retried destination to native navigation', 
     fallbackTarget: 'https://pinega.example/technology/#ignored',
   }), {
     action: 'native',
+    reason: 'fallback-guard',
+  });
+});
+
+const ordinaryPrefetch = Object.freeze({
+  currentUrl: 'https://pinega.example/',
+  activeDocumentUrl: 'https://pinega.example/',
+  destinationUrl: 'https://pinega.example/technology/',
+  sourceKind: 'anchor',
+  downloadRequested: false,
+  hasTarget: false,
+  disabled: false,
+});
+
+test('prefetch eligibility is a strict subset of enhanced link navigation', () => {
+  assert.deepEqual(classifyPrefetchIntent(ordinaryPrefetch), {
+    action: 'prefetch',
+    reason: 'eligible',
+    url: ordinaryPrefetch.destinationUrl,
+  });
+  assert.deepEqual(classifyPrefetchIntent({
+    ...ordinaryPrefetch,
+    destinationUrl: 'https://pinega.example/technology/#optimisation',
+  }), {
+    action: 'prefetch',
+    reason: 'eligible',
+    url: 'https://pinega.example/technology/#optimisation',
+  });
+
+  const cases = [
+    ['active-route', { destinationUrl: 'https://pinega.example/#ignored' }],
+    ['download', { downloadRequested: true }],
+    ['target', { hasTarget: true }],
+    ['disabled', { disabled: true }],
+    ['source', { sourceKind: 'none' }],
+    ['cross-origin', { destinationUrl: 'https://example.com/technology/' }],
+    ['non-http', { destinationUrl: 'mailto:research@pinega.example' }],
+    ['url-credentials', { destinationUrl: 'https://user:secret@pinega.example/technology/' }],
+  ];
+  for (const [reason, override] of cases) {
+    assert.deepEqual(classifyPrefetchIntent({ ...ordinaryPrefetch, ...override }), {
+      action: 'skip',
+      reason,
+    });
+  }
+});
+
+test('prefetch respects the same guarded hard-navigation destination boundary', () => {
+  assert.deepEqual(classifyPrefetchIntent({
+    ...ordinaryPrefetch,
+    fallbackTarget: 'https://pinega.example/technology/#ignored',
+  }), {
+    action: 'skip',
     reason: 'fallback-guard',
   });
 });

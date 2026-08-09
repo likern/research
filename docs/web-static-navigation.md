@@ -15,13 +15,22 @@ Gate 4.3 status: **ACCEPTED BASELINE**, merged as PR #31. It adds the bounded
 native-template LRU, boot-route capture, eviction, `no-store` policy, and
 same-route in-flight preparation reuse.
 
-Gate 4.4 status: **IMPLEMENTATION UNDER REVIEW**. This change adds the closed
+Gate 4.4 status: **ACCEPTED BASELINE**, merged as PR #32. It adds the closed
 dynamic-feature registry, critical/deferred/viewport scheduling, a verified
 production bundle graph based on the esbuild metafile, browser module-map
-reuse, and a Pinega Lit island sharing one Lit runtime with Web Awesome. It
-becomes accepted baseline only after its dedicated pull request is merged.
+reuse, and a Pinega Lit island sharing one Lit runtime with Web Awesome.
 
-Gate 4.4 base repository state: `main@3953d04` after PR #31.
+The initial-render stability closure is **ACCEPTED BASELINE**, merged as PR
+#33. It proves static-region geometry and style stability across Pinega and Web
+Awesome upgrade boundaries.
+
+Gate 4.5 status: **IMPLEMENTATION UNDER REVIEW**. This change adds
+hover/focus/pointer intent, bounded speculative route preparation,
+save-data/slow-network policy, and explicit hit-rate and wasted-byte
+instrumentation. It becomes accepted baseline only after this pull request is
+merged.
+
+Gate 4.5 base repository state: `main@b8a8f3d` after PR #33.
 
 ## Decision
 
@@ -51,7 +60,7 @@ It deliberately adds no client router or navigation interception.
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | One root Lit 3.3.3 installation shared by Web Awesome and the Pinega diagram island |
 | Runtime loading | Shell-eager `main.js` plus allowlisted esbuild dynamic entries classified as critical, deferred, or viewport |
-| Navigation | Gate 4.3 transactional Navigation API coordinator with a bounded in-memory native-template LRU |
+| Navigation | Gate 4.5 transactional Navigation API coordinator with bounded intent prefetch and an in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
@@ -180,11 +189,13 @@ the current boundary. An unknown `pinega-*` element under route `<main>` is a
 build error until it is explicitly classified. Web Awesome `wa-*` elements are
 vendor primitives and are not Pinega route feature IDs.
 
-The generated site-manifest schema is version 5. It projects `features`,
+The generated site-manifest schema is version 6. It projects `features`,
 `criticalFeatures`, and deterministic shell/critical/deferred/viewport request
-manifests for every localized route. `/assets/feature-graph.json` records the
-verified source-to-chunk mapping and `/assets/bundle-manifest.json` preserves
-the underlying esbuild metafile.
+manifests for every localized route. It also publishes the versioned intent
+prefetch signals, scheduler/network bounds, request priority, and metrics
+contract. `/assets/feature-graph.json` records the verified source-to-chunk
+mapping and `/assets/bundle-manifest.json` preserves the underlying esbuild
+metafile.
 
 ## Route-owned metadata whitelist
 
@@ -746,7 +757,7 @@ The only route-owned loading classes are:
 Imports are not abortable. The navigation transaction is therefore checked
 again after every critical await, and the feature runtime owns a separate
 route serial so a late deferred or viewport completion cannot mutate a removed
-route. Intent, hover, idle, and speculative prefetch remain outside Gate 4.4.
+route. Gate 4.4 itself did not prefetch route HTML or feature modules.
 
 ### esbuild metafile and request manifests
 
@@ -788,7 +799,7 @@ zero-retry browser matrix executes the real minified production artifact in
 Chromium, Firefox, and WebKit; any future cross-chunk ordering dependency must
 add a direct regression test or reopen the bundler decision.
 
-Each route's schema-v5 request manifest partitions the actual transitive
+Each route's schema-v6 request manifest partitions the actual transitive
 closure into shell, critical, deferred, and viewport requests. Assets already
 loaded through the shell are listed under `moduleMapReuse` instead of counted
 again as feature requests. No manual `modulepreload` or import map is required
@@ -810,6 +821,105 @@ activation after commit, locale-route module reuse, and critical chunk failure
 with zero partial commit. The complete matrix runs with zero retries in
 Chromium desktop/mobile, Firefox, and WebKit against one immutable artifact.
 
+## Gate 4.5 intent-aware route prefetch
+
+### Intent and eligibility
+
+Prefetch is an application-owned route preparation, not a parallel
+`<link rel="prefetch">` cache. It uses the coordinator's existing fetch,
+response-envelope checks, detached parse, complete route-contract validation,
+and build/shell compatibility boundary. A validated speculative route may
+enter the same native-template LRU, so a later navigation consumes the exact
+prepared object without a second request or parse.
+
+Only ordinary eligible anchor/area destinations are considered. The prefetch
+policy is deliberately stricter than interception: it rejects active-route,
+cross-origin, non-HTTP(S), credentialed, download, explicit-target, disabled,
+fallback-guard, and unknown-source links. Event delegation follows the composed
+path so links inside component trees retain the same policy.
+
+The three intent signals are:
+
+- primary mouse/pen `pointerover` after an 80 ms dwell; leaving the link before
+  the dwell cancels the intent;
+- `focusin`, immediately, for keyboard and programmatic focus intent;
+- primary unmodified button-zero `pointerdown`, immediately, so touch/pen/mouse
+  activation can publish shared in-flight ownership before the click-driven
+  Navigation API event.
+
+Hover uses `pointerover` because it bubbles; the related target check prevents
+descendant transitions from restarting the dwell. Touch hover is ignored and
+touch intent enters through primary `pointerdown`.
+
+### Scheduler, network, and foreground ownership
+
+The scheduler admits at most two active route preparations and eight queued
+keys. Keys coalesce across signals. Pointer intent outranks focus, which
+outranks hover; promotion preserves one operation, and a stronger intent may
+replace only the oldest lower-priority queued item. It never displaces active
+work merely to improve priority.
+
+Starting a foreground navigation cancels queued and active speculation for
+other routes. If the selected route already owns an active preparation, the
+navigation reuses that exact in-flight promise; the scheduler invokes the task
+synchronously enough to publish this ownership before a following click event.
+The selected navigation remains the only owner of visible commit, critical
+feature loading, focus, scroll, and fallback.
+
+Speculation runs only while the document is visible and `navigator.onLine` is
+not false. It is blocked when Network Information reports `saveData=true` or
+an effective type of `slow-2g`, `2g`, or `3g`. A policy change or document hide
+aborts orphaned speculation. When Network Information is unavailable, Pinega
+does not invent a connection class; other eligibility checks still apply.
+Route HTML uses Fetch request priority `low`, which is a scheduling hint rather
+than a correctness dependency.
+
+Speculative LRU entries are the first eviction candidates, before any visited
+non-active prototype. A speculative insertion cannot evict a full cache made
+only of committed routes: the new speculative entry evicts itself. `no-store`
+responses may be validated for intent evidence but are not retained and are
+immediately finalized as unused. Route feature modules are not imported during
+prefetch; critical modules remain a foreground pre-commit boundary, while
+deferred and viewport behavior still starts from the committed route.
+
+### Metrics and evidence
+
+Every state change publishes schema-v1 `pinega:prefetch-metrics` and updates
+`window.__PINEGA_PREFETCH_METRICS__`. The snapshot exposes intent outcomes,
+network policy, live scheduler occupancy, completed/failed/aborted work,
+cache/in-flight hits, retained and finalized unused entries, and byte
+accounting.
+
+The hit-rate denominator is completed route-HTML prefetches. A hit is counted
+only when an active or retained speculative preparation is consumed by a
+successful navigation commit; a mere cache lookup is not a hit. Exact UTF-8
+response bytes provide source accounting. Transfer accounting uses the
+matching Fetch `PerformanceResourceTiming.transferSize` entry when available
+and labels exact source bytes as the explicit fallback measurement otherwise.
+
+At any snapshot:
+
+```text
+wasted bytes = prefetched bytes - useful bytes
+             = retained-unused bytes + finalized-unused bytes
+```
+
+The retained partition can still become useful later; finalized unused bytes
+cannot. Cache eviction, `no-store`, and incompatible-build clearing finalize
+unused records. This makes the metric interpretable during a live document
+without pretending an unfinished session is a final outcome.
+
+The zero-retry production browser matrix covers hover dwell/cancellation,
+focus and pointerdown, one-request in-flight reuse, two-active/eight-queued
+bounds, Save-Data and 3g blocking with 4g recovery, zero feature execution
+during prefetch, cache hits, and `no-store` waste. The diagnostic
+`gate-4.5-intent-prefetch-baseline.json` deliberately completes two route
+prefetches, consumes one, and retains one unused; it therefore requires a 0.5
+hit rate plus internally balanced useful/wasted source and transfer bytes.
+Numeric product budgets remain deferred until repeated production evidence
+exists. Idle prefetch, module prefetch, persistence, and Service Worker
+behavior remain outside Gate 4.5.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
@@ -818,10 +928,15 @@ Chromium desktop/mobile, Firefox, and WebKit against one immutable artifact.
 - [HTML Standard — Navigation API](https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api)
 - [HTML Standard — the `template` element](https://html.spec.whatwg.org/multipage/scripting.html#the-template-element)
 - [HTML Standard — JavaScript module maps](https://html.spec.whatwg.org/multipage/webappapis.html#module-map)
+- [HTML Standard — prefetch links](https://html.spec.whatwg.org/multipage/links.html#link-type-prefetch)
+- [HTML Standard — speculative loading](https://html.spec.whatwg.org/multipage/speculative-loading.html)
+- [Pointer Events](https://www.w3.org/TR/pointerevents/)
 - [Intersection Observer](https://www.w3.org/TR/intersection-observer/)
 - [ECMAScript — keyed collections and `Map` insertion order](https://tc39.es/ecma262/multipage/keyed-collections.html)
 - [Fetch Standard](https://fetch.spec.whatwg.org/)
 - [Resource Timing](https://www.w3.org/TR/resource-timing/)
+- [Network Information API](https://wicg.github.io/netinfo/)
+- [Save Data API](https://wicg.github.io/savedata/)
 - [WAI-ARIA 1.2 — `aria-busy`](https://www.w3.org/TR/wai-aria-1.2/#aria-busy)
 - [WAI-ARIA 1.2 — `status` role](https://www.w3.org/TR/wai-aria-1.2/#status)
 - [WCAG 2.2 — focus order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html)

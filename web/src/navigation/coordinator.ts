@@ -30,6 +30,11 @@ import {
   type ActiveRouteState,
   type PreparedRoute,
 } from './route-document.js';
+import {
+  IntentPrefetchController,
+  type PrefetchCommitOutcome,
+  type PrefetchLoadResult,
+} from './intent-prefetch.js';
 
 const fallbackStorageKey = 'pinega-navigation-hard-fallback-v1';
 
@@ -54,6 +59,7 @@ interface NavigationCommitDetail {
   preparation: NavigationPreparationDetail;
   cache: NavigationCacheDetail;
   features: RouteFeaturePhases;
+  prefetch: PrefetchCommitOutcome;
 }
 
 interface NavigationFallbackDetail {
@@ -79,6 +85,8 @@ interface PreparedNavigation {
   cacheable: boolean;
   networkMs: number;
   parseMs: number;
+  transferBytes: number;
+  transferMeasurement: 'cache' | 'resource-timing' | 'source-fallback';
 }
 
 interface NavigationPreparationDetail {
@@ -93,6 +101,8 @@ interface NavigationPreparationDetail {
   sourceBytes: number;
   nodeCount: number;
   weightBytes: number;
+  transferBytes: number;
+  transferMeasurement: PreparedNavigation['transferMeasurement'];
 }
 
 interface NavigationCacheDetail {
@@ -155,6 +165,7 @@ export class NavigationCoordinator {
   readonly #cache = new NativeRouteCache<PreparedRoute>();
   readonly #preparations = new InFlightRoutePreparations<PreparedNavigation>();
   readonly #featureGraph: DynamicFeatureGraph;
+  readonly #prefetch: IntentPrefetchController;
   readonly #scrollPositions = new Map<string, RememberedScrollPosition>();
   readonly #scrollDisposalKeys = new Set<string>();
   #active: ActiveRouteState;
@@ -173,12 +184,23 @@ export class NavigationCoordinator {
       const bootKey = routeCacheKey(active.buildId, this.#activeDocumentUrl, location.origin);
       this.#cache.commitActive(bootKey, bootRoute, bootRoute.weightBytes);
     }
+    this.#prefetch = new IntentPrefetchController({
+      activeBuildId: () => this.#active.buildId,
+      activeDocumentUrl: () => this.#activeDocumentUrl,
+      fallbackTarget: () => this.#currentFallbackTarget(),
+      routeState: key => {
+        if (this.#cache.peek(key)) return 'cached';
+        return this.#preparations.has(key) ? 'in-flight' : 'cold';
+      },
+      load: (target, key, signal) => this.#prefetchRoute(target, key, signal),
+    });
   }
 
   start(): void {
     if (this.#started) return;
     this.#started = true;
     this.#navigation.addEventListener('navigate', this.#handleNavigate);
+    this.#prefetch.start();
   }
 
   #handleNavigate = (event: NavigateEvent): void => {
@@ -202,12 +224,14 @@ export class NavigationCoordinator {
     const decision = classifyNavigationIntent(intent);
 
     if (decision.action === 'native') {
+      this.#prefetch.prepareForNavigation();
       this.#transactions.invalidate();
       this.#preparations.clear();
       this.#clearPending();
       return;
     }
     if (decision.action === 'cancel') {
+      this.#prefetch.prepareForNavigation();
       this.#transactions.invalidate();
       this.#preparations.clear();
       this.#clearPending();
@@ -217,6 +241,7 @@ export class NavigationCoordinator {
 
     const target = new URL(decision.url);
     const key = routeCacheKey(this.#active.buildId, target, location.origin);
+    this.#prefetch.prepareForNavigation(key);
     this.#preparations.abortExcept(key);
     const transaction = this.#transactions.begin(event.signal);
     try {
@@ -245,7 +270,14 @@ export class NavigationCoordinator {
       let result: PreparedNavigation;
       let source: NavigationPreparationSource;
       if (cached) {
-        result = { prepared: cached, cacheable: true, networkMs: 0, parseMs: 0 };
+        result = {
+          prepared: cached,
+          cacheable: true,
+          networkMs: 0,
+          parseMs: 0,
+          transferBytes: 0,
+          transferMeasurement: 'cache',
+        };
         source = 'cache';
       } else {
         const acquisition = this.#preparations.acquire(key, signal => this.#fetchAndPrepare(target, signal));
@@ -304,21 +336,22 @@ export class NavigationCoordinator {
         };
         this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
         let stored: boolean;
-        let evictedEntries: number;
+        let evictedKeys: readonly string[];
         if (source === 'cache') {
           const activation = this.#cache.activate(key);
           stored = activation.activated;
-          evictedEntries = activation.evictedKeys.length;
+          evictedKeys = activation.evictedKeys;
         } else if (result.cacheable) {
           const mutation = this.#cache.commitActive(key, prepared, prepared.weightBytes);
           stored = mutation.stored;
-          evictedEntries = mutation.evictedKeys.length;
+          evictedKeys = mutation.evictedKeys;
         } else {
           const mutation = this.#cache.deactivate();
           stored = false;
-          evictedEntries = mutation.evictedKeys.length;
+          evictedKeys = mutation.evictedKeys;
         }
-        const cache = cacheDetail(this.#cache.snapshot(), stored, evictedEntries);
+        const cache = cacheDetail(this.#cache.snapshot(), stored, evictedKeys.length);
+        const prefetch = this.#prefetch.recordCommit(key, source, evictedKeys);
         this.#clearPending(transaction);
         applyPostCommitScroll(event, target, rememberedScroll);
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
@@ -339,9 +372,12 @@ export class NavigationCoordinator {
             sourceBytes: prepared.sourceBytes,
             nodeCount: prepared.nodeCount,
             weightBytes: prepared.weightBytes,
+            transferBytes: result.transferBytes,
+            transferMeasurement: result.transferMeasurement,
           },
           cache,
           features: featurePhases,
+          prefetch,
         } satisfies NavigationCommitDetail;
       });
       if (outcome.committed) {
@@ -355,6 +391,7 @@ export class NavigationCoordinator {
           }
         }
         if (rememberedScroll) this.#scheduleRememberedScrollCorrection(transaction, rememberedScroll);
+        this.#prefetch.publish();
         window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail: outcome.value }));
       }
     } catch (error) {
@@ -362,18 +399,23 @@ export class NavigationCoordinator {
       const reason = error instanceof RoutePreparationError || error instanceof NavigationPreparationError
         ? error.reason
         : 'unknown';
-      if (reason === 'build-mismatch') this.#cache.clear();
+      if (reason === 'build-mismatch') this.#prefetch.recordEvictions(this.#cache.clear());
       this.#hardNavigate(transaction, target, reason);
     }
   }
 
-  async #fetchAndPrepare(target: URL, signal: AbortSignal): Promise<PreparedNavigation> {
+  async #fetchAndPrepare(
+    target: URL,
+    signal: AbortSignal,
+    priority: 'auto' | 'low' = 'auto',
+  ): Promise<PreparedNavigation> {
     const networkStarted = performance.now();
     const response = await fetch(target.href, {
       method: 'GET',
       credentials: 'same-origin',
       redirect: 'follow',
       headers: { Accept: 'text/html' },
+      priority,
       signal,
     });
     const envelopeFailure = classifyResponseEnvelope(response, target);
@@ -387,17 +429,55 @@ export class NavigationCoordinator {
     const parseStarted = performance.now();
     const prepared = prepareRouteDocument(html, target.href, this.#active);
     const parseMs = performance.now() - parseStarted;
+    const transfer = measuredTransfer(response.url, networkStarted, prepared.sourceBytes);
     return Object.freeze({
       prepared,
       cacheable: responseAllowsRouteCache(response.headers.get('cache-control')),
       networkMs,
       parseMs,
+      transferBytes: transfer.bytes,
+      transferMeasurement: transfer.measurement,
     });
+  }
+
+  async #prefetchRoute(target: URL, key: string, signal: AbortSignal): Promise<PrefetchLoadResult> {
+    const acquisition = this.#preparations.acquire(
+      key,
+      preparationSignal => this.#fetchAndPrepare(target, preparationSignal, 'low'),
+    );
+    const abort = (): void => {
+      if (!acquisition.reused) this.#preparations.abort(key);
+    };
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort();
+    try {
+      const result = await acquisition.promise;
+      this.#validatePreparedCompatibility(result.prepared);
+      if (!result.cacheable) {
+        return Object.freeze({
+          sourceBytes: result.prepared.sourceBytes,
+          transferBytes: result.transferBytes,
+          transferMeasurement: fallbackMeasurement(result.transferMeasurement),
+          retained: false,
+          evictedKeys: Object.freeze([]),
+        });
+      }
+      const mutation = this.#cache.insertSpeculative(key, result.prepared, result.prepared.weightBytes);
+      return Object.freeze({
+        sourceBytes: result.prepared.sourceBytes,
+        transferBytes: result.transferBytes,
+        transferMeasurement: fallbackMeasurement(result.transferMeasurement),
+        retained: mutation.stored,
+        evictedKeys: Object.freeze(mutation.evictedKeys),
+      });
+    } finally {
+      signal.removeEventListener('abort', abort);
+    }
   }
 
   #validatePreparedCompatibility(prepared: PreparedRoute): void {
     if (prepared.buildId !== this.#active.buildId || prepared.shellVersion !== this.#active.shellVersion) {
-      this.#cache.clear();
+      this.#prefetch.recordEvictions(this.#cache.clear());
       throw new RoutePreparationError('build-mismatch', 'Cached route build or shell is incompatible with the active document.');
     }
     if (prepared.contractVersion !== this.#active.contractVersion) {
@@ -407,6 +487,7 @@ export class NavigationCoordinator {
 
   #hardNavigate(transaction: NavigationTransaction, target: URL, reason: HardFallbackReason): void {
     this.#transactions.commit(transaction, () => {
+      this.#prefetch.prepareForNavigation();
       this.#preparations.clear();
       const identity = normalizeRouteUrl(target, location.origin);
       this.#fallbackTarget = identity;
@@ -567,6 +648,30 @@ function classifyResponseEnvelope(response: Response, target: URL): HardFallback
 
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
+}
+
+function measuredTransfer(
+  responseUrl: string,
+  startedAt: number,
+  sourceBytes: number,
+): { bytes: number; measurement: 'resource-timing' | 'source-fallback' } {
+  const entry = (performance.getEntriesByType('resource') as PerformanceResourceTiming[])
+    .toReversed()
+    .find(candidate => (
+      candidate.initiatorType === 'fetch'
+      && candidate.name === responseUrl
+      && candidate.startTime >= startedAt - 1
+    ));
+  if (entry && Number.isSafeInteger(entry.transferSize) && entry.transferSize >= 0) {
+    return { bytes: entry.transferSize, measurement: 'resource-timing' };
+  }
+  return { bytes: sourceBytes, measurement: 'source-fallback' };
+}
+
+function fallbackMeasurement(
+  measurement: PreparedNavigation['transferMeasurement'],
+): PrefetchLoadResult['transferMeasurement'] {
+  return measurement === 'resource-timing' ? measurement : 'source-fallback';
 }
 
 function readFallbackGuard(): string | undefined {

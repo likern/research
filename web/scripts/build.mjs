@@ -12,6 +12,12 @@ import {
   ROUTE_OWNED_METADATA,
   SHELL_VERSION,
 } from '../navigation/contract.mjs';
+import {
+  DEFAULT_PREFETCH_MAX_CONCURRENCY,
+  DEFAULT_PREFETCH_MAX_QUEUE,
+  HOVER_PREFETCH_DELAY_MS,
+  SLOW_EFFECTIVE_CONNECTION_TYPES,
+} from '../navigation/prefetch.mjs';
 import { finalizeBuildIdentity } from './lib/build-identity.mjs';
 import { applyDocumentContract, validateDocumentContract } from './lib/document-contract.mjs';
 import { createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
@@ -142,7 +148,7 @@ await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRo
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 5,
+    schemaVersion: 6,
     build: {
       id: BUILD_ID_PLACEHOLDER,
       identityAlgorithm: BUILD_ID_ALGORITHM,
@@ -157,6 +163,30 @@ await writeFile(
         assetManifest: '/assets/feature-graph.json',
         bundleManifest: verifiedFeatures.graph.bundler.metafile,
         lit: verifiedFeatures.graph.lit,
+      },
+      intentPrefetch: {
+        schemaVersion: 1,
+        signals: {
+          hover: 'dwell',
+          focus: 'immediate',
+          pointer: 'primary-button-immediate',
+        },
+        hoverDelayMs: HOVER_PREFETCH_DELAY_MS,
+        maxConcurrent: DEFAULT_PREFETCH_MAX_CONCURRENCY,
+        maxQueued: DEFAULT_PREFETCH_MAX_QUEUE,
+        routeRequestPriority: 'low',
+        networkPolicy: {
+          blockOffline: true,
+          blockSaveData: true,
+          blockedEffectiveTypes: SLOW_EFFECTIVE_CONNECTION_TYPES,
+        },
+        metrics: {
+          schemaVersion: 1,
+          event: 'pinega:prefetch-metrics',
+          global: 'window.__PINEGA_PREFETCH_METRICS__',
+          hitRateDenominator: 'completed-route-prefetches',
+          wastedBytes: 'prefetched-minus-useful',
+        },
       },
       routeOwnedMetadata: ROUTE_OWNED_METADATA,
       urlNormalization: {

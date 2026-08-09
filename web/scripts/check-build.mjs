@@ -12,6 +12,12 @@ import {
   ROUTE_OWNED_METADATA,
   SHELL_VERSION,
 } from '../navigation/contract.mjs';
+import {
+  DEFAULT_PREFETCH_MAX_CONCURRENCY,
+  DEFAULT_PREFETCH_MAX_QUEUE,
+  HOVER_PREFETCH_DELAY_MS,
+  SLOW_EFFECTIVE_CONNECTION_TYPES,
+} from '../navigation/prefetch.mjs';
 import { verifyBuildIdentity } from './lib/build-identity.mjs';
 import { validateDocumentContract } from './lib/document-contract.mjs';
 import { createRouteRequestManifest, createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
@@ -150,7 +156,7 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 5);
+assert.equal(manifest.schemaVersion, 6);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
@@ -161,6 +167,30 @@ assert.deepEqual(manifest.navigation.featureGraph, {
   assetManifest: '/assets/feature-graph.json',
   bundleManifest: '/assets/bundle-manifest.json',
   lit: featureGraph.lit,
+});
+assert.deepEqual(manifest.navigation.intentPrefetch, {
+  schemaVersion: 1,
+  signals: {
+    hover: 'dwell',
+    focus: 'immediate',
+    pointer: 'primary-button-immediate',
+  },
+  hoverDelayMs: HOVER_PREFETCH_DELAY_MS,
+  maxConcurrent: DEFAULT_PREFETCH_MAX_CONCURRENCY,
+  maxQueued: DEFAULT_PREFETCH_MAX_QUEUE,
+  routeRequestPriority: 'low',
+  networkPolicy: {
+    blockOffline: true,
+    blockSaveData: true,
+    blockedEffectiveTypes: SLOW_EFFECTIVE_CONNECTION_TYPES,
+  },
+  metrics: {
+    schemaVersion: 1,
+    event: 'pinega:prefetch-metrics',
+    global: 'window.__PINEGA_PREFETCH_METRICS__',
+    hitRateDenominator: 'completed-route-prefetches',
+    wastedBytes: 'prefetched-minus-useful',
+  },
 });
 assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
 assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);

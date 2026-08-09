@@ -263,16 +263,41 @@ test('generated discovery files expose the complete documentation corpus', async
   const payload = await manifest.json() as {
     schemaVersion: number;
     build: { id: string; identityAlgorithm: string; documentContractVersion: string; shellVersion: string };
-    navigation: { routeFeatureDefinitions: Array<{ id: string; implementation: string }>; routeOwnedMetadata: string[] };
+    navigation: {
+      routeFeatureDefinitions: Array<{ id: string; implementation: string }>;
+      intentPrefetch: {
+        schemaVersion: number;
+        hoverDelayMs: number;
+        maxConcurrent: number;
+        maxQueued: number;
+        routeRequestPriority: string;
+        networkPolicy: { blockSaveData: boolean; blockedEffectiveTypes: string[] };
+        metrics: { event: string; hitRateDenominator: string; wastedBytes: string };
+      };
+      routeOwnedMetadata: string[];
+    };
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
     routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
   };
-  expect(payload.schemaVersion).toBe(5);
+  expect(payload.schemaVersion).toBe(6);
   expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
   expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
   expect(payload.build.documentContractVersion).toBe('1');
   expect(payload.build.shellVersion).toBe('4.0');
   expect(payload.navigation.routeFeatureDefinitions.map(feature => feature.id)).toEqual(['benchmark', 'code-example', 'diagram-viewer', 'doc-topic-filter']);
+  expect(payload.navigation.intentPrefetch).toMatchObject({
+    schemaVersion: 1,
+    hoverDelayMs: 80,
+    maxConcurrent: 2,
+    maxQueued: 8,
+    routeRequestPriority: 'low',
+    networkPolicy: { blockSaveData: true, blockedEffectiveTypes: ['slow-2g', '2g', '3g'] },
+    metrics: {
+      event: 'pinega:prefetch-metrics',
+      hitRateDenominator: 'completed-route-prefetches',
+      wastedBytes: 'prefetched-minus-useful',
+    },
+  });
   expect(payload.navigation.routeOwnedMetadata).toContain('link[rel="canonical"]');
   expect(payload.site.tagline).toBe('Correctness under concurrency.');
   expect(payload.site.defaultLocale).toBe('en');
