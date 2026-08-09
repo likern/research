@@ -1,11 +1,13 @@
-# Pinega Web Gate 4.0 — Static-first navigation contract and MPA baseline
+# Pinega Web Gate 4 — Static-first navigation and coordinator contract
 
-Status: **PROPOSED NEXT MILESTONE** until the implementing pull request is
-merged. The contract in this document then becomes the pre-condition for Gate
-4.1. It does not claim that same-document navigation, route caching, prefetch,
-or dynamic route-feature imports are implemented.
+Gate 4.0 status: **ACCEPTED BASELINE**, merged as PR #27.
 
-Baseline repository state: `main@b4b4ef0` after Gate 3B.
+Gate 4.1 status: **PROPOSED NEXT MILESTONE** until its implementing pull request
+is merged. This document does not claim that route caching, prefetch, dynamic
+route-feature imports, custom scroll/focus restoration, or Lit migration are
+implemented.
+
+Gate 4.1 baseline repository state: `main@83b9aa9` after Gate 4.0.
 
 ## Decision
 
@@ -47,7 +49,7 @@ review deliberately changes bundlers.
 
 1. **Full document.** Every public route remains independently loadable,
    printable, crawlable, and meaningful without JavaScript.
-2. **Single navigation owner.** Only the future `NavigationCoordinator` may
+2. **Single navigation owner.** Only `NavigationCoordinator` may
    decide interception, preparation, commit, or hard fallback.
 3. **Validate before commit.** Unvalidated response content never enters the
    active DOM.
@@ -168,17 +170,20 @@ The future coordinator may update only this route-owned set:
 |---|---|
 | `<title>` | exactly one, non-empty |
 | `meta[name="description"]` | exactly one, non-empty |
+| `meta[name="robots"]` | zero or one; removed when the destination does not own it |
 | `link[rel="canonical"]` | zero or one; absolute, same-origin, fragment-free |
 | `link[rel="alternate"][hreflang]` | unique languages; canonical routes require self and `x-default` |
 | `meta[property^="og:"]` | unique property names |
 | `meta[name^="twitter:"]` | unique names |
-| `<html lang>` and `dir` | exact destination document values |
+| `<html lang>`, `dir`, `data-page`, and `data-locale` | exact destination document values |
 | body route marker | exactly the route ID |
+| marked language-switcher slot and translation notices | exact destination route peers and localized fallback state |
+| site brand route marker | current only on the locale homepage |
 | primary-navigation `aria-current="page"` | at most one inside the primary navigation region |
 
 Charset, viewport, stylesheets, executable scripts, Web Awesome project
-metadata, favicon, and shell-owned theme state are not route-owned and cannot
-be copied from a fetched document during Gate 4.1.
+metadata, favicon, theme-color, and shell-owned theme state are not route-owned
+and cannot be copied from a fetched document during Gate 4.1.
 
 ## URL identity and response boundary
 
@@ -270,8 +275,8 @@ comparisons with Gate 4.1 and later stages.
 - Every generated route is rejected at build time if its contract is malformed.
 - All route documents and site-manifest identify one normalized application
   build and one compatible shell.
-- Site-manifest schema v4 exposes the feature graph and metadata ownership
-  policy without changing content registry schema v3.
+- Site-manifest schema v4 exposes the native-route policy, feature graph, and
+  metadata ownership policy without changing content registry schema v3.
 - Ordinary, long, Lit, locale, missing-translation, failure, and deployment
   fixtures are deterministic unit inputs.
 - CI produces a raw MPA baseline on the pinned browser profile.
@@ -280,9 +285,9 @@ comparisons with Gate 4.1 and later stages.
 
 ## Gate 4.1 entry condition
 
-The first coordinator PR may start only after Gate 4.0 is merged and its checks
-pass. Gate 4.1 must consume this contract; it may not replace it with an
-unversioned ad-hoc parser. Its first vertical slice is:
+This entry condition is satisfied: Gate 4.0 is merged and its required checks
+passed. Gate 4.1 consumes that contract; it does not replace it with an
+unversioned ad-hoc parser. Its vertical slice is:
 
 ```text
 eligible same-origin GET navigation
@@ -294,6 +299,144 @@ eligible same-origin GET navigation
 
 Caching, prefetch, dynamic feature imports, and Lit migration remain outside
 that PR.
+
+## Gate 4.1 implementation contract
+
+### Coordinator boot and ownership
+
+The coordinator starts synchronously from the existing eager `main.js` entry,
+before the asynchronous Web Awesome initialization. It first validates the
+active document identity. It then has one of four observable states on the
+document root:
+
+| Runtime marker | Meaning |
+|---|---|
+| `data-pinega-navigation="enhanced"` | the active public route has one Navigation API owner |
+| `data-pinega-navigation="native"` | the browser does not expose the required API |
+| `data-pinega-navigation="native-policy"` | the active route requires a complete document |
+| `data-pinega-navigation="error"` | the active document failed its own coordinator pre-condition |
+
+There is no History API router or click-handler polyfill. If Navigation API is
+unavailable, semantic links retain the static MPA behavior.
+
+`component-lab` and `not-found` are a closed native-only route-ID set. They have
+shell or SEO state that differs from the public persistent shell: the component
+laboratory has no public footer and is intentionally English-only; a not-found
+document owns `robots=noindex` and an HTTP error status. They cannot be entered
+or exited through a partial route commit.
+
+### Eligibility policy
+
+The centralized `navigate` listener classifies the event synchronously:
+
+| Event | Gate 4.1 behavior |
+|---|---|
+| same-origin ordinary HTTP(S) anchor/area GET | intercept |
+| traversal between entries created by this coordinator | intercept |
+| exact active URL | cancel with zero fetch and zero commit |
+| fragment-only navigation | native |
+| reload | native |
+| cross-origin, credentialed, or non-HTTP(S) URL | native |
+| download, form, explicit `target`, or unknown programmatic source | native |
+| language-selector link to another locale | native |
+| hard-fallback retry target | native |
+
+Gate 4.1 keeps cross-locale navigation native because primary navigation,
+footer text, theme-control messages, and Web Awesome translation state belong
+to the actual document locale. Same-document multilingual transitions require
+the broader shell/locale transaction specified for Gate 4.2.
+
+### Prepare phase
+
+An eligible navigation performs exactly one uncached route HTML `fetch()` in
+this gate. The Navigation API event's `AbortSignal` is passed to fetch. Before
+any visible mutation the coordinator rejects:
+
+- non-2xx status, redirects, changed final response URL, and non-HTML media;
+- empty bodies and malformed DOM/document contracts;
+- contract, build, or shell incompatibility;
+- locale changes and native-only route IDs;
+- inconsistent route identity, metadata, feature lists, language slots, or
+  route `aria-current` state;
+- script, style, base, or stylesheet ownership inside route `<main>`.
+
+Parsing uses a detached `DOMParser` document. Only validated route-owned nodes
+are imported. Fetched executable scripts, stylesheets, and an arbitrary body or
+head are never installed.
+
+### Synchronous visible commit
+
+After all asynchronous preparation and the final latest-navigation check, one
+function with no `await` updates:
+
+- `<title>`, description, robots, canonical, `hreflang`, Open Graph, and
+  Twitter metadata;
+- `html[lang][dir][data-page][data-locale]` and the body route marker;
+- the brand/primary-navigation route `aria-current` marker;
+- the marked language-switcher slot and any missing-translation notices;
+- exactly one `main#main-content`.
+
+The `pinega-site-header` custom-element instance, theme state, loaded modules,
+Web Awesome runtime, stylesheet graph, footer, and live `Document` remain in
+place. The language slot is route-owned because its peer URL changes on every
+route even when the locale does not. Its replacement remains inside the same
+header instance and uses the header's existing delegated listener.
+
+After the commit, the coordinator emits `pinega:navigation-commit`. Existing
+eager custom elements upgrade/connect naturally when the new main enters the
+document; the Web Awesome runtime label is refreshed synchronously when that
+runtime is already available.
+
+### Cancellation and hard fallback
+
+Every intercepted operation receives a monotonically increasing serial in
+addition to the Navigation API abort signal. A superseded handler performs no
+DOM, metadata, cache, focus, scroll, fallback, or success mutation.
+
+Expected response rejection and unknown non-abort failures emit
+`pinega:navigation-fallback`, record a normalized target in `sessionStorage`,
+and reload/replace the already committed destination as a full document. The
+retry event is left native and the guard is cleared only after arrival, so a
+malformed response cannot create a client-side interception loop.
+
+Gate 4.1 intentionally relies on the browser's default `intercept()` focus and
+scroll behavior. Explicit fragment timing, traversal scroll restoration,
+focus-transfer policy, competing-navigation stress, and two-build deployment
+races receive their complete behavioral contract in Gate 4.2.
+
+### Baselines and test gates
+
+The original Gate 4.0 MPA measurement remains reproducible by setting the
+coordinator's test-only disable flag in every measured document. It therefore
+continues to measure a JavaScript-enabled full-document site instead of
+silently changing meaning after Gate 4.1.
+
+The additional `gate-4.1-navigation-baseline.json` records cold route
+transitions before any route cache exists. Its structural requirements are:
+
+- one HTML fetch and zero document requests per enhanced transition;
+- one visible commit per completed transition;
+- unchanged `performance.timeOrigin` and one navigation timing entry;
+- preserved site-header identity;
+- the same build ID before and after the transition.
+
+Browser gates cover the happy path, active route, Back/Forward, supersession,
+locale/native policy, malformed and non-HTML responses, real 404, and a real
+JavaScript-disabled link transition in Chromium desktop/mobile, Firefox, and
+WebKit. Numeric latency budgets remain deferred until repeated evidence exists.
+
+## Gate 4.1 post-conditions
+
+- Public same-locale links preserve the live Document and persistent shell.
+- A cold destination costs one HTML fetch, one detached parse, and one
+  synchronous route commit; no cache or prefetch claim is made.
+- Direct loads, reload, locale changes, native-only routes, JavaScript-off, and
+  every rejected response remain complete static document navigation.
+- Active-route selection performs no network or visible mutation.
+- Superseded work cannot commit.
+- Route cache, in-flight reuse, intent prefetch, dynamic imports, Lit islands,
+  `precommitHandler`, View Transitions, Service Worker, and custom focus/scroll
+  orchestration remain unimplemented.
 
 ## Normative and implementation references
 

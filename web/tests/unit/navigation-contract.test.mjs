@@ -8,6 +8,8 @@ import test from 'node:test';
 
 import {
   DOCUMENT_CONTRACT_VERSION,
+  NATIVE_NAVIGATION_ROUTE_IDS,
+  ROUTE_OWNED_METADATA,
   ROUTE_FEATURE_DEFINITIONS,
   SHELL_VERSION,
   normalizeRouteUrl,
@@ -61,6 +63,25 @@ test('every registered content class has one deterministic representative route'
     assert.ok(entry, `Unknown representative entry ${representative.id}`);
     assert.equal(entry.content_type, representative.contentType);
     assert.equal(entry.locales[representative.locale]?.route, representative.route);
+  }
+});
+
+test('coordinator ownership and native-route policy are closed over the content registry', async () => {
+  const contentIndex = JSON.parse(await readFile(resolve(root, '../content/content-index.json'), 'utf8'));
+  assert.deepEqual(NATIVE_NAVIGATION_ROUTE_IDS, ['component-lab', 'not-found']);
+  for (const id of NATIVE_NAVIGATION_ROUTE_IDS) {
+    const entry = contentIndex.entries.find(candidate => candidate.id === id);
+    assert.ok(entry, `Unknown native-navigation route ${id}`);
+    assert.equal(entry.public, false, `${id} must remain outside the enhanced public route graph`);
+  }
+  for (const selector of [
+    'meta[name="robots"]',
+    'html[lang][dir][data-page][data-locale]',
+    'pinega-site-header [data-pinega-language-switcher]',
+    'pinega-site-header [data-translation-notice]',
+    'pinega-site-header .pinega-brand[aria-current="page"]',
+  ]) {
+    assert.ok(ROUTE_OWNED_METADATA.includes(selector), `Missing coordinator-owned route state ${selector}`);
   }
 });
 

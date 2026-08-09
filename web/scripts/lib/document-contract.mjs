@@ -91,6 +91,11 @@ export function validateDocumentContract(html, expected = {}) {
 
   const descriptionNodes = findElements(head, element => element.tagName === 'meta' && attribute(element, 'name') === 'description');
   const description = requiredAttribute(attributes(exactlyOne(descriptionNodes, 'meta[name="description"]')), 'content', 'meta[name="description"]');
+  const robotsNodes = findElements(head, element => element.tagName === 'meta' && attribute(element, 'name') === 'robots');
+  if (robotsNodes.length > 1) throw new TypeError('Document contains more than one meta[name="robots"].');
+  const robots = robotsNodes.length === 1
+    ? requiredAttribute(attributes(robotsNodes[0]), 'content', 'meta[name="robots"]')
+    : null;
   const canonicalNodes = findElements(head, element => element.tagName === 'link' && relIncludes(element, 'canonical'));
   if (canonicalNodes.length > 1) throw new TypeError('Document contains more than one canonical link.');
   const canonicalUrl = canonicalNodes.length === 1
@@ -117,6 +122,27 @@ export function validateDocumentContract(html, expected = {}) {
   const primaryCurrent = primaryNavigation.length === 0 ? [] : findElements(primaryNavigation[0], element => attribute(element, 'aria-current') === 'page');
   if (primaryCurrent.length > 1) throw new TypeError('Primary navigation contains more than one aria-current="page" item.');
 
+  const siteHeaders = findElements(body, element => element.tagName === 'pinega-site-header');
+  if (siteHeaders.length > 1) throw new TypeError('Document contains more than one pinega-site-header.');
+  let shellCurrentHref = primaryCurrent.length === 1 ? attribute(primaryCurrent[0], 'href') ?? null : null;
+  if (siteHeaders.length === 1) {
+    const siteHeader = siteHeaders[0];
+    if (findElements(main, element => element === siteHeader).length === 1) {
+      throw new TypeError('pinega-site-header must remain outside route main.');
+    }
+    const languageSwitchers = findElements(siteHeader, element => hasAttribute(element, 'data-pinega-language-switcher'));
+    if (languageSwitchers.length !== 1) {
+      throw new TypeError(`pinega-site-header requires exactly one language switcher, found ${languageSwitchers.length}.`);
+    }
+    validateTranslationSlots(siteHeader, languageSwitchers[0]);
+    const currentBrands = findElements(siteHeader, element => (
+      element.tagName === 'a' && hasClass(element, 'pinega-brand') && attribute(element, 'aria-current') === 'page'
+    ));
+    if (currentBrands.length + primaryCurrent.length > 1) {
+      throw new TypeError('Site header contains more than one route aria-current="page" item.');
+    }
+    if (currentBrands.length === 1) shellCurrentHref = requiredAttribute(attributes(currentBrands[0]), 'href', 'current Pinega brand');
+  }
   const openGraph = metadataMap(head, 'property', value => value.startsWith('og:'));
   const twitter = metadataMap(head, 'name', value => value.startsWith('twitter:'));
   const result = {
@@ -129,6 +155,7 @@ export function validateDocumentContract(html, expected = {}) {
     direction,
     title,
     description,
+    robots,
     canonicalUrl,
     alternates,
     openGraph,
@@ -136,6 +163,7 @@ export function validateDocumentContract(html, expected = {}) {
     features,
     criticalFeatures,
     primaryNavigationCurrentHref: primaryCurrent.length === 1 ? attribute(primaryCurrent[0], 'href') ?? null : null,
+    shellCurrentHref,
   };
   assertExpected(result, expected);
   return result;
@@ -206,6 +234,10 @@ function hasAttribute(element, name) {
   return attributes(element).has(name);
 }
 
+function hasClass(element, name) {
+  return (attribute(element, 'class') ?? '').split(/\s+/u).includes(name);
+}
+
 function requiredAttribute(values, name, element) {
   const value = values.get(name);
   if (value === undefined || value === '') throw new TypeError(`${element} requires a non-empty ${name} attribute.`);
@@ -257,6 +289,27 @@ function assertSameList(actual, expected, label) {
 
 function assertUnique(values, label) {
   if (new Set(values).size !== values.length) throw new TypeError(`Duplicate ${label}: ${JSON.stringify(values)}.`);
+}
+
+function validateTranslationSlots(siteHeader, languageSwitcher) {
+  const notices = findElements(siteHeader, element => hasAttribute(element, 'data-translation-notice'));
+  const noticesById = new Map();
+  for (const notice of notices) {
+    const id = requiredAttribute(attributes(notice), 'id', 'translation notice');
+    if (noticesById.has(id)) throw new TypeError(`Duplicate translation notice ID ${JSON.stringify(id)}.`);
+    noticesById.set(id, notice);
+  }
+  const unavailableLinks = findElements(languageSwitcher, element => hasAttribute(element, 'data-translation-unavailable'));
+  const controlledNoticeIds = [];
+  for (const link of unavailableLinks) {
+    const noticeId = requiredAttribute(attributes(link), 'aria-controls', 'unavailable translation link');
+    if (!noticesById.has(noticeId)) throw new TypeError(`Unavailable translation link references missing notice ${JSON.stringify(noticeId)}.`);
+    controlledNoticeIds.push(noticeId);
+  }
+  assertUnique(controlledNoticeIds, 'controlled translation notice');
+  if (controlledNoticeIds.length !== noticesById.size) {
+    throw new TypeError('Every translation notice must be controlled by exactly one language-switcher link.');
+  }
 }
 
 function assertExpected(actual, expected) {

@@ -7,6 +7,7 @@ import {
   BUILD_ID_ALGORITHM,
   BUILD_ID_PLACEHOLDER,
   DOCUMENT_CONTRACT_VERSION,
+  NATIVE_NAVIGATION_ROUTE_IDS,
   ROUTE_FEATURE_DEFINITIONS,
   ROUTE_OWNED_METADATA,
   SHELL_VERSION,
@@ -24,6 +25,7 @@ const projectUrl = process.env.PINEGA_WEB_AWESOME_PROJECT_URL ?? '';
 const siteOrigin = normalizeSiteOrigin(process.env.PINEGA_SITE_ORIGIN ?? 'https://pinega.example');
 const documentationSectionIds = ['start', 'tutorials', 'how-to', 'concepts', 'reference', 'contributing'];
 const contentIndex = validateContentIndex(JSON.parse(await readFile(resolve(contentRoot, 'content-index.json'), 'utf8')));
+validateNativeNavigationRoutes(contentIndex);
 const localeMessages = await loadLocaleMessages(contentIndex.site.locales);
 const pages = expandPages(contentIndex);
 const builtPages = [];
@@ -122,6 +124,7 @@ await writeFile(
       shellVersion: SHELL_VERSION,
     },
     navigation: {
+      nativeRouteIds: NATIVE_NAVIGATION_ROUTE_IDS,
       routeFeatureDefinitions: ROUTE_FEATURE_DEFINITIONS,
       routeOwnedMetadata: ROUTE_OWNED_METADATA,
       urlNormalization: {
@@ -387,6 +390,14 @@ function validateContentIndex(value) {
   return value;
 }
 
+function validateNativeNavigationRoutes(index) {
+  for (const id of NATIVE_NAVIGATION_ROUTE_IDS) {
+    const entry = index.entries.find(candidate => candidate.id === id);
+    if (!entry) throw new TypeError(`Native navigation policy references unknown route ID ${JSON.stringify(id)}`);
+    if (entry.public) throw new TypeError(`Native navigation route ${JSON.stringify(id)} must remain outside the public enhanced-navigation graph`);
+  }
+}
+
 function validateLocalizedRoute(id, locale, localized, locales) {
   const prefix = locales[locale].path_prefix;
   if (prefix && localized.route !== prefix && !localized.route.startsWith(`${prefix}/`)) throw new TypeError(`${id}.${locale}: route must use locale prefix ${prefix}`);
@@ -586,7 +597,7 @@ function renderLanguageSwitcher(page) {
     const noticeId = translationNoticeId(language.locale);
     return `<a class="pinega-language-option" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${label}</a>`;
   }).join('');
-  return `<nav class="pinega-language-switcher" aria-label="${escapeHtml(messages.navigation.language)}">${options}</nav>`;
+  return `<nav class="pinega-language-switcher" data-pinega-language-switcher aria-label="${escapeHtml(messages.navigation.language)}">${options}</nav>`;
 }
 
 function renderTranslationNotices(page) {

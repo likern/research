@@ -2,6 +2,7 @@ declare module '*.css';
 
 interface Window {
   __PINEGA_WEB_AWESOME_PROJECT_URL__?: string;
+  __PINEGA_DISABLE_NAVIGATION__?: boolean;
 }
 
 interface HTMLElementTagNameMap {
@@ -10,4 +11,5 @@ interface HTMLElementTagNameMap {
   'pinega-evidence': HTMLElement;
   'pinega-code-example': HTMLElement;
   'pinega-benchmark': HTMLElement;
+  'pinega-doc-search': HTMLElement;
 }

@@ -173,11 +173,27 @@ validates route-owned metadata and feature classification, and records the same
 build/feature projection in site-manifest schema v4. The logical multilingual
 content registry remains schema v3.
 
-Gate 4.0 does not intercept navigation. It preserves the native MPA as the
-behavioral baseline and adds deterministic fixtures for ordinary, long,
+Gate 4.0 itself did not intercept navigation. Its MPA measurement remains an
+explicit coordinator-disabled behavioral reference and its deterministic
+fixtures cover ordinary, long,
 multilingual, missing-translation, future Lit-feature, malformed, redirect,
 404, non-HTML, and old/new-build cases. The complete decision and ownership
 contract is in [`../docs/web-static-navigation.md`](../docs/web-static-navigation.md).
+
+## Gate 4.1 Navigation coordinator
+
+Public same-locale links now progressively enhance through one Navigation API
+coordinator. A cold route performs one HTML fetch, detached DOM/contract
+validation, and one synchronous replacement of route-owned metadata, the
+language-switcher slot, active navigation marker, and `<main>`. The live
+Document, site-header instance, theme, modules, CSS, footer, and Web Awesome
+runtime remain in place.
+
+Reloads, fragments, cross-origin/download/form/target links, locale changes,
+the internal component laboratory, 404 documents, unsupported browsers, and
+all rejected responses remain native MPA navigation. There is no History API
+polyfill. Route cache, prefetch, dynamic feature imports, custom focus/scroll
+policy, and Lit migration remain later gates.
 
 The raw, non-gating MPA measurement can be generated after a production build:
 
@@ -186,9 +202,12 @@ The raw, non-gating MPA measurement can be generated after a production build:
 ^npm run measure:baseline
 ```
 
-CI runs it with the pinned Chromium profile and uploads
-`artifacts/baseline/gate-4-mpa-baseline.json`. A single run is diagnostic input,
-not a latency or Web Vitals budget.
+CI runs both measurements with the pinned Chromium profile and uploads
+`artifacts/baseline/gate-4-mpa-baseline.json` plus
+`artifacts/baseline/gate-4.1-navigation-baseline.json`. The latter enforces
+structural performance—one HTML fetch, zero new Document requests, one commit,
+and preserved shell identity. A single run remains diagnostic input, not a
+latency or Web Vitals budget.
 
 ## Topic filter versus search
 
