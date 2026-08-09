@@ -8,6 +8,26 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const malformedFixture = await readFile(resolve(root, 'fixtures/navigation/malformed.html'), 'utf8');
 const transactionEventsKey = 'pinega-test-navigation-transaction-events';
 
+interface NavigationCommitRecord {
+  type: 'commit';
+  detail: {
+    preparation: {
+      source: 'cache' | 'in-flight' | 'network';
+      networkRequests: number;
+      parseCalls: number;
+      materializeCalls: number;
+    };
+    cache: {
+      stored: boolean;
+      entries: number;
+      weightBytes: number;
+      maxEntries: number;
+      maxWeightBytes: number;
+      evictedEntries: number;
+    };
+  };
+}
+
 async function ready(page: Page, route: string): Promise<void> {
   await openReadyDocument(page, route);
 }
@@ -51,9 +71,32 @@ async function instrumentTransactionEvents(page: Page): Promise<void> {
   }, transactionEventsKey);
 }
 
+async function navigationCommits(page: Page): Promise<NavigationCommitRecord[]> {
+  return page.evaluate(storageKey => (
+    (JSON.parse(sessionStorage.getItem(storageKey) ?? '[]') as NavigationCommitRecord[])
+      .filter(event => event.type === 'commit')
+  ), transactionEventsKey);
+}
+
+async function countDomParserCalls(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    document.documentElement.dataset.testDomParserCalls = '0';
+    const original = DOMParser.prototype.parseFromString;
+    DOMParser.prototype.parseFromString = function parseFromString(
+      input: string,
+      format: DOMParserSupportedType,
+    ): Document {
+      const root = document.documentElement;
+      root.dataset.testDomParserCalls = String(Number(root.dataset.testDomParserCalls ?? 0) + 1);
+      return original.call(this, input, format);
+    };
+  });
+}
+
 test('eligible navigation commits validated route state without replacing the Document or shell', async ({ page }) => {
   await ready(page, '/');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-route-cache', 'native-lru');
   const timeOrigin = await instrumentDocument(page);
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
@@ -117,6 +160,51 @@ test('Back and Forward traverse same-document entries through the coordinator', 
   }))).toEqual({ timeOrigin, commits: '3' });
 });
 
+test('boot and fetched routes become warm native-template hits with zero network and zero parsing', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
+  await countDomParserCalls(page);
+  const requests: Request[] = [];
+  page.on('request', request => requests.push(request));
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/research/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
+  expect(await page.locator('html').getAttribute('data-test-dom-parser-calls')).toBe('2');
+
+  const requestBoundary = requests.length;
+  await page.evaluate(() => history.back());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await page.evaluate(() => history.back());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'home');
+  await page.evaluate(() => history.forward());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+
+  const warmRequests = requests.slice(requestBoundary).filter(request => (
+    ['/', '/technology/'].includes(new URL(request.url()).pathname)
+  ));
+  expect(warmRequests).toHaveLength(0);
+  expect(await page.locator('html').getAttribute('data-test-dom-parser-calls')).toBe('2');
+  const commits = await navigationCommits(page);
+  expect(commits.map(event => event.detail.preparation.source)).toEqual([
+    'network',
+    'network',
+    'cache',
+    'cache',
+    'cache',
+  ]);
+  for (const event of commits.slice(2)) {
+    expect(event.detail.preparation).toMatchObject({
+      source: 'cache',
+      networkRequests: 0,
+      parseCalls: 0,
+      materializeCalls: 1,
+    });
+  }
+});
+
 test('Back and Forward remain transactional after more than ten routes without adding entries', async ({ page }) => {
   const routes = [
     '/technology/',
@@ -134,6 +222,7 @@ test('Back and Forward remain transactional after more than ten routes without a
   const entries = ['/', ...routes];
   await ready(page, '/');
   const timeOrigin = await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
   const initialHistoryLength = await page.evaluate(() => history.length);
   let commits = 0;
 
@@ -170,6 +259,15 @@ test('Back and Forward remain transactional after more than ten routes without a
     route: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
   }))).toEqual({ historyLength: initialHistoryLength + routes.length, timeOrigin, route: 'about' });
   await expect(page.locator('pinega-site-header')).toHaveAttribute('data-test-shell-identity', 'preserved');
+  const commitRecords = await navigationCommits(page);
+  expect(commitRecords.some(event => event.detail.cache.evictedEntries > 0)).toBe(true);
+  expect(commitRecords.some(event => event.detail.preparation.source === 'cache')).toBe(true);
+  for (const event of commitRecords) {
+    expect(event.detail.cache.entries).toBeLessThanOrEqual(event.detail.cache.maxEntries);
+    expect(event.detail.cache.entries).toBeLessThanOrEqual(10);
+    expect(event.detail.cache.weightBytes).toBeLessThanOrEqual(event.detail.cache.maxWeightBytes);
+    expect(event.detail.cache.maxWeightBytes).toBe(2 * 1024 * 1024);
+  }
 });
 
 test('selecting the active route performs zero network and zero visible commits', async ({ page }) => {
@@ -194,6 +292,7 @@ test('selecting the active route performs zero network and zero visible commits'
 test('a repeated pending destination remains eligible until its document commits', async ({ page }) => {
   await ready(page, '/');
   await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
   let firstRequestStarted: (() => void) | undefined;
   let releaseFirstRequest: (() => void) | undefined;
   const started = new Promise<void>(resolveStarted => {
@@ -225,14 +324,157 @@ test('a repeated pending destination remains eligible until its document commits
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await started;
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await page.waitForTimeout(0);
+  releaseFirstRequest?.();
 
   await expect(page).toHaveURL(/\/technology\/$/u);
   await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
   await expect(page.locator('main')).toBeFocused();
-  releaseFirstRequest?.();
   await page.waitForTimeout(100);
-  expect(fetches).toBe(2);
+  expect(fetches).toBe(1);
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
+  const commits = await navigationCommits(page);
+  expect(commits).toHaveLength(1);
+  expect(commits[0]?.detail.preparation).toMatchObject({
+    source: 'in-flight',
+    networkRequests: 1,
+    parseCalls: 1,
+    materializeCalls: 1,
+  });
+});
+
+test('Cache-Control no-store routes stay cold while cacheable boot routes remain warm', async ({ page }) => {
+  let technologyFetches = 0;
+  await page.route('**/technology/', async route => {
+    if (route.request().resourceType() !== 'fetch') {
+      await route.continue();
+      return;
+    }
+    technologyFetches += 1;
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      headers: { ...response.headers(), 'cache-control': 'private, no-store' },
+    });
+  });
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
+  await countDomParserCalls(page);
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await page.evaluate(() => history.back());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'home');
+  await page.evaluate(() => history.forward());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+
+  expect(technologyFetches).toBe(2);
+  expect(await page.locator('html').getAttribute('data-test-dom-parser-calls')).toBe('2');
+  const commits = await navigationCommits(page);
+  expect(commits.map(event => event.detail.preparation.source)).toEqual(['network', 'cache', 'network']);
+  expect(commits[0]?.detail.cache.stored).toBe(false);
+  expect(commits[2]?.detail.cache.stored).toBe(false);
+});
+
+test('template activations create fresh form, details, selection, and Custom Element lifecycle state', async ({ page }) => {
+  let docsFetches = 0;
+  await page.route('**/docs/', async route => {
+    if (route.request().resourceType() !== 'fetch') {
+      await route.continue();
+      return;
+    }
+    docsFetches += 1;
+    const response = await route.fetch();
+    const html = await response.text();
+    const stateFixture = [
+      '<form data-cache-state-form>',
+      '<label>Cache state <input data-cache-state-input value="initial"></label>',
+      '<details data-cache-state-details><summary>Transient details</summary><p data-cache-selection>mutable selection</p></details>',
+      '<x-cache-lifecycle></x-cache-lifecycle>',
+      '</form>',
+    ].join('');
+    await route.fulfill({ response, body: html.replace('</main>', `${stateFixture}</main>`) });
+  });
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
+  await page.evaluate(() => {
+    const state = { connected: 0, disconnected: 0, externalEvents: 0, observerRecords: 0 };
+    const controllers = new WeakMap<HTMLElement, AbortController>();
+    const observers = new WeakMap<HTMLElement, MutationObserver>();
+    (window as unknown as { __PINEGA_CACHE_LIFECYCLE__?: typeof state }).__PINEGA_CACHE_LIFECYCLE__ = state;
+    customElements.define('x-cache-lifecycle', class extends HTMLElement {
+      connectedCallback(): void {
+        state.connected += 1;
+        const controller = new AbortController();
+        const observer = new MutationObserver(records => { state.observerRecords += records.length; });
+        controllers.set(this, controller);
+        observers.set(this, observer);
+        observer.observe(this, { attributes: true });
+        window.addEventListener('pinega-test-cache-external', () => { state.externalEvents += 1; }, {
+          signal: controller.signal,
+        });
+      }
+
+      disconnectedCallback(): void {
+        state.disconnected += 1;
+        (window as unknown as { __PINEGA_REMOVED_CACHE_PROBE__?: HTMLElement }).__PINEGA_REMOVED_CACHE_PROBE__ = this;
+        controllers.get(this)?.abort();
+        controllers.delete(this);
+        observers.get(this)?.disconnect();
+        observers.delete(this);
+      }
+    });
+  });
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/docs/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'documentation');
+  await page.locator('[data-cache-state-input]').evaluate((input: HTMLInputElement) => { input.value = 'mutated'; });
+  await page.locator('[data-cache-state-details]').evaluate((details: HTMLDetailsElement) => { details.open = true; });
+  await page.locator('[data-cache-selection]').evaluate(element => {
+    const selection = getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('pinega-test-cache-external')));
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/research/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
+  expect(await page.evaluate(async () => {
+    const state = window as unknown as {
+      __PINEGA_CACHE_LIFECYCLE__?: { observerRecords: number };
+      __PINEGA_REMOVED_CACHE_PROBE__?: HTMLElement;
+    };
+    state.__PINEGA_REMOVED_CACHE_PROBE__?.setAttribute('data-after-disconnect', 'true');
+    await new Promise(resolve => setTimeout(resolve, 0));
+    return state.__PINEGA_CACHE_LIFECYCLE__?.observerRecords;
+  })).toBe(0);
+  await page.evaluate(() => history.back());
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'documentation');
+
+  await expect(page.locator('[data-cache-state-input]')).toHaveValue('initial');
+  await expect(page.locator('[data-cache-state-details]')).not.toHaveAttribute('open', '');
+  expect(await page.evaluate(() => getSelection()?.toString())).not.toBe('mutable selection');
+  await page.evaluate(() => window.dispatchEvent(new Event('pinega-test-cache-external')));
+  await page.locator('x-cache-lifecycle').evaluate(async element => {
+    element.setAttribute('data-live-mutation', 'true');
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+  expect(await page.evaluate(() => (
+    (window as unknown as {
+      __PINEGA_CACHE_LIFECYCLE__?: {
+        connected: number;
+        disconnected: number;
+        externalEvents: number;
+        observerRecords: number;
+      };
+    }).__PINEGA_CACHE_LIFECYCLE__
+  ))).toEqual({ connected: 2, disconnected: 1, externalEvents: 2, observerRecords: 1 });
+  expect(docsFetches).toBe(1);
+  expect((await navigationCommits(page)).at(-1)?.detail.preparation.source).toBe('cache');
 });
 
 test('pending state is transaction-owned, accessible, and overlays the header without layout shift', async ({ page }) => {

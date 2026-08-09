@@ -1,4 +1,4 @@
-import { normalizeRouteUrl } from '../../navigation/contract.mjs';
+import { normalizeRouteUrl, routeCacheKey } from '../../navigation/contract.mjs';
 import {
   classifyNavigationIntent,
   type NavigationIntent,
@@ -8,14 +8,22 @@ import {
   NavigationTransactionGate,
   type NavigationTransaction,
 } from '../../navigation/transaction-gate.mjs';
+import {
+  InFlightRoutePreparations,
+  NativeRouteCache,
+  responseAllowsRouteCache,
+  type RouteCacheSnapshot,
+} from '../../navigation/route-cache.mjs';
 import { prepareWebAwesomeLocale } from '../vendor/webawesome/runtime.js';
 import {
   RoutePreparationError,
   commitRoute,
   createRouteCommitPlan,
+  prepareActiveRouteDocument,
   prepareRouteDocument,
   readActiveRouteState,
   type ActiveRouteState,
+  type PreparedRoute,
 } from './route-document.js';
 
 const fallbackStorageKey = 'pinega-navigation-hard-fallback-v1';
@@ -37,6 +45,8 @@ interface NavigationCommitDetail {
   routeId: string;
   locale: string;
   navigationType: NavigationType;
+  preparation: NavigationPreparationDetail;
+  cache: NavigationCacheDetail;
 }
 
 interface NavigationFallbackDetail {
@@ -48,6 +58,53 @@ interface PendingAbortSubscription {
   serial: number;
   signal: AbortSignal;
   listener: () => void;
+}
+
+interface RememberedScrollPosition {
+  left: number;
+  top: number;
+}
+
+type NavigationPreparationSource = 'cache' | 'in-flight' | 'network';
+
+interface PreparedNavigation {
+  prepared: PreparedRoute;
+  cacheable: boolean;
+  networkMs: number;
+  parseMs: number;
+}
+
+interface NavigationPreparationDetail {
+  source: NavigationPreparationSource;
+  networkRequests: 0 | 1;
+  parseCalls: 0 | 1;
+  materializeCalls: 1;
+  networkMs: number;
+  parseMs: number;
+  materializeMs: number;
+  commitMs: number;
+  sourceBytes: number;
+  nodeCount: number;
+  weightBytes: number;
+}
+
+interface NavigationCacheDetail {
+  stored: boolean;
+  entries: number;
+  weightBytes: number;
+  maxEntries: number;
+  maxWeightBytes: number;
+  evictedEntries: number;
+}
+
+class NavigationPreparationError extends Error {
+  readonly reason: HardFallbackReason;
+
+  constructor(reason: HardFallbackReason, message: string) {
+    super(message);
+    this.name = 'NavigationPreparationError';
+    this.reason = reason;
+  }
 }
 
 export function initializeNavigationCoordinator(): NavigationCoordinator | undefined {
@@ -76,6 +133,7 @@ export function initializeNavigationCoordinator(): NavigationCoordinator | undef
     const coordinator = new NavigationCoordinator(window.navigation, active);
     coordinator.start();
     root.dataset.pinegaNavigation = 'enhanced';
+    root.dataset.pinegaRouteCache = 'native-lru';
     return coordinator;
   } catch (error) {
     root.dataset.pinegaNavigation = 'error';
@@ -87,6 +145,10 @@ export function initializeNavigationCoordinator(): NavigationCoordinator | undef
 export class NavigationCoordinator {
   readonly #navigation: Navigation;
   readonly #transactions = new NavigationTransactionGate();
+  readonly #cache = new NativeRouteCache<PreparedRoute>();
+  readonly #preparations = new InFlightRoutePreparations<PreparedNavigation>();
+  readonly #scrollPositions = new Map<string, RememberedScrollPosition>();
+  readonly #scrollDisposalKeys = new Set<string>();
   #active: ActiveRouteState;
   #activeDocumentUrl: string;
   #fallbackTarget: string | undefined;
@@ -97,6 +159,11 @@ export class NavigationCoordinator {
     this.#navigation = navigation;
     this.#active = active;
     this.#activeDocumentUrl = normalizeRouteUrl(location.href, location.origin);
+    if (window.__PINEGA_INITIAL_RESPONSE_NO_STORE__ !== true) {
+      const bootRoute = prepareActiveRouteDocument(document, active);
+      const bootKey = routeCacheKey(active.buildId, this.#activeDocumentUrl, location.origin);
+      this.#cache.commitActive(bootKey, bootRoute, bootRoute.weightBytes);
+    }
   }
 
   start(): void {
@@ -106,6 +173,7 @@ export class NavigationCoordinator {
   }
 
   #handleNavigate = (event: NavigateEvent): void => {
+    this.#rememberActiveScrollPosition();
     const source = describeSource(event.sourceElement);
     const fallbackTarget = this.#currentFallbackTarget();
     const intent: NavigationIntent = {
@@ -126,58 +194,58 @@ export class NavigationCoordinator {
 
     if (decision.action === 'native') {
       this.#transactions.invalidate();
+      this.#preparations.clear();
       this.#clearPending();
       return;
     }
     if (decision.action === 'cancel') {
       this.#transactions.invalidate();
+      this.#preparations.clear();
       this.#clearPending();
       event.preventDefault();
       return;
     }
 
-    const transaction = this.#transactions.begin(event.signal);
     const target = new URL(decision.url);
+    const key = routeCacheKey(this.#active.buildId, target, location.origin);
+    this.#preparations.abortExcept(key);
+    const transaction = this.#transactions.begin(event.signal);
     try {
       event.intercept({
         focusReset: 'manual',
         scroll: 'manual',
-        handler: () => this.#navigate(event, target, transaction),
+        handler: () => this.#navigate(event, target, key, transaction),
       });
       this.#markPending(transaction);
     } catch (error) {
       this.#transactions.invalidate();
+      this.#preparations.clear();
       this.#clearPending();
       console.error('Pinega could not intercept an eligible navigation; the browser will retain native handling.', error);
     }
   };
 
-  async #navigate(event: NavigateEvent, target: URL, transaction: NavigationTransaction): Promise<void> {
+  async #navigate(
+    event: NavigateEvent,
+    target: URL,
+    key: string,
+    transaction: NavigationTransaction,
+  ): Promise<void> {
     try {
-      const response = await fetch(target.href, {
-        method: 'GET',
-        credentials: 'same-origin',
-        redirect: 'follow',
-        headers: { Accept: 'text/html' },
-        signal: event.signal,
-      });
-      if (!this.#transactions.isCurrent(transaction)) return;
-
-      const envelopeFailure = classifyResponseEnvelope(response, target);
-      if (envelopeFailure) {
-        this.#hardNavigate(transaction, target, envelopeFailure);
-        return;
+      const cached = this.#cache.peek(key);
+      let result: PreparedNavigation;
+      let source: NavigationPreparationSource;
+      if (cached) {
+        result = { prepared: cached, cacheable: true, networkMs: 0, parseMs: 0 };
+        source = 'cache';
+      } else {
+        const acquisition = this.#preparations.acquire(key, signal => this.#fetchAndPrepare(target, signal));
+        result = await acquisition.promise;
+        source = acquisition.reused ? 'in-flight' : 'network';
       }
-
-      const html = await response.text();
       if (!this.#transactions.isCurrent(transaction)) return;
-      if (!html) {
-        this.#hardNavigate(transaction, target, 'missing-body');
-        return;
-      }
-
-      const prepared = prepareRouteDocument(html, target.href, this.#active);
-      if (!this.#transactions.isCurrent(transaction)) return;
+      const { prepared } = result;
+      this.#validatePreparedCompatibility(prepared);
       if (prepared.locale !== this.#active.locale) {
         try {
           await prepareWebAwesomeLocale(prepared.locale);
@@ -190,9 +258,13 @@ export class NavigationCoordinator {
         }
       }
       if (!this.#transactions.isCurrent(transaction)) return;
+      const materializeStarted = performance.now();
       const plan = createRouteCommitPlan(prepared, document);
+      const materializeMs = performance.now() - materializeStarted;
       if (!this.#transactions.isCurrent(transaction)) return;
 
+      const commitStarted = performance.now();
+      const rememberedScroll = this.#rememberedDestinationScroll(event);
       const outcome = this.#transactions.commit(transaction, () => {
         const nextMain = commitRoute(plan);
         document.documentElement.dataset.webawesomeLocale = prepared.locale;
@@ -209,28 +281,102 @@ export class NavigationCoordinator {
           navigationPolicy: 'enhanced',
         };
         this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
+        let stored: boolean;
+        let evictedEntries: number;
+        if (source === 'cache') {
+          const activation = this.#cache.activate(key);
+          stored = activation.activated;
+          evictedEntries = activation.evictedKeys.length;
+        } else if (result.cacheable) {
+          const mutation = this.#cache.commitActive(key, prepared, prepared.weightBytes);
+          stored = mutation.stored;
+          evictedEntries = mutation.evictedKeys.length;
+        } else {
+          const mutation = this.#cache.deactivate();
+          stored = false;
+          evictedEntries = mutation.evictedKeys.length;
+        }
+        const cache = cacheDetail(this.#cache.snapshot(), stored, evictedEntries);
         this.#clearPending(transaction);
-        applyPostCommitScroll(event, target);
+        applyPostCommitScroll(event, target, rememberedScroll);
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
           url: target.href,
           routeId: prepared.routeId,
           locale: prepared.locale,
           navigationType: event.navigationType,
+          preparation: {
+            source,
+            networkRequests: source === 'cache' ? 0 : 1,
+            parseCalls: source === 'cache' ? 0 : 1,
+            materializeCalls: 1,
+            networkMs: result.networkMs,
+            parseMs: result.parseMs,
+            materializeMs,
+            commitMs: 0,
+            sourceBytes: prepared.sourceBytes,
+            nodeCount: prepared.nodeCount,
+            weightBytes: prepared.weightBytes,
+          },
+          cache,
         } satisfies NavigationCommitDetail;
       });
       if (outcome.committed) {
+        outcome.value.preparation.commitMs = performance.now() - commitStarted;
+        if (rememberedScroll) this.#scheduleRememberedScrollCorrection(transaction, rememberedScroll);
         window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail: outcome.value }));
       }
     } catch (error) {
       if (!this.#transactions.isCurrent(transaction) || isAbortError(error)) return;
-      const reason = error instanceof RoutePreparationError ? error.reason : 'unknown';
+      const reason = error instanceof RoutePreparationError || error instanceof NavigationPreparationError
+        ? error.reason
+        : 'unknown';
+      if (reason === 'build-mismatch') this.#cache.clear();
       this.#hardNavigate(transaction, target, reason);
+    }
+  }
+
+  async #fetchAndPrepare(target: URL, signal: AbortSignal): Promise<PreparedNavigation> {
+    const networkStarted = performance.now();
+    const response = await fetch(target.href, {
+      method: 'GET',
+      credentials: 'same-origin',
+      redirect: 'follow',
+      headers: { Accept: 'text/html' },
+      signal,
+    });
+    const envelopeFailure = classifyResponseEnvelope(response, target);
+    if (envelopeFailure) {
+      throw new NavigationPreparationError(envelopeFailure, `Route response failed the ${envelopeFailure} boundary.`);
+    }
+    const html = await response.text();
+    const networkMs = performance.now() - networkStarted;
+    if (!html) throw new NavigationPreparationError('missing-body', 'Route response has no HTML body.');
+
+    const parseStarted = performance.now();
+    const prepared = prepareRouteDocument(html, target.href, this.#active);
+    const parseMs = performance.now() - parseStarted;
+    return Object.freeze({
+      prepared,
+      cacheable: responseAllowsRouteCache(response.headers.get('cache-control')),
+      networkMs,
+      parseMs,
+    });
+  }
+
+  #validatePreparedCompatibility(prepared: PreparedRoute): void {
+    if (prepared.buildId !== this.#active.buildId || prepared.shellVersion !== this.#active.shellVersion) {
+      this.#cache.clear();
+      throw new RoutePreparationError('build-mismatch', 'Cached route build or shell is incompatible with the active document.');
+    }
+    if (prepared.contractVersion !== this.#active.contractVersion) {
+      throw new RoutePreparationError('malformed-contract', 'Cached route document contract is incompatible with the active document.');
     }
   }
 
   #hardNavigate(transaction: NavigationTransaction, target: URL, reason: HardFallbackReason): void {
     this.#transactions.commit(transaction, () => {
+      this.#preparations.clear();
       const identity = normalizeRouteUrl(target, location.origin);
       this.#fallbackTarget = identity;
       writeFallbackGuard(identity);
@@ -247,6 +393,33 @@ export class NavigationCoordinator {
 
   #currentFallbackTarget(): string | undefined {
     return this.#fallbackTarget ?? readFallbackGuard();
+  }
+
+  #rememberActiveScrollPosition(): void {
+    const entry = this.#navigation.currentEntry;
+    if (!entry) return;
+    this.#scrollPositions.set(entry.key, { left: scrollX, top: scrollY });
+    if (this.#scrollDisposalKeys.has(entry.key)) return;
+    this.#scrollDisposalKeys.add(entry.key);
+    entry.addEventListener('dispose', () => {
+      this.#scrollPositions.delete(entry.key);
+      this.#scrollDisposalKeys.delete(entry.key);
+    }, { once: true });
+  }
+
+  #rememberedDestinationScroll(event: NavigateEvent): RememberedScrollPosition | undefined {
+    if (event.navigationType !== 'traverse' || !event.destination.key) return undefined;
+    return this.#scrollPositions.get(event.destination.key);
+  }
+
+  #scheduleRememberedScrollCorrection(
+    transaction: NavigationTransaction,
+    position: RememberedScrollPosition,
+  ): void {
+    requestAnimationFrame(() => {
+      if (!this.#transactions.isCurrent(transaction)) return;
+      window.scrollTo({ left: position.left, top: position.top, behavior: 'instant' });
+    });
   }
 
   #markPending(transaction: NavigationTransaction): void {
@@ -274,8 +447,33 @@ export class NavigationCoordinator {
   }
 }
 
-function applyPostCommitScroll(event: NavigateEvent, target: URL): void {
+function cacheDetail(
+  snapshot: RouteCacheSnapshot,
+  stored: boolean,
+  evictedEntries: number,
+): NavigationCacheDetail {
+  return {
+    stored,
+    entries: snapshot.entries,
+    weightBytes: snapshot.weightBytes,
+    maxEntries: snapshot.maxEntries,
+    maxWeightBytes: snapshot.maxWeightBytes,
+    evictedEntries,
+  };
+}
+
+function applyPostCommitScroll(
+  event: NavigateEvent,
+  target: URL,
+  remembered?: RememberedScrollPosition,
+): void {
   event.scroll();
+  if (event.navigationType === 'traverse' && remembered) {
+    // A warm template can commit in the same task that starts a traversal.
+    // Reapply the entry's observed viewport after the native restoration call
+    // so WebKit does not leave an otherwise restorable warm entry at the top.
+    window.scrollTo({ left: remembered.left, top: remembered.top, behavior: 'instant' });
+  }
   if (event.navigationType === 'traverse' || !target.hash || hasFragmentScrollTarget(target.hash)) return;
 
   // WebKit can retain the previous entry's scroll offset when the destination

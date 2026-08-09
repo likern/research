@@ -21,7 +21,10 @@ test('live-reload mode is response-only and publishes successful rebuild notific
 
   const page = await fetch(`${server.url}/`);
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /data-pinega-live-reload/u);
+  assert.equal(page.headers.get('cache-control'), 'no-store');
+  const liveHtml = await page.text();
+  assert.match(liveHtml, /data-pinega-live-reload/u);
+  assert.match(liveHtml, /__PINEGA_INITIAL_RESPONSE_NO_STORE__=true/u);
   assert.equal(await readFile(resolve(root, 'index.html'), 'utf8'), html);
 
   const events = await fetch(`${server.url}/_pinega/live-reload`);
@@ -47,6 +50,7 @@ test('ordinary serve mode does not alter built HTML', async t => {
 
   const page = await fetch(`${server.url}/`);
   assert.equal(page.status, 200);
+  assert.equal(page.headers.get('cache-control'), 'no-cache');
   assert.equal(await page.text(), html);
 });
 
