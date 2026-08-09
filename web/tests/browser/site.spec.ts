@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
+import { openReadyDocument } from './support/direct-document.js';
 
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
@@ -26,9 +27,7 @@ const russianPublicRoutes = publicRoutes.map(route => route === '/' ? '/ru/' : `
 const allCoreRoutes = [...corePublicRoutes, ...russianCorePublicRoutes, '/docs/getting-started/', '/ru/docs/getting-started/', '/component-lab/'];
 
 async function ready(page: Page, route: string) {
-  const response = await page.goto(route, { waitUntil: 'commit' });
-  expect(response?.status(), `${route} should return a successful response`).toBeLessThan(400);
-  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await openReadyDocument(page, route);
 }
 
 for (const route of allCoreRoutes) {
@@ -312,15 +311,12 @@ test('generated discovery files expose the complete documentation corpus', async
 });
 
 test('unknown routes return the accessible not-found page with HTTP 404', async ({ page }) => {
-  const response = await page.goto('/missing-stratum', { waitUntil: 'commit' });
-  expect(response?.status()).toBe(404);
-  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await openReadyDocument(page, '/missing-stratum', 404);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('not part of the current model');
 });
 
 test('Russian unknown routes use the Russian 404, locale messages, and peer switcher', async ({ page }) => {
-  const response = await page.goto('/ru/missing-stratum', { waitUntil: 'commit' });
-  expect(response?.status()).toBe(404);
+  await openReadyDocument(page, '/ru/missing-stratum', 404);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
   await expect(page.locator('html')).toHaveAttribute('data-locale', 'ru');
   await expect(page.locator('html')).toHaveAttribute('data-webawesome-locale', 'ru');

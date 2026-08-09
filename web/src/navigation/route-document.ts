@@ -7,6 +7,13 @@ import {
   isBuildId,
   parseFeatureList,
 } from '../../navigation/contract.mjs';
+import {
+  validateLocaleRouteContract,
+  type LocaleAlternateDescriptor,
+  type LocaleOptionDescriptor,
+  type TranslationNoticeDescriptor,
+  type ValidatedLocaleRouteContract,
+} from '../../navigation/locale-contract.mjs';
 
 export type RoutePreparationFailure =
   | 'build-mismatch'
@@ -21,6 +28,9 @@ export interface ActiveRouteState {
   routeId: string;
   language: string;
   locale: string;
+  siteLocales: readonly string[];
+  defaultLocale: string;
+  metadataOrigin: string;
   navigationPolicy: 'enhanced' | 'native';
 }
 
@@ -70,6 +80,11 @@ interface RouteCommitPlan {
   nextRouteMarker?: HTMLElement;
 }
 
+interface RouteMetadataContract {
+  canonical: URL;
+  alternates: Array<{ language: string; href: URL }>;
+}
+
 export class RoutePreparationError extends Error {
   readonly reason: RoutePreparationFailure;
 
@@ -97,6 +112,40 @@ export function readActiveRouteState(document: Document): ActiveRouteState {
   if (!isBuildId(buildId)) throw new TypeError(`Invalid active build ID ${JSON.stringify(buildId)}.`);
   if (page !== routeId || body.dataset.pinegaRoute !== routeId) throw new TypeError('Active route identity is inconsistent.');
   if (language !== locale) throw new TypeError('Active document language and locale are inconsistent.');
+  if (main.hasAttribute('aria-busy')) throw new TypeError('Initial route main must not contain runtime-owned aria-busy state.');
+
+  const navigationPolicy = NATIVE_NAVIGATION_ROUTE_IDS.includes(routeId) ? 'native' : 'enhanced';
+  if (navigationPolicy === 'native') {
+    return {
+      buildId,
+      contractVersion,
+      shellVersion,
+      routeId,
+      language,
+      locale,
+      siteLocales: Object.freeze([locale]),
+      defaultLocale: locale,
+      metadataOrigin: new URL(document.URL).origin,
+      navigationPolicy,
+    };
+  }
+
+  const destination = routeUrl(document.URL, 'active document URL');
+  const metadata = validateRouteMetadata(document.head, language, destination);
+  const siteHeader = exactlyOne([...body.querySelectorAll<HTMLElement>('pinega-site-header')], 'active site header');
+  const languageSwitcher = exactlyOne(
+    [...siteHeader.querySelectorAll<HTMLElement>('[data-pinega-language-switcher]')],
+    'active language switcher',
+  );
+  const translationNotices = [...siteHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')];
+  const localeContract = validateTranslationSlots(
+    languageSwitcher,
+    translationNotices,
+    language,
+    locale,
+    metadata,
+  );
+  if (!localeContract.metadataOrigin) throw new TypeError('Enhanced active route requires a canonical metadata origin.');
 
   return {
     buildId,
@@ -105,7 +154,10 @@ export function readActiveRouteState(document: Document): ActiveRouteState {
     routeId,
     language,
     locale,
-    navigationPolicy: NATIVE_NAVIGATION_ROUTE_IDS.includes(routeId) ? 'native' : 'enhanced',
+    siteLocales: localeContract.locales,
+    defaultLocale: localeContract.defaultLocale,
+    metadataOrigin: localeContract.metadataOrigin,
+    navigationPolicy,
   };
 }
 
@@ -143,6 +195,7 @@ export function prepareRouteDocument(
   if (main.id !== 'main-content' || main.getAttribute('tabindex') !== '-1') {
     throw malformed('Destination main must use id="main-content" and tabindex="-1".');
   }
+  if (main.hasAttribute('aria-busy')) throw malformed('Destination main must not contain runtime-owned aria-busy state.');
   if (language !== locale) throw malformed('Destination language and locale are inconsistent.');
   if (direction !== 'ltr' && direction !== 'rtl') throw malformed(`Invalid direction ${JSON.stringify(direction)}.`);
 
@@ -161,7 +214,7 @@ export function prepareRouteDocument(
   const titleNodes = [...head.querySelectorAll('title')];
   const title = exactlyOne(titleNodes, 'route title').textContent?.trim() ?? '';
   if (!title) throw malformed('Route title must not be empty.');
-  validateRouteMetadata(head, language, destination);
+  const metadata = validateRouteMetadata(head, language, destination, active.metadataOrigin);
 
   const siteHeader = exactlyOne([...body.querySelectorAll<HTMLElement>('pinega-site-header')], 'route site header');
   exactlyOne(
@@ -173,7 +226,11 @@ export function prepareRouteDocument(
     'route language switcher',
   );
   const translationNotices = [...siteHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')];
-  validateTranslationSlots(languageSwitcher, translationNotices, language);
+  validateTranslationSlots(languageSwitcher, translationNotices, language, locale, metadata, {
+    locales: [...active.siteLocales],
+    defaultLocale: active.defaultLocale,
+    metadataOrigin: active.metadataOrigin,
+  });
   const primaryNavigations = [...siteHeader.querySelectorAll<HTMLElement>('[data-primary-navigation]')];
   const primaryNavigation = exactlyOne(primaryNavigations, 'route primary navigation region');
   const routeMarkers = routeMarkerElements(siteHeader);
@@ -340,7 +397,12 @@ function deriveRouteFeatures(main: HTMLElement): { features: string[]; criticalF
   return { features, criticalFeatures };
 }
 
-function validateRouteMetadata(head: HTMLHeadElement, language: string, destination: URL): void {
+function validateRouteMetadata(
+  head: HTMLHeadElement,
+  language: string,
+  destination: URL,
+  expectedMetadataOrigin?: string,
+): RouteMetadataContract {
   const descriptions = [...head.querySelectorAll<HTMLMetaElement>('meta[name="description"]')];
   const description = requiredAttribute(exactlyOne(descriptions, 'meta[name="description"]'), 'content', 'meta[name="description"]');
   if (!description.trim()) throw malformed('Route description must not be empty.');
@@ -363,37 +425,101 @@ function validateRouteMetadata(head: HTMLHeadElement, language: string, destinat
   if (alternates.some(alternate => alternate.href.origin !== canonical.origin)) {
     throw malformed('Canonical and alternate metadata must share one origin.');
   }
+  if (expectedMetadataOrigin && canonical.origin !== new URL(expectedMetadataOrigin).origin) {
+    throw malformed(`Canonical metadata origin ${JSON.stringify(canonical.origin)} is incompatible with the active document.`);
+  }
   if (canonical.pathname !== destination.pathname) {
     throw malformed('Canonical route path is inconsistent with the destination URL.');
   }
 
   assertUniqueMetadata(head, 'property', value => value.startsWith('og:'));
   assertUniqueMetadata(head, 'name', value => value.startsWith('twitter:'));
+  return { canonical, alternates };
 }
 
-function validateTranslationSlots(languageSwitcher: HTMLElement, notices: HTMLElement[], language: string): void {
-  const noticesById = new Map<string, HTMLElement>();
-  for (const notice of notices) {
+function validateTranslationSlots(
+  languageSwitcher: HTMLElement,
+  notices: HTMLElement[],
+  language: string,
+  locale: string,
+  metadata: RouteMetadataContract,
+  expected: { locales?: string[]; defaultLocale?: string; metadataOrigin?: string } = {},
+): ValidatedLocaleRouteContract {
+  requiredAttribute(languageSwitcher, 'aria-label', 'language switcher');
+  const defaultLocale = requiredAttribute(languageSwitcher, 'data-pinega-default-locale', 'language switcher');
+  const optionElements = [...languageSwitcher.querySelectorAll<HTMLElement>('.pinega-language-option')];
+  const options: LocaleOptionDescriptor[] = optionElements.map((option, index) => {
+    const optionLocale = requiredAttribute(option, 'data-pinega-locale', `language-switcher option ${index}`);
+    const label = exactlyOne([...option.querySelectorAll<HTMLElement>('[lang]')], `language label for option ${JSON.stringify(optionLocale)}`);
+    const optionLanguage = requiredAttribute(label, 'lang', `language label for option ${JSON.stringify(optionLocale)}`);
+    if (!label.textContent?.trim()) throw malformed(`Language label for option ${JSON.stringify(optionLocale)} must not be empty.`);
+    const current = option.getAttribute('aria-current') === 'page';
+    const unavailable = option.hasAttribute('data-translation-unavailable');
+    if (option.hasAttribute('aria-current') && !current) {
+      throw malformed(`Language-switcher option ${JSON.stringify(optionLocale)} has an invalid aria-current value.`);
+    }
+    if (current) {
+      if (
+        option instanceof HTMLAnchorElement ||
+        option.hasAttribute('href') ||
+        option.hasAttribute('hreflang') ||
+        unavailable ||
+        option.hasAttribute('aria-controls')
+      ) {
+        throw malformed('Current language-switcher option must be a non-link without translation fallback state.');
+      }
+      return { locale: optionLocale, language: optionLanguage, kind: 'current', href: null, noticeId: null };
+    }
+    if (!(option instanceof HTMLAnchorElement)) throw malformed('Non-current language-switcher options must be links.');
+    const href = requiredAttribute(option, 'href', `language-switcher option ${JSON.stringify(optionLocale)}`);
+    if (unavailable) {
+      if (option.hasAttribute('hreflang')) throw malformed('Unavailable language-switcher option must not publish hreflang.');
+      const noticeId = requiredAttribute(option, 'aria-controls', `unavailable option ${JSON.stringify(optionLocale)}`);
+      return { locale: optionLocale, language: optionLanguage, kind: 'unavailable', href, noticeId };
+    }
+    if (option.hasAttribute('aria-controls')) throw malformed('Available language-switcher option must not control a translation notice.');
+    const hrefLanguage = requiredAttribute(option, 'hreflang', `available option ${JSON.stringify(optionLocale)}`);
+    if (hrefLanguage !== optionLanguage) throw malformed('Language-switcher link hreflang must match its language label.');
+    return { locale: optionLocale, language: optionLanguage, kind: 'available', href, noticeId: null };
+  });
+
+  const noticeDescriptors: TranslationNoticeDescriptor[] = notices.map(notice => {
     if (!notice.id) throw malformed('Translation notice requires an ID.');
-    if (noticesById.has(notice.id)) throw malformed(`Duplicate translation notice ID ${JSON.stringify(notice.id)}.`);
-    noticesById.set(notice.id, notice);
-  }
+    if (
+      notice.getAttribute('role') !== 'status' ||
+      notice.getAttribute('aria-live') !== 'polite' ||
+      notice.getAttribute('aria-atomic') !== 'true'
+    ) {
+      throw malformed(`Translation notice ${JSON.stringify(notice.id)} must be a polite atomic status region.`);
+    }
+    const message = exactlyOne(
+      [...notice.querySelectorAll<HTMLElement>('[data-translation-notice-message]')],
+      `message for translation notice ${JSON.stringify(notice.id)}`,
+    );
+    const messageValue = requiredAttribute(message, 'data-message', `translation notice ${JSON.stringify(notice.id)} message`);
+    if (message.textContent?.trim() !== messageValue) {
+      throw malformed(`Translation notice ${JSON.stringify(notice.id)} static text must equal its data-message.`);
+    }
+    return { id: notice.id, message: messageValue };
+  });
 
-  const controlled = new Set<string>();
-  for (const link of languageSwitcher.querySelectorAll<HTMLElement>('[data-translation-unavailable]')) {
-    const noticeId = requiredAttribute(link, 'aria-controls', 'unavailable translation link');
-    if (!noticesById.has(noticeId)) throw malformed(`Unavailable translation link references missing notice ${JSON.stringify(noticeId)}.`);
-    if (controlled.has(noticeId)) throw malformed(`Translation notice ${JSON.stringify(noticeId)} has more than one controller.`);
-    controlled.add(noticeId);
+  const alternates: LocaleAlternateDescriptor[] = metadata.alternates.map(alternate => ({
+    language: alternate.language,
+    href: alternate.href.href,
+  }));
+  try {
+    return validateLocaleRouteContract({
+      documentLanguage: language,
+      documentLocale: locale,
+      canonicalUrl: metadata.canonical.href,
+      alternates,
+      defaultLocale,
+      options,
+      notices: noticeDescriptors,
+    }, expected);
+  } catch (error) {
+    throw malformed(error instanceof Error ? error.message : 'Invalid locale route contract.', error);
   }
-  if (controlled.size !== noticesById.size) throw malformed('Every translation notice requires exactly one language-switcher controller.');
-
-  const current = exactlyOne(
-    [...languageSwitcher.querySelectorAll<HTMLElement>('.pinega-language-option[aria-current="page"]')],
-    'current route language option',
-  );
-  const currentLanguage = exactlyOne([...current.querySelectorAll<HTMLElement>('[lang]')], 'current route language label');
-  if (currentLanguage.lang !== language) throw malformed('Current route language option is inconsistent with html[lang].');
 }
 
 function validateLocaleShell(

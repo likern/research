@@ -202,9 +202,15 @@ abort-aware, non-reentrant transaction gate. A late response, a superseded
 push, or a pending navigation interrupted by Back cannot mutate the route that
 won. Successful push/replace commits focus the new `<main>` and update one
 persistent polite route-title announcer. After commit, explicit Navigation API
-scroll restoration handles top, cross-route fragments, and Back/Forward
-entries before push/replace focus is finalized; fragment-only active-route
-links remain native.
+scroll restoration handles top, cross-route fragments, missing-fragment top
+normalization, and Back/Forward entries before push/replace focus is finalized;
+fragment-only active-route links remain native.
+
+While the current transaction is pending, the existing `<main>` exposes
+`aria-busy="true"` and an absolute two-pixel progress surface overlays the lower
+edge of the persistent header without moving content. Pending state is owned by
+the transaction serial: supersession transfers it, and abort or commit clears
+it without allowing an older operation to clear a newer indicator.
 
 Committed-document identity is tracked independently from an address-bar URL
 whose handler is still pending, so repeating that pending destination starts a
@@ -216,6 +222,12 @@ commit updates metadata, `lang`/locale, the localized contents of the
 persistent site-header host, skip link, footer, `<main>`, theme-control labels,
 Web Awesome locale marker, and announcement. Theme state, the live Document,
 site-header instance, loaded modules, and CSS remain in place.
+
+A shared build/runtime locale validator requires the complete ordered site
+locale set, configured default, one current option, exact canonical/hreflang
+and `x-default` targets, matching switcher links, and one polite notice for each
+unavailable translation. A fetched contradiction is malformed and cannot
+commit.
 
 Build/shell mismatch, malformed responses, native-only routes, and locale
 chunk failures commit nothing. They use one per-destination session guard and
@@ -394,3 +406,14 @@ responsive overflow, and committed visual baselines.
 Gate 4.2 additionally covers A→B→C supersession, pending Back, focus and route
 announcements, scroll/fragment semantics, locale transactions, deployment
 skew, failed locale chunks, and guarded native fallback.
+The closure matrix also exercises response-body and locale-module
+supersession, Back/Forward after eleven pushed routes, a missing fragment,
+direct-versus-enhanced ARIA snapshots, busy-state geometry and ownership,
+malformed locale/feature contracts, and a persistently malformed destination.
+Both local and deployed Playwright configurations use zero retries, so CI does
+not convert a first-attempt failure into a passing gate.
+
+Gate 4.2 has no route cache: cold Back/Forward preparation is the correctness
+oracle for a future eviction miss. LRU bounds and actual post-eviction replay
+remain Gate 4.3; generated route-feature imports and their chunk failures
+remain Gate 4.4.

@@ -2,15 +2,14 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { openReadyDocument } from './support/direct-document.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const malformedFixture = await readFile(resolve(root, 'fixtures/navigation/malformed.html'), 'utf8');
 const transactionEventsKey = 'pinega-test-navigation-transaction-events';
 
 async function ready(page: Page, route: string): Promise<void> {
-  const response = await page.goto(route, { waitUntil: 'commit' });
-  expect(response?.status(), `${route} should return a successful response`).toBeLessThan(400);
-  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await openReadyDocument(page, route);
 }
 
 async function instrumentDocument(page: Page): Promise<number> {
@@ -73,6 +72,7 @@ test('eligible navigation commits validated route state without replacing the Do
   await expect(page.locator('[data-pinega-language-switcher] a[hreflang="ru"]')).toHaveAttribute('href', '/ru/technology/');
   await expect(page.locator('main')).toBeFocused();
   await expect(page.locator('[data-pinega-navigation-announcer]')).toHaveText('Technology — Pinega');
+  await expect(page.locator('[data-pinega-navigation-announcer]')).toMatchAriaSnapshot('- status: Technology — Pinega');
 
   const runtime = await page.evaluate(() => ({
     timeOrigin: performance.timeOrigin,
@@ -81,6 +81,19 @@ test('eligible navigation commits validated route state without replacing the Do
   }));
   expect(runtime).toEqual({ timeOrigin, navigationEntries: 1, commits: '1' });
   expect(requestsFor(requests, '/technology/').map(request => request.resourceType())).toEqual(['fetch']);
+});
+
+test('direct and enhanced delivery expose the same route accessibility tree', async ({ page }) => {
+  await ready(page, '/technology/');
+  const direct = await page.locator('main').ariaSnapshot();
+
+  await ready(page, '/');
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+
+  expect(await page.locator('main').ariaSnapshot()).toBe(direct);
+  await expect(page.locator('main')).toBeFocused();
+  await expect(page.locator('[data-pinega-navigation-announcer]')).toMatchAriaSnapshot('- status: Technology — Pinega');
 });
 
 test('Back and Forward traverse same-document entries through the coordinator', async ({ page }) => {
@@ -102,6 +115,61 @@ test('Back and Forward traverse same-document entries through the coordinator', 
     timeOrigin: performance.timeOrigin,
     commits: document.documentElement.dataset.testNavigationCommits,
   }))).toEqual({ timeOrigin, commits: '3' });
+});
+
+test('Back and Forward remain transactional after more than ten routes without adding entries', async ({ page }) => {
+  const routes = [
+    '/technology/',
+    '/research/',
+    '/docs/',
+    '/docs/getting-started/',
+    '/docs/start/project-overview/',
+    '/docs/start/research-workspace/',
+    '/docs/how-to/build-the-site/',
+    '/docs/how-to/run-validation/',
+    '/docs/concepts/pinega-programme/',
+    '/docs/concepts/pinega-engine-architecture/',
+    '/about/',
+  ];
+  const entries = ['/', ...routes];
+  await ready(page, '/');
+  const timeOrigin = await instrumentDocument(page);
+  const initialHistoryLength = await page.evaluate(() => history.length);
+  let commits = 0;
+
+  for (const route of routes) {
+    commits += 1;
+    await page.evaluate(target => {
+      const link = document.createElement('a');
+      link.href = target;
+      link.textContent = target;
+      document.body.append(link);
+      link.click();
+    }, route);
+    await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', String(commits));
+    expect(new URL(page.url()).pathname).toBe(route);
+  }
+  expect(await page.evaluate(() => history.length)).toBe(initialHistoryLength + routes.length);
+
+  for (let index = entries.length - 2; index >= 0; index -= 1) {
+    commits += 1;
+    await page.evaluate(() => history.back());
+    await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', String(commits));
+    expect(new URL(page.url()).pathname).toBe(entries[index]);
+  }
+  for (let index = 1; index < entries.length; index += 1) {
+    commits += 1;
+    await page.evaluate(() => history.forward());
+    await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', String(commits));
+    expect(new URL(page.url()).pathname).toBe(entries[index]);
+  }
+
+  expect(await page.evaluate(() => ({
+    historyLength: history.length,
+    timeOrigin: performance.timeOrigin,
+    route: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+  }))).toEqual({ historyLength: initialHistoryLength + routes.length, timeOrigin, route: 'about' });
+  await expect(page.locator('pinega-site-header')).toHaveAttribute('data-test-shell-identity', 'preserved');
 });
 
 test('selecting the active route performs zero network and zero visible commits', async ({ page }) => {
@@ -165,6 +233,130 @@ test('a repeated pending destination remains eligible until its document commits
   await page.waitForTimeout(100);
   expect(fetches).toBe(2);
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
+});
+
+test('pending state is transaction-owned, accessible, and overlays the header without layout shift', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  const geometry = await page.evaluate(() => {
+    const header = document.querySelector('pinega-site-header');
+    const main = document.querySelector('main');
+    if (!header || !main) throw new Error('Missing navigation geometry');
+    return { headerBottom: header.getBoundingClientRect().bottom, mainTop: main.getBoundingClientRect().top };
+  });
+  let requestStarted: (() => void) | undefined;
+  let releaseRequest: (() => void) | undefined;
+  const started = new Promise<void>(resolveStarted => { requestStarted = resolveStarted; });
+  const release = new Promise<void>(resolveRelease => { releaseRequest = resolveRelease; });
+  await page.route('**/technology/', async route => {
+    if (route.request().resourceType() !== 'fetch') {
+      await route.continue();
+      return;
+    }
+    requestStarted?.();
+    await release;
+    await route.continue();
+  });
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await started;
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation-pending', 'true');
+  await expect(page.locator('main')).toHaveAttribute('aria-busy', 'true');
+  const pending = await page.evaluate(() => {
+    const header = document.querySelector('pinega-site-header');
+    const main = document.querySelector('main');
+    if (!header || !main) throw new Error('Missing pending navigation geometry');
+    return {
+      headerBottom: header.getBoundingClientRect().bottom,
+      mainTop: main.getBoundingClientRect().top,
+      indicatorOpacity: getComputedStyle(header, '::after').opacity,
+    };
+  });
+  expect(Math.abs(pending.headerBottom - geometry.headerBottom)).toBeLessThan(0.5);
+  expect(Math.abs(pending.mainTop - geometry.mainTop)).toBeLessThan(0.5);
+  expect(pending.indicatorOpacity).toBe('1');
+
+  releaseRequest?.();
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await expect(page.locator('html')).not.toHaveAttribute('data-pinega-navigation-pending', 'true');
+  await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+});
+
+test('supersession while reading a response body cannot commit the late route', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await page.evaluate(async () => {
+    const capturedTechnologyBody = await fetch('/technology/').then(response => response.text());
+    const originalFetch = window.fetch.bind(window);
+    let releaseBody: (() => void) | undefined;
+    const bodyGate = new Promise<void>(resolveGate => { releaseBody = resolveGate; });
+    const state = window as unknown as Window & { __PINEGA_RELEASE_TEST_BODY__?: () => void };
+    state.__PINEGA_RELEASE_TEST_BODY__ = () => releaseBody?.();
+    window.fetch = async (...args): Promise<Response> => {
+      const response = await originalFetch(...args);
+      if (new URL(response.url).pathname !== '/technology/') return response;
+      const read = response.text.bind(response);
+      Object.defineProperty(response, 'text', {
+        configurable: true,
+        value: async (): Promise<string> => {
+          document.documentElement.dataset.testBodyRead = 'pending';
+          await bodyGate;
+          void read().catch(() => undefined);
+          return capturedTechnologyBody;
+        },
+      });
+      return response;
+    };
+  });
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page.locator('html')).toHaveAttribute('data-test-body-read', 'pending');
+  await expect(page.locator('main')).toHaveAttribute('aria-busy', 'true');
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/research/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
+  await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+  await page.evaluate(() => {
+    (window as unknown as Window & { __PINEGA_RELEASE_TEST_BODY__?: () => void }).__PINEGA_RELEASE_TEST_BODY__?.();
+  });
+  await page.waitForTimeout(100);
+
+  expect(await page.evaluate(() => ({
+    path: location.pathname,
+    route: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+    title: document.title,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({ path: '/research/', route: 'research', title: 'Research — Pinega', commits: '1' });
+});
+
+test('supersession while loading a locale module preserves the newer route and pending owner', async ({ page }) => {
+  let localeChunkStarted: (() => void) | undefined;
+  let releaseLocaleChunk: (() => void) | undefined;
+  const started = new Promise<void>(resolveStarted => { localeChunkStarted = resolveStarted; });
+  const release = new Promise<void>(resolveRelease => { releaseLocaleChunk = resolveRelease; });
+  await page.route(/\/assets\/chunks\/ru-[^/?]+\.js(?:\?.*)?$/u, async route => {
+    localeChunkStarted?.();
+    await release;
+    await route.continue();
+  });
+  await ready(page, '/docs/');
+  await instrumentDocument(page);
+
+  await activateCoordinatorLink(page, '[data-pinega-language-switcher] a[href="/ru/docs/"]');
+  await started;
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation-pending', 'true');
+  await expect(page.locator('main')).toHaveAttribute('aria-busy', 'true');
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await expect(page.locator('html')).not.toHaveAttribute('data-pinega-navigation-pending', 'true');
+  releaseLocaleChunk?.();
+  await page.waitForTimeout(100);
+
+  expect(await page.evaluate(() => ({
+    path: location.pathname,
+    locale: document.documentElement.dataset.locale,
+    route: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({ path: '/technology/', locale: 'en', route: 'technology', commits: '1' });
 });
 
 test('slow A, fast B, then C leaves late A unable to mutate any committed route state', async ({ page }) => {
@@ -316,6 +508,31 @@ test('new-route fragments scroll after commit while same-route fragments stay na
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
 });
 
+test('a missing new-route fragment commits the route and applies the normalized top fallback', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  const initialScroll = await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    scrollTo(0, Math.max(1, document.documentElement.scrollHeight - innerHeight));
+    return scrollY;
+  });
+  expect(initialScroll).toBeGreaterThan(0);
+
+  await page.evaluate(() => {
+    const link = document.createElement('a');
+    link.href = '/technology/#missing-gate-4-2-fragment';
+    link.textContent = 'Missing fragment';
+    document.body.append(link);
+    link.click();
+  });
+
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await expect(page).toHaveURL(/\/technology\/#missing-gate-4-2-fragment$/u);
+  await expect(page.locator('main')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+  await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
+});
+
 test('Back and Forward restore each entry scroll position after route content exists', async ({ page }) => {
   await ready(page, '/');
   await instrumentDocument(page);
@@ -427,6 +644,74 @@ for (const fault of [
     expect(requestTypes).toEqual(['fetch', 'document']);
   });
 }
+
+for (const fault of [
+  {
+    id: 'language switcher target that disagrees with hreflang',
+    mutate: (body: string) => body.replace(
+      'data-pinega-locale="ru" href="/ru/technology/" hreflang="ru"',
+      'data-pinega-locale="ru" href="/ru/research/" hreflang="ru"',
+    ),
+  },
+  {
+    id: 'unknown route feature ID',
+    mutate: (body: string) => body.replace('data-pinega-features=""', 'data-pinega-features="unknown-feature"'),
+  },
+]) {
+  test(`${fault.id} fails closed through one native fallback`, async ({ page }) => {
+    const requestTypes: string[] = [];
+    let injected = false;
+    await page.route('**/technology/', async route => {
+      const type = route.request().resourceType();
+      requestTypes.push(type);
+      if (type === 'fetch' && !injected) {
+        injected = true;
+        const response = await route.fetch();
+        const original = await response.text();
+        const body = fault.mutate(original);
+        expect(body, `${fault.id}: mutation must change the response`).not.toBe(original);
+        await route.fulfill({ response, body });
+        return;
+      }
+      await route.continue();
+    });
+    await ready(page, '/');
+    await instrumentDocument(page);
+
+    await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+
+    await expect(page).toHaveURL(/\/technology\/$/u);
+    await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+    await expect(page.locator('pinega-site-header')).not.toHaveAttribute('data-test-shell-identity', 'preserved');
+    await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+    expect(requestTypes).toEqual(['fetch', 'document']);
+  });
+}
+
+test('a persistently malformed destination stops after one fallback through the session loop guard', async ({ page }) => {
+  const requestTypes: string[] = [];
+  await page.route('**/technology/', async route => {
+    const type = route.request().resourceType();
+    requestTypes.push(type);
+    const response = await route.fetch();
+    const original = await response.text();
+    const body = original.replace('data-pinega-shell="4.0"', 'data-pinega-shell="malformed"');
+    expect(body).not.toBe(original);
+    await route.fulfill({ response, body });
+  });
+  await ready(page, '/');
+  await instrumentDocument(page);
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'error');
+  await page.waitForTimeout(200);
+  expect(requestTypes).toEqual(['fetch', 'document']);
+  expect(await page.evaluate(() => sessionStorage.getItem('pinega-navigation-hard-fallback-v1')))
+    .toBe('http://127.0.0.1:4173/technology/');
+});
 
 test('a two-build deployment race hard-reloads once without a partial old-shell commit', async ({ page }) => {
   const requestTypes: string[] = [];
