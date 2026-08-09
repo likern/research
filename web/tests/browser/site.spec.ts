@@ -109,7 +109,7 @@ test('homepage states the Pinega master-brand and evidence boundary', async ({ p
 
 test('technology page separates active, research, and portfolio programmes', async ({ page }) => {
   await ready(page, '/technology/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Research becomes technology');
+  await expect(page.locator('h1#technology-title')).toContainText('Research becomes technology');
   await expect(page.locator('#pinega-engine')).toBeAttached();
   await expect(page.locator('#optimisation')).toBeAttached();
   await expect(page.locator('#verification')).toBeAttached();
