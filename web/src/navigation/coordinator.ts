@@ -264,6 +264,7 @@ export class NavigationCoordinator {
       if (!this.#transactions.isCurrent(transaction)) return;
 
       const commitStarted = performance.now();
+      const rememberedScroll = this.#rememberedDestinationScroll(event);
       const outcome = this.#transactions.commit(transaction, () => {
         const nextMain = commitRoute(plan);
         document.documentElement.dataset.webawesomeLocale = prepared.locale;
@@ -297,7 +298,7 @@ export class NavigationCoordinator {
         }
         const cache = cacheDetail(this.#cache.snapshot(), stored, evictedEntries);
         this.#clearPending(transaction);
-        applyPostCommitScroll(event, target, this.#rememberedDestinationScroll(event));
+        applyPostCommitScroll(event, target, rememberedScroll);
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
           url: target.href,
@@ -322,6 +323,7 @@ export class NavigationCoordinator {
       });
       if (outcome.committed) {
         outcome.value.preparation.commitMs = performance.now() - commitStarted;
+        if (rememberedScroll) this.#scheduleRememberedScrollCorrection(transaction, rememberedScroll);
         window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail: outcome.value }));
       }
     } catch (error) {
@@ -408,6 +410,16 @@ export class NavigationCoordinator {
   #rememberedDestinationScroll(event: NavigateEvent): RememberedScrollPosition | undefined {
     if (event.navigationType !== 'traverse' || !event.destination.key) return undefined;
     return this.#scrollPositions.get(event.destination.key);
+  }
+
+  #scheduleRememberedScrollCorrection(
+    transaction: NavigationTransaction,
+    position: RememberedScrollPosition,
+  ): void {
+    requestAnimationFrame(() => {
+      if (!this.#transactions.isCurrent(transaction)) return;
+      window.scrollTo({ left: position.left, top: position.top, behavior: 'instant' });
+    });
   }
 
   #markPending(transaction: NavigationTransaction): void {

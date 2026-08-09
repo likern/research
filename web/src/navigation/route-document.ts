@@ -486,6 +486,11 @@ export function commitRoute(plan: RouteCommitPlan): HTMLElement {
     plan.activeHeader.append(...plan.nextTranslationNotices);
   }
   plan.activeMain.replaceWith(plan.nextMain);
+  // Nodes cloned from an inert template can originate in a DOMParser-owned
+  // document. Upgrade only after the winning route has entered the live
+  // document so constructors and lifecycle callbacks cannot leak from an
+  // abandoned transaction.
+  customElements.upgrade(plan.nextMain);
   plan.activeAnnouncer.textContent = prepared.title;
   return plan.nextMain;
 }
