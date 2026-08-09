@@ -60,6 +60,11 @@ interface PendingAbortSubscription {
   listener: () => void;
 }
 
+interface RememberedScrollPosition {
+  left: number;
+  top: number;
+}
+
 type NavigationPreparationSource = 'cache' | 'in-flight' | 'network';
 
 interface PreparedNavigation {
@@ -142,6 +147,8 @@ export class NavigationCoordinator {
   readonly #transactions = new NavigationTransactionGate();
   readonly #cache = new NativeRouteCache<PreparedRoute>();
   readonly #preparations = new InFlightRoutePreparations<PreparedNavigation>();
+  readonly #scrollPositions = new Map<string, RememberedScrollPosition>();
+  readonly #scrollDisposalKeys = new Set<string>();
   #active: ActiveRouteState;
   #activeDocumentUrl: string;
   #fallbackTarget: string | undefined;
@@ -166,6 +173,7 @@ export class NavigationCoordinator {
   }
 
   #handleNavigate = (event: NavigateEvent): void => {
+    this.#rememberActiveScrollPosition();
     const source = describeSource(event.sourceElement);
     const fallbackTarget = this.#currentFallbackTarget();
     const intent: NavigationIntent = {
@@ -289,7 +297,7 @@ export class NavigationCoordinator {
         }
         const cache = cacheDetail(this.#cache.snapshot(), stored, evictedEntries);
         this.#clearPending(transaction);
-        applyPostCommitScroll(event, target);
+        applyPostCommitScroll(event, target, this.#rememberedDestinationScroll(event));
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
           url: target.href,
@@ -385,6 +393,23 @@ export class NavigationCoordinator {
     return this.#fallbackTarget ?? readFallbackGuard();
   }
 
+  #rememberActiveScrollPosition(): void {
+    const entry = this.#navigation.currentEntry;
+    if (!entry) return;
+    this.#scrollPositions.set(entry.key, { left: scrollX, top: scrollY });
+    if (this.#scrollDisposalKeys.has(entry.key)) return;
+    this.#scrollDisposalKeys.add(entry.key);
+    entry.addEventListener('dispose', () => {
+      this.#scrollPositions.delete(entry.key);
+      this.#scrollDisposalKeys.delete(entry.key);
+    }, { once: true });
+  }
+
+  #rememberedDestinationScroll(event: NavigateEvent): RememberedScrollPosition | undefined {
+    if (event.navigationType !== 'traverse' || !event.destination.key) return undefined;
+    return this.#scrollPositions.get(event.destination.key);
+  }
+
   #markPending(transaction: NavigationTransaction): void {
     if (!this.#transactions.isCurrent(transaction)) return;
     this.#clearPending();
@@ -425,8 +450,18 @@ function cacheDetail(
   };
 }
 
-function applyPostCommitScroll(event: NavigateEvent, target: URL): void {
+function applyPostCommitScroll(
+  event: NavigateEvent,
+  target: URL,
+  remembered?: RememberedScrollPosition,
+): void {
   event.scroll();
+  if (event.navigationType === 'traverse' && remembered) {
+    // A warm template can commit in the same task that starts a traversal.
+    // Reapply the entry's observed viewport after the native restoration call
+    // so WebKit does not leave an otherwise restorable warm entry at the top.
+    window.scrollTo({ left: remembered.left, top: remembered.top, behavior: 'instant' });
+  }
   if (event.navigationType === 'traverse' || !target.hash || hasFragmentScrollTarget(target.hash)) return;
 
   // WebKit can retain the previous entry's scroll offset when the destination

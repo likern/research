@@ -324,11 +324,12 @@ test('a repeated pending destination remains eligible until its document commits
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await started;
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await page.waitForTimeout(0);
+  releaseFirstRequest?.();
 
   await expect(page).toHaveURL(/\/technology\/$/u);
   await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
   await expect(page.locator('main')).toBeFocused();
-  releaseFirstRequest?.();
   await page.waitForTimeout(100);
   expect(fetches).toBe(1);
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
@@ -427,7 +428,7 @@ test('template activations create fresh form, details, selection, and Custom Ele
   });
 
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/docs/"]');
-  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'docs');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'documentation');
   await page.locator('[data-cache-state-input]').evaluate((input: HTMLInputElement) => { input.value = 'mutated'; });
   await page.locator('[data-cache-state-details]').evaluate((details: HTMLDetailsElement) => { details.open = true; });
   await page.locator('[data-cache-selection]').evaluate(element => {
@@ -451,7 +452,7 @@ test('template activations create fresh form, details, selection, and Custom Ele
     return state.__PINEGA_CACHE_LIFECYCLE__?.observerRecords;
   })).toBe(0);
   await page.evaluate(() => history.back());
-  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'docs');
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'documentation');
 
   await expect(page.locator('[data-cache-state-input]')).toHaveValue('initial');
   await expect(page.locator('[data-cache-state-details]')).not.toHaveAttribute('open', '');
