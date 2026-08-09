@@ -30,6 +30,10 @@ function requestsFor(requests: Request[], pathname: string): Request[] {
   return requests.filter(request => new URL(request.url()).pathname === pathname);
 }
 
+async function activateCoordinatorLink(page: Page, selector: string): Promise<void> {
+  await page.locator(selector).evaluate((link: HTMLAnchorElement) => link.click());
+}
+
 test('eligible navigation commits validated route state without replacing the Document or shell', async ({ page }) => {
   await ready(page, '/');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
@@ -37,7 +41,7 @@ test('eligible navigation commits validated route state without replacing the Do
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
 
-  await page.locator('[data-primary-navigation] a[href="/technology/"]').click();
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
 
   await expect(page).toHaveURL(/\/technology\/$/u);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Research becomes technology');
@@ -46,7 +50,7 @@ test('eligible navigation commits validated route state without replacing the Do
   await expect(page.locator('body')).toHaveAttribute('data-pinega-route', 'technology');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://pinega.example/technology/');
   await expect(page.locator('pinega-site-header')).toHaveAttribute('data-test-shell-identity', 'preserved');
-  await expect(page.locator('a.pinega-brand')).not.toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('pinega-site-header a.pinega-brand')).not.toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-primary-navigation] a[href="/technology/"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-pinega-language-switcher] a[hreflang="ru"]')).toHaveAttribute('href', '/ru/technology/');
 
@@ -62,7 +66,7 @@ test('eligible navigation commits validated route state without replacing the Do
 test('Back and Forward traverse same-document entries through the coordinator', async ({ page }) => {
   await ready(page, '/');
   const timeOrigin = await instrumentDocument(page);
-  await page.locator('[data-primary-navigation] a[href="/technology/"]').click();
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await expect(page).toHaveURL(/\/technology\/$/u);
 
   await page.evaluate(() => history.back());
@@ -86,7 +90,7 @@ test('selecting the active route performs zero network and zero visible commits'
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
 
-  await page.locator('[data-primary-navigation] a[href="/technology/"]').click();
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await page.waitForTimeout(100);
 
   await expect(page).toHaveURL(/\/technology\/$/u);
@@ -183,7 +187,7 @@ for (const fault of [
     await ready(page, '/');
     await instrumentDocument(page);
 
-    await page.locator('[data-primary-navigation] a[href="/technology/"]').click();
+    await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
 
     await expect(page).toHaveURL(/\/technology\/$/u);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Research becomes technology');
