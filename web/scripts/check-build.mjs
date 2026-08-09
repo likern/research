@@ -3,6 +3,16 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  BUILD_ID_ALGORITHM,
+  DOCUMENT_CONTRACT_VERSION,
+  ROUTE_FEATURE_DEFINITIONS,
+  ROUTE_OWNED_METADATA,
+  SHELL_VERSION,
+} from '../navigation/contract.mjs';
+import { verifyBuildIdentity } from './lib/build-identity.mjs';
+import { validateDocumentContract } from './lib/document-contract.mjs';
+
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const diagramIds = ['buffer-frame-lifecycle', 'linearizability-overlap', 'version-chain-snapshot'];
 const contentIndex = JSON.parse(await readFile(resolve(root, 'content/content-index.json'), 'utf8'));
@@ -46,6 +56,9 @@ const required = [
 
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
 
+const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
+const manifestRoutes = new Map(manifest.routes.map(entry => [`${entry.id}:${entry.locale}`, entry]));
+
 const files = await walk(root);
 const totals = new Map();
 for (const file of files) {
@@ -60,6 +73,24 @@ assert.ok(css <= 210 * 1024, `CSS budget exceeded: ${css} bytes`);
 
 for (const entry of variants) {
   const html = await readFile(resolve(root, entry.output_path), 'utf8');
+  const manifestRoute = manifestRoutes.get(`${entry.id}:${entry.locale}`);
+  assert.ok(manifestRoute, `Missing manifest route ${entry.id}:${entry.locale}`);
+  const contract = validateDocumentContract(html, {
+    siteOrigin: manifest.origin,
+    routeId: entry.id,
+    buildId: manifest.build.id,
+    language: contentIndex.site.locales[entry.locale].lang,
+    locale: entry.locale,
+    direction: contentIndex.site.locales[entry.locale].direction,
+    title: entry.canonical_title,
+    description: entry.summary,
+    canonicalUrl: entry.canonical ? `${manifest.origin}${entry.route}` : null,
+    alternates: expectedRouteAlternates(entry, manifest.origin),
+    features: manifestRoute.features,
+    criticalFeatures: manifestRoute.criticalFeatures,
+  });
+  assert.deepEqual(contract.features, manifestRoute.features, `${entry.route}: manifest route features`);
+  assert.deepEqual(contract.criticalFeatures, manifestRoute.criticalFeatures, `${entry.route}: manifest critical route features`);
   assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:|PINEGA_DOC_[A-Z_]+|PINEGA_LANGUAGE_SWITCHER/u, `${entry.output_path} contains an unresolved build marker`);
   assert.match(html, /\/assets\/main\.css/u);
   assert.match(html, /\/assets\/main\.js/u);
@@ -97,8 +128,14 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
-assert.equal(manifest.schemaVersion, 3);
+assert.equal(manifest.schemaVersion, 4);
+assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
+assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
+assert.equal(manifest.build.shellVersion, SHELL_VERSION);
+assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFINITIONS);
+assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
+assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);
+await verifyBuildIdentity(root, manifest.build.id, [...variants.map(entry => entry.output_path), 'site-manifest.json']);
 assert.equal(manifest.site.tagline, 'Correctness under concurrency.');
 assert.equal(manifest.site.defaultLocale, 'en');
 assert.deepEqual(manifest.routes.map(entry => `${entry.id}:${entry.locale}`), variants.map(entry => `${entry.id}:${entry.locale}`));
@@ -220,6 +257,19 @@ async function isFile(path) {
     if (error?.code === 'ENOENT') return false;
     throw error;
   }
+}
+
+function expectedRouteAlternates(entry, origin) {
+  if (!entry.canonical) return [];
+  const alternates = Object.entries(entry.locales)
+    .filter(([_locale, localized]) => localized.canonical)
+    .map(([locale, localized]) => ({
+      language: contentIndex.site.locales[locale].lang,
+      href: `${origin}${localized.route}`,
+    }));
+  const defaultVariant = entry.locales[contentIndex.site.default_locale];
+  if (defaultVariant?.canonical) alternates.push({ language: 'x-default', href: `${origin}${defaultVariant.route}` });
+  return alternates;
 }
 
 function escapeRegex(value) {

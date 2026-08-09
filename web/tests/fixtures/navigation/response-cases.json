@@ -1,0 +1,67 @@
+[
+  {
+    "id": "valid-html",
+    "requestUrl": "https://pinega.example/fixtures/normal/#target",
+    "responseUrl": "https://pinega.example/fixtures/normal/",
+    "status": 200,
+    "redirected": false,
+    "contentType": "text/html; charset=utf-8",
+    "body": "normal.html",
+    "outcome": "prepared"
+  },
+  {
+    "id": "not-found",
+    "requestUrl": "https://pinega.example/missing/",
+    "responseUrl": "https://pinega.example/missing/",
+    "status": 404,
+    "redirected": false,
+    "contentType": "text/html",
+    "body": "normal.html",
+    "outcome": "hard-navigation",
+    "reason": "http-status"
+  },
+  {
+    "id": "redirect",
+    "requestUrl": "https://pinega.example/fixtures/redirect",
+    "responseUrl": "https://pinega.example/fixtures/normal/",
+    "status": 200,
+    "redirected": true,
+    "contentType": "text/html",
+    "body": "normal.html",
+    "outcome": "hard-navigation",
+    "reason": "redirect"
+  },
+  {
+    "id": "non-html",
+    "requestUrl": "https://pinega.example/paper.pdf",
+    "responseUrl": "https://pinega.example/paper.pdf",
+    "status": 200,
+    "redirected": false,
+    "contentType": "application/pdf",
+    "body": null,
+    "outcome": "hard-navigation",
+    "reason": "content-type"
+  },
+  {
+    "id": "malformed-contract",
+    "requestUrl": "https://pinega.example/fixtures/malformed/",
+    "responseUrl": "https://pinega.example/fixtures/malformed/",
+    "status": 200,
+    "redirected": false,
+    "contentType": "text/html",
+    "body": "malformed.html",
+    "outcome": "hard-navigation",
+    "reason": "malformed-contract"
+  },
+  {
+    "id": "new-build",
+    "requestUrl": "https://pinega.example/fixtures/build/",
+    "responseUrl": "https://pinega.example/fixtures/build/",
+    "status": 200,
+    "redirected": false,
+    "contentType": "text/html",
+    "body": "build-new.html",
+    "outcome": "hard-navigation",
+    "reason": "build-mismatch"
+  }
+]

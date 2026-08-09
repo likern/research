@@ -164,6 +164,32 @@ Russian translation module when `<html lang="ru">`; a purchased project is
 expected to expose the matching `translations/ru.js` beside its configured
 project module.
 
+## Gate 4.0 static-navigation contract and MPA baseline
+
+Every generated route now exposes document contract `1`, shell compatibility
+version `4.0`, one normalized artifact build ID, route identity, and a closed
+feature list on `<main>`. The build parses every complete document with parse5,
+validates route-owned metadata and feature classification, and records the same
+build/feature projection in site-manifest schema v4. The logical multilingual
+content registry remains schema v3.
+
+Gate 4.0 does not intercept navigation. It preserves the native MPA as the
+behavioral baseline and adds deterministic fixtures for ordinary, long,
+multilingual, missing-translation, future Lit-feature, malformed, redirect,
+404, non-HTML, and old/new-build cases. The complete decision and ownership
+contract is in [`../docs/web-static-navigation.md`](../docs/web-static-navigation.md).
+
+The raw, non-gating MPA measurement can be generated after a production build:
+
+```nu
+^npm run build
+^npm run measure:baseline
+```
+
+CI runs it with the pinned Chromium profile and uploads
+`artifacts/baseline/gate-4-mpa-baseline.json`. A single run is diagnostic input,
+not a latency or Web Vitals budget.
+
 ## Topic filter versus search
 
 `pinega-doc-search` is intentionally a progressive metadata/topic filter, not a
