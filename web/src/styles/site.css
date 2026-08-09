@@ -1,4 +1,8 @@
 @layer pinega.components {
+  .pinega-site-main :where([id]) {
+    scroll-margin-block-start: calc(var(--pinega-component-header-height) + var(--pinega-ref-space-l));
+  }
+
   .pinega-site-main > :not(.pinega-full-bleed) {
     inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), var(--pinega-sys-measure-wide));
     margin-inline: auto;

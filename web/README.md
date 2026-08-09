@@ -195,6 +195,34 @@ all rejected responses remain native MPA navigation. There is no History API
 polyfill. Route cache, prefetch, dynamic feature imports, custom focus/scroll
 policy, and Lit migration remain later gates.
 
+## Gate 4.2 Transactional correctness
+
+The coordinator now admits a visible commit only through a monotonic,
+abort-aware, non-reentrant transaction gate. A late response, a superseded
+push, or a pending navigation interrupted by Back cannot mutate the route that
+won. Successful push/replace commits focus the new `<main>` and update one
+persistent polite route-title announcer. After commit, explicit Navigation API
+scroll restoration handles top, cross-route fragments, and Back/Forward
+entries before push/replace focus is finalized; fragment-only active-route
+links remain native.
+
+Committed-document identity is tracked independently from an address-bar URL
+whose handler is still pending, so repeating that pending destination starts a
+new transaction instead of being misclassified as an active-route no-op.
+
+Same-origin English/Russian switches are enhanced only after the destination
+document and its locale runtime have both been prepared. One synchronous
+commit updates metadata, `lang`/locale, the localized contents of the
+persistent site-header host, skip link, footer, `<main>`, theme-control labels,
+Web Awesome locale marker, and announcement. Theme state, the live Document,
+site-header instance, loaded modules, and CSS remain in place.
+
+Build/shell mismatch, malformed responses, native-only routes, and locale
+chunk failures commit nothing. They use one per-destination session guard and
+one native reload/assignment; a failed module is not retried inside the old
+module map. Route cache, prefetch, route-feature imports, Lit islands, View
+Transitions, and Service Workers remain outside Gate 4.2.
+
 The raw, non-gating MPA measurement can be generated after a production build:
 
 ```nu
@@ -204,10 +232,11 @@ The raw, non-gating MPA measurement can be generated after a production build:
 
 CI runs both measurements with the pinned Chromium profile and uploads
 `artifacts/baseline/gate-4-mpa-baseline.json` plus
-`artifacts/baseline/gate-4.1-navigation-baseline.json`. The latter enforces
-structural performance—one HTML fetch, zero new Document requests, one commit,
-and preserved shell identity. A single run remains diagnostic input, not a
-latency or Web Vitals budget.
+`artifacts/baseline/gate-4.2-transaction-baseline.json`. The latter covers
+same-locale and cross-locale push/traverse transitions and enforces structural
+performance—one HTML fetch, zero new Document requests, one commit, the
+expected locale/focus/announcement state, and preserved shell identity. A
+single run remains diagnostic input, not a latency or Web Vitals budget.
 
 ## Topic filter versus search
 
@@ -362,3 +391,6 @@ master-brand and maturity claims, public navigation, component-lab isolation,
 documentation decomposition and generated discovery surfaces, no-JavaScript
 catalogue completeness, browser behaviour, keyboard interaction, accessibility,
 responsive overflow, and committed visual baselines.
+Gate 4.2 additionally covers A→B→C supersession, pending Back, focus and route
+announcements, scroll/fragment semantics, locale transactions, deployment
+skew, failed locale chunks, and guarded native fallback.

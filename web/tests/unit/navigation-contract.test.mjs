@@ -80,6 +80,10 @@ test('coordinator ownership and native-route policy are closed over the content 
     'pinega-site-header [data-pinega-language-switcher]',
     'pinega-site-header [data-translation-notice]',
     'pinega-site-header .pinega-brand[aria-current="page"]',
+    'a.pinega-skip-link',
+    'pinega-site-header > header',
+    'footer.pinega-site-footer',
+    '[data-pinega-navigation-announcer]',
   ]) {
     assert.ok(ROUTE_OWNED_METADATA.includes(selector), `Missing coordinator-owned route state ${selector}`);
   }

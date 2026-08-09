@@ -3,6 +3,7 @@ import { parse } from 'parse5';
 import {
   BUILD_ID_PLACEHOLDER,
   DOCUMENT_CONTRACT_VERSION,
+  NATIVE_NAVIGATION_ROUTE_IDS,
   SHELL_VERSION,
   classifyPinegaElement,
   featureDefinition,
@@ -142,6 +143,29 @@ export function validateDocumentContract(html, expected = {}) {
       throw new TypeError('Site header contains more than one route aria-current="page" item.');
     }
     if (currentBrands.length === 1) shellCurrentHref = requiredAttribute(attributes(currentBrands[0]), 'href', 'current Pinega brand');
+
+    const siteFooters = findElements(body, element => element.tagName === 'footer' && hasClass(element, 'pinega-site-footer'));
+    if (NATIVE_NAVIGATION_ROUTE_IDS.includes(routeId)) {
+      if (siteFooters.length > 1) throw new TypeError('Native document contains more than one Pinega site footer.');
+    } else {
+      exactlyOne(siteFooters, 'pinega site footer');
+    }
+    const skipLinks = findElements(body, element => element.tagName === 'a' && hasClass(element, 'pinega-skip-link'));
+    const skipLink = exactlyOne(skipLinks, 'pinega skip link');
+    if (attribute(skipLink, 'href') !== '#main-content' || !textContent(skipLink).trim()) {
+      throw new TypeError('Pinega skip link must name and target main#main-content.');
+    }
+    const announcers = findElements(body, element => hasAttribute(element, 'data-pinega-navigation-announcer'));
+    const announcer = exactlyOne(announcers, 'pinega navigation announcer');
+    const announcerAttributes = attributes(announcer);
+    if (
+      announcerAttributes.get('role') !== 'status' ||
+      announcerAttributes.get('aria-live') !== 'polite' ||
+      announcerAttributes.get('aria-atomic') !== 'true' ||
+      textContent(announcer).trim()
+    ) {
+      throw new TypeError('Pinega navigation announcer must be an empty polite atomic status region.');
+    }
   }
   const openGraph = metadataMap(head, 'property', value => value.startsWith('og:'));
   const twitter = metadataMap(head, 'name', value => value.startsWith('twitter:'));

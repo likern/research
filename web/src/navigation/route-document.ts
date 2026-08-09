@@ -10,7 +10,7 @@ import {
 
 export type RoutePreparationFailure =
   | 'build-mismatch'
-  | 'locale-mismatch'
+  | 'locale-runtime'
   | 'malformed-contract'
   | 'route-policy';
 
@@ -38,6 +38,9 @@ export interface PreparedRoute {
   page: string;
   main: HTMLElement;
   routeMetadata: Element[];
+  siteHeader: HTMLElement;
+  siteFooter: HTMLElement;
+  skipLink: HTMLAnchorElement;
   languageSwitcher: HTMLElement;
   translationNotices: HTMLElement[];
   shellCurrentHref: string | null;
@@ -45,11 +48,18 @@ export interface PreparedRoute {
 
 interface RouteCommitPlan {
   prepared: PreparedRoute;
+  localeChanged: boolean;
   root: HTMLElement;
   body: HTMLElement;
   activeMain: HTMLElement;
   nextMain: HTMLElement;
   activeHeader: HTMLElement;
+  nextHeaderChildren: Node[];
+  activeSiteFooter: HTMLElement;
+  nextSiteFooter: HTMLElement;
+  activeSkipLink: HTMLAnchorElement;
+  nextSkipLink: HTMLAnchorElement;
+  activeAnnouncer: HTMLElement;
   activeLanguageSwitcher: HTMLElement;
   nextLanguageSwitcher: HTMLElement;
   activeTranslationNotices: HTMLElement[];
@@ -142,10 +152,6 @@ export function prepareRouteDocument(
   if (NATIVE_NAVIGATION_ROUTE_IDS.includes(routeId)) {
     throw new RoutePreparationError('route-policy', `Route ${JSON.stringify(routeId)} requires native document navigation.`);
   }
-  if (locale !== active.locale || language !== active.language) {
-    throw new RoutePreparationError('locale-mismatch', 'Cross-locale transitions require native document navigation in Gate 4.1.');
-  }
-
   const features = parseFeatureList(presentAttribute(main, 'data-pinega-features', 'main'));
   const criticalFeatures = parseFeatureList(presentAttribute(main, 'data-pinega-critical-features', 'main'));
   const derived = deriveRouteFeatures(main);
@@ -158,14 +164,18 @@ export function prepareRouteDocument(
   validateRouteMetadata(head, language, destination);
 
   const siteHeader = exactlyOne([...body.querySelectorAll<HTMLElement>('pinega-site-header')], 'route site header');
+  exactlyOne(
+    [...siteHeader.children].filter(element => element.localName === 'header'),
+    'route site-header header',
+  );
   const languageSwitcher = exactlyOne(
     [...siteHeader.querySelectorAll<HTMLElement>('[data-pinega-language-switcher]')],
     'route language switcher',
   );
   const translationNotices = [...siteHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')];
-  validateTranslationSlots(languageSwitcher, translationNotices);
+  validateTranslationSlots(languageSwitcher, translationNotices, language);
   const primaryNavigations = [...siteHeader.querySelectorAll<HTMLElement>('[data-primary-navigation]')];
-  if (primaryNavigations.length > 1) throw malformed('Route site header contains more than one primary navigation region.');
+  const primaryNavigation = exactlyOne(primaryNavigations, 'route primary navigation region');
   const routeMarkers = routeMarkerElements(siteHeader);
   if (routeMarkers.length !== 1) {
     throw malformed(`Route site header requires exactly one route aria-current="page" marker, found ${routeMarkers.length}.`);
@@ -183,6 +193,30 @@ export function prepareRouteDocument(
     throw malformed('Route site-header current marker is inconsistent with the destination URL.');
   }
   const shellCurrentHref = shellCurrentUrl.href;
+  const siteFooter = exactlyOne(
+    [...body.querySelectorAll<HTMLElement>('footer.pinega-site-footer')],
+    'route site footer',
+  );
+  const skipLink = exactlyOne(
+    [...body.querySelectorAll<HTMLAnchorElement>('a.pinega-skip-link')],
+    'route skip link',
+  );
+  if (skipLink.getAttribute('href') !== '#main-content' || !skipLink.textContent?.trim()) {
+    throw malformed('Route skip link must name and target main#main-content.');
+  }
+  const announcer = exactlyOne(
+    [...body.querySelectorAll<HTMLElement>('[data-pinega-navigation-announcer]')],
+    'route navigation announcer',
+  );
+  if (
+    announcer.getAttribute('role') !== 'status' ||
+    announcer.getAttribute('aria-live') !== 'polite' ||
+    announcer.getAttribute('aria-atomic') !== 'true' ||
+    announcer.textContent?.trim()
+  ) {
+    throw malformed('Route navigation announcer must be an empty polite atomic status region.');
+  }
+  validateLocaleShell(siteHeader, siteFooter, primaryNavigation, language, destination);
 
   return {
     buildId,
@@ -198,6 +232,9 @@ export function prepareRouteDocument(
     page,
     main,
     routeMetadata: [...head.children].filter(isRouteMetadataElement),
+    siteHeader,
+    siteFooter,
+    skipLink,
     languageSwitcher,
     translationNotices,
     shellCurrentHref,
@@ -209,14 +246,27 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
   const body = document.body;
   const activeMain = exactlyOne([...body.querySelectorAll<HTMLElement>('main')], 'active route main');
   const activeHeader = exactlyOne([...body.querySelectorAll<HTMLElement>('pinega-site-header')], 'active site header');
+  const activeSiteFooter = exactlyOne(
+    [...body.querySelectorAll<HTMLElement>('footer.pinega-site-footer')],
+    'active site footer',
+  );
+  const activeSkipLink = exactlyOne(
+    [...body.querySelectorAll<HTMLAnchorElement>('a.pinega-skip-link')],
+    'active skip link',
+  );
+  const activeAnnouncer = exactlyOne(
+    [...body.querySelectorAll<HTMLElement>('[data-pinega-navigation-announcer]')],
+    'active navigation announcer',
+  );
   const activeLanguageSwitcher = exactlyOne(
     [...activeHeader.querySelectorAll<HTMLElement>('[data-pinega-language-switcher]')],
     'active language switcher',
   );
   const activeRouteMarkers = routeMarkerElements(activeHeader);
+  const localeChanged = prepared.locale !== root.dataset.locale || prepared.language !== root.lang;
   let nextRouteMarker: HTMLElement | undefined;
 
-  if (prepared.shellCurrentHref) {
+  if (!localeChanged && prepared.shellCurrentHref) {
     nextRouteMarker = routeMarkerCandidates(activeHeader).find(element => (
       resolveShellHref(requiredAttribute(element, 'href', 'active route marker candidate'), location.href) === prepared.shellCurrentHref
     ));
@@ -225,11 +275,18 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
 
   return {
     prepared,
+    localeChanged,
     root,
     body,
     activeMain,
     nextMain: document.importNode(prepared.main, true),
     activeHeader,
+    nextHeaderChildren: [...prepared.siteHeader.childNodes].map(node => document.importNode(node, true)),
+    activeSiteFooter,
+    nextSiteFooter: document.importNode(prepared.siteFooter, true),
+    activeSkipLink,
+    nextSkipLink: document.importNode(prepared.skipLink, true),
+    activeAnnouncer,
     activeLanguageSwitcher,
     nextLanguageSwitcher: document.importNode(prepared.languageSwitcher, true),
     activeTranslationNotices: [...activeHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')],
@@ -241,7 +298,7 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
   };
 }
 
-export function commitRoute(plan: RouteCommitPlan): void {
+export function commitRoute(plan: RouteCommitPlan): HTMLElement {
   const { prepared } = plan;
 
   document.title = prepared.title;
@@ -254,12 +311,20 @@ export function commitRoute(plan: RouteCommitPlan): void {
   plan.root.dataset.locale = prepared.locale;
   plan.body.dataset.pinegaRoute = prepared.routeId;
 
-  for (const marker of plan.activeRouteMarkers) marker.removeAttribute('aria-current');
-  plan.nextRouteMarker?.setAttribute('aria-current', 'page');
-  plan.activeLanguageSwitcher.replaceWith(plan.nextLanguageSwitcher);
-  for (const notice of plan.activeTranslationNotices) notice.remove();
-  plan.activeHeader.append(...plan.nextTranslationNotices);
+  if (plan.localeChanged) {
+    plan.activeSkipLink.replaceWith(plan.nextSkipLink);
+    plan.activeHeader.replaceChildren(...plan.nextHeaderChildren);
+    plan.activeSiteFooter.replaceWith(plan.nextSiteFooter);
+  } else {
+    for (const marker of plan.activeRouteMarkers) marker.removeAttribute('aria-current');
+    plan.nextRouteMarker?.setAttribute('aria-current', 'page');
+    plan.activeLanguageSwitcher.replaceWith(plan.nextLanguageSwitcher);
+    for (const notice of plan.activeTranslationNotices) notice.remove();
+    plan.activeHeader.append(...plan.nextTranslationNotices);
+  }
   plan.activeMain.replaceWith(plan.nextMain);
+  plan.activeAnnouncer.textContent = prepared.title;
+  return plan.nextMain;
 }
 
 function deriveRouteFeatures(main: HTMLElement): { features: string[]; criticalFeatures: string[] } {
@@ -306,7 +371,7 @@ function validateRouteMetadata(head: HTMLHeadElement, language: string, destinat
   assertUniqueMetadata(head, 'name', value => value.startsWith('twitter:'));
 }
 
-function validateTranslationSlots(languageSwitcher: HTMLElement, notices: HTMLElement[]): void {
+function validateTranslationSlots(languageSwitcher: HTMLElement, notices: HTMLElement[], language: string): void {
   const noticesById = new Map<string, HTMLElement>();
   for (const notice of notices) {
     if (!notice.id) throw malformed('Translation notice requires an ID.');
@@ -322,6 +387,60 @@ function validateTranslationSlots(languageSwitcher: HTMLElement, notices: HTMLEl
     controlled.add(noticeId);
   }
   if (controlled.size !== noticesById.size) throw malformed('Every translation notice requires exactly one language-switcher controller.');
+
+  const current = exactlyOne(
+    [...languageSwitcher.querySelectorAll<HTMLElement>('.pinega-language-option[aria-current="page"]')],
+    'current route language option',
+  );
+  const currentLanguage = exactlyOne([...current.querySelectorAll<HTMLElement>('[lang]')], 'current route language label');
+  if (currentLanguage.lang !== language) throw malformed('Current route language option is inconsistent with html[lang].');
+}
+
+function validateLocaleShell(
+  siteHeader: HTMLElement,
+  siteFooter: HTMLElement,
+  primaryNavigation: HTMLElement,
+  language: string,
+  destination: URL,
+): void {
+  if (siteHeader.querySelector('script, style, base, link[rel~="stylesheet"]')) {
+    throw malformed('Route site header contains executable or stylesheet resources.');
+  }
+  if (siteFooter.querySelector('script, style, base, link[rel~="stylesheet"]')) {
+    throw malformed('Route site footer contains executable or stylesheet resources.');
+  }
+  requiredAttribute(primaryNavigation, 'aria-label', 'route primary navigation');
+  const footerNavigation = exactlyOne([...siteFooter.querySelectorAll<HTMLElement>('nav')], 'route footer navigation');
+  requiredAttribute(footerNavigation, 'aria-label', 'route footer navigation');
+
+  const headerBrand = exactlyOne(
+    [...siteHeader.querySelectorAll<HTMLAnchorElement>('a.pinega-brand[href]')],
+    'route site-header brand',
+  );
+  const footerBrand = exactlyOne(
+    [...siteFooter.querySelectorAll<HTMLAnchorElement>('a.pinega-brand[href]')],
+    'route site-footer brand',
+  );
+  const headerBrandUrl = resolveShellHref(requiredAttribute(headerBrand, 'href', 'route site-header brand'), destination.href);
+  const footerBrandUrl = resolveShellHref(requiredAttribute(footerBrand, 'href', 'route site-footer brand'), destination.href);
+  if (headerBrandUrl !== footerBrandUrl) throw malformed('Route header and footer brand destinations are inconsistent.');
+  requiredAttribute(headerBrand, 'aria-label', 'route site-header brand');
+  requiredAttribute(footerBrand, 'aria-label', 'route site-footer brand');
+
+  const primaryDestinations = [...primaryNavigation.querySelectorAll<HTMLAnchorElement>('a[href]')]
+    .map(link => resolveShellHref(requiredAttribute(link, 'href', 'primary navigation link'), destination.href));
+  const footerDestinations = [...footerNavigation.querySelectorAll<HTMLAnchorElement>('a[href]')]
+    .map(link => resolveShellHref(requiredAttribute(link, 'href', 'footer navigation link'), destination.href));
+  assertSameList(primaryDestinations, footerDestinations, 'header and footer navigation destinations');
+
+  for (const [selector, label] of [
+    ['[data-theme-toggle]', 'theme control'],
+    ['[data-navigation-toggle]', 'navigation control'],
+  ] as const) {
+    const control = exactlyOne([...siteHeader.querySelectorAll<HTMLElement>(selector)], `route ${label}`);
+    if (!control.textContent?.trim()) throw malformed(`Route ${label} must have a localized accessible name.`);
+  }
+  if (!language.trim()) throw malformed('Route shell requires a document language.');
 }
 
 function routeMarkerElements(siteHeader: HTMLElement): HTMLElement[] {

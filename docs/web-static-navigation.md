@@ -2,12 +2,14 @@
 
 Gate 4.0 status: **ACCEPTED BASELINE**, merged as PR #27.
 
-Gate 4.1 status: **PROPOSED NEXT MILESTONE** until its implementing pull request
+Gate 4.1 status: **ACCEPTED BASELINE**, merged as PR #28.
+
+Gate 4.2 status: **PROPOSED NEXT MILESTONE** until its implementing pull request
 is merged. This document does not claim that route caching, prefetch, dynamic
-route-feature imports, custom scroll/focus restoration, or Lit migration are
+route-feature imports, Lit islands, View Transitions, or a Service Worker are
 implemented.
 
-Gate 4.1 baseline repository state: `main@83b9aa9` after Gate 4.0.
+Gate 4.2 baseline repository state: `main@bdbb486` after Gate 4.1.
 
 ## Decision
 
@@ -37,7 +39,7 @@ It deliberately adds no client router or navigation interception.
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | Lit 3.3.3 is present transitively through Web Awesome; Pinega-owned Lit components do not yet exist |
 | Runtime loading | One eager `main.js` entry plus esbuild-generated dependency chunks |
-| Navigation | Native full-document navigation only |
+| Navigation | Gate 4.1 Navigation API coordinator over complete static documents |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
@@ -438,12 +440,139 @@ WebKit. Numeric latency budgets remain deferred until repeated evidence exists.
   `precommitHandler`, View Transitions, Service Worker, and custom focus/scroll
   orchestration remain unimplemented.
 
+## Gate 4.2 transactional-correctness contract
+
+### Transaction ownership and latest-navigation-wins
+
+Every intercepted navigation obtains an immutable token from one monotonic
+`NavigationTransactionGate`. Only the latest non-aborted token may enter the
+single synchronous commit section. That section rejects asynchronous and
+reentrant writers; preparation remains outside it and may contain network or
+module-loading awaits.
+
+The baseline path remains `NavigateEvent.intercept({ handler })` across the
+supported browser matrix. Gate 4.2 does not make `precommitHandler` a
+correctness dependency. The Navigation API may therefore commit the history
+entry URL before Pinega's handler has prepared visible state. Pinega's stronger
+guarantee is that a late or aborted handler cannot change route DOM, metadata,
+locale shell, focus, announcement, fallback state, or any future route-cache
+state.
+
+The coordinator consequently tracks committed-document identity separately
+from `location.href`. A destination that is visible in the address bar but
+whose handler is still pending is not an active-route no-op; a repeated click
+starts a newer transaction. Fragment handling is native only when the
+destination document identity matches the DOM that actually committed. A
+traversal back to that already-committed document stays native, aborting the
+pending transaction without fetching or recommitting identical content.
+
+The required race oracle is:
+
+```text
+slow A starts
+→ fast B commits
+→ optional C commits
+→ late A completes
+→ URL, title, canonical, main, aria-current, focus, announcement stay B/C
+```
+
+Back or Forward while a push is pending starts a newer traversal transaction.
+The pending push cannot overwrite the traversed entry even if its response is
+eventually delivered after abort.
+
+### Locale transaction
+
+An ordinary same-origin GET language link is now eligible for enhancement.
+The fetched destination must pass the same build, shell, route, metadata,
+feature, language-switcher, and translation-notice validation as a same-locale
+route. Before an English-to-Russian commit, the pinned Web Awesome Russian
+translation chunk (or configured project translation module) must load
+successfully.
+
+One locale-changing commit updates, without an intermediate await or paint:
+
+- title, canonical, complete `hreflang`, Open Graph/Twitter metadata;
+- `html[lang][dir][data-locale][data-page]` and body route identity;
+- the localized skip link and the contents of the persistent
+  `pinega-site-header` host, including navigation, controls, language switcher,
+  notices, and `aria-current`;
+- the localized site footer and route `<main>`;
+- the active Web Awesome locale marker and the route announcement.
+
+The `pinega-site-header` custom-element instance, live `Document`, theme
+classes/storage, loaded modules, and stylesheet graph remain in place. Header
+controls rebind after commit, and theme controls use delegation, so the new
+localized descendants remain operable. A missing translation still stays on
+the actual content locale and exposes the already localized status notice; it
+does not fabricate or silently substitute content.
+
+### Focus, announcement, scroll, and fragments
+
+Intercepted transitions use `focusReset: "manual"` and `scroll: "manual"`.
+After the destination DOM has committed, the handler invokes
+`NavigateEvent.scroll()` before applying the final push/replace focus target.
+
+- Successful `push`/`replace` commits first apply the platform scroll decision,
+  then focus the new `main#main-content` with `preventScroll`, placing keyboard
+  and assistive-technology reading order at the new content without moving the
+  resolved viewport.
+- Traversals do not force a new focus target; replacing focused route content
+  naturally returns focus to the document while the history entry's viewport
+  is restored.
+- A persistent empty `role="status"` region receives the localized destination
+  title in the same successful commit. Aborted and active-route no-op
+  operations do not announce.
+- For a new route without a fragment, the browser resets to the start after the
+  handler settles. For a new route with a fragment, it scrolls only after the
+  validated destination DOM exists. For `traverse`, it restores the entry's
+  saved scroll position.
+- Fragment-only navigation within the active route remains native and performs
+  no HTML fetch or Pinega commit. Route targets have a shared sticky-header
+  `scroll-margin` offset.
+
+### Deployment and module failure boundary
+
+A different valid build ID, incompatible shell, malformed contract, 404,
+redirect, changed response URL, invalid media type, empty body, or failed
+locale module produces no partial commit. The current transaction writes one
+normalized per-destination `sessionStorage` fallback guard and performs native
+navigation. If the Navigation API has already committed the destination URL,
+the page reloads; otherwise it assigns the destination. The retry event is
+left native, and arrival clears the guard.
+
+A rejected locale chunk is never retried inside the failed document's module
+map. Pinega performs one guarded hard reload so the destination document starts
+with a fresh module map. Gate 4.2 does not introduce route feature imports;
+their graph and failure policy remain Gate 4.4.
+
+### Evidence and post-conditions
+
+The production-artifact matrix covers Chromium desktop/mobile, Firefox, and
+WebKit. It includes complete direct/no-JavaScript routes, active-route no-op,
+A→B→C supersession, pending Back, Back/Forward route and scroll restoration,
+same-route and cross-route fragments, EN↔RU shell consistency, missing
+translation, build skew, locale-chunk failure, malformed/non-HTML/404 fallback,
+and native-only routes.
+
+`gate-4.2-transaction-baseline.json` records same-locale push/traverse and
+cross-locale push/traverse. Every successful cold transition must have one HTML
+fetch, zero document requests, one visible commit, the same `timeOrigin`, one
+Navigation Timing entry, the same site-header instance, and the expected locale
+and announcement. Numeric latency budgets remain deferred.
+
+After Gate 4.2, transactional navigation correctness is an accepted
+pre-condition for Gate 4.3 parsed-template LRU work. No route cache, in-flight
+reuse, prefetch, dynamic route-feature import, global Lit render root, View
+Transition, or Service Worker enters this milestone.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
 - [HTML Standard — custom `data-*` attributes](https://html.spec.whatwg.org/multipage/dom.html#embedding-custom-non-visible-data-with-the-data-*-attributes)
 - [HTML Standard — canonical links](https://html.spec.whatwg.org/multipage/links.html#link-type-canonical)
 - [HTML Standard — Navigation API](https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api)
+- [WAI-ARIA — `status` role](https://www.w3.org/TR/wai-aria-1.3/#status)
+- [WCAG 2.2 — focus order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html)
 - [Navigation Timing Level 2](https://www.w3.org/TR/navigation-timing-2/)
 - [Event Timing](https://w3c.github.io/event-timing/)
 - [Layout Instability](https://wicg.github.io/layout-instability/)

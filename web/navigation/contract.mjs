@@ -55,6 +55,10 @@ export const ROUTE_OWNED_METADATA = Object.freeze([
   'pinega-site-header [data-translation-notice]',
   'pinega-site-header .pinega-brand[aria-current="page"]',
   '[data-primary-navigation] [aria-current="page"]',
+  'a.pinega-skip-link',
+  'pinega-site-header > header',
+  'footer.pinega-site-footer',
+  '[data-pinega-navigation-announcer]',
 ]);
 
 const featureByElement = new Map(ROUTE_FEATURE_DEFINITIONS.map(feature => [feature.element, feature]));

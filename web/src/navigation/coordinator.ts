@@ -5,6 +5,11 @@ import {
   type NavigationSourceKind,
 } from '../../navigation/policy.mjs';
 import {
+  NavigationTransactionGate,
+  type NavigationTransaction,
+} from '../../navigation/transaction-gate.mjs';
+import { prepareWebAwesomeLocale } from '../vendor/webawesome/runtime.js';
+import {
   RoutePreparationError,
   commitRoute,
   createRouteCommitPlan,
@@ -19,7 +24,7 @@ type HardFallbackReason =
   | 'build-mismatch'
   | 'content-type'
   | 'http-status'
-  | 'locale-mismatch'
+  | 'locale-runtime'
   | 'malformed-contract'
   | 'missing-body'
   | 'redirect'
@@ -30,6 +35,7 @@ type HardFallbackReason =
 interface NavigationCommitDetail {
   url: string;
   routeId: string;
+  locale: string;
   navigationType: NavigationType;
 }
 
@@ -74,14 +80,16 @@ export function initializeNavigationCoordinator(): NavigationCoordinator | undef
 
 export class NavigationCoordinator {
   readonly #navigation: Navigation;
+  readonly #transactions = new NavigationTransactionGate();
   #active: ActiveRouteState;
-  #serial = 0;
+  #activeDocumentUrl: string;
   #fallbackTarget: string | undefined;
   #started = false;
 
   constructor(navigation: Navigation, active: ActiveRouteState) {
     this.#navigation = navigation;
     this.#active = active;
+    this.#activeDocumentUrl = normalizeRouteUrl(location.href, location.origin);
   }
 
   start(): void {
@@ -95,8 +103,8 @@ export class NavigationCoordinator {
     const fallbackTarget = this.#currentFallbackTarget();
     const intent: NavigationIntent = {
       currentUrl: location.href,
+      activeDocumentUrl: this.#activeDocumentUrl,
       destinationUrl: event.destination.url,
-      currentLanguage: this.#active.language,
       navigationType: event.navigationType,
       sourceKind: source.kind,
       canIntercept: event.canIntercept,
@@ -105,29 +113,34 @@ export class NavigationCoordinator {
       downloadRequested: event.downloadRequest !== null || source.download,
       hasFormData: event.formData !== null,
       hasTarget: source.hasTarget,
-      ...(source.language ? { sourceLanguage: source.language } : {}),
       ...(fallbackTarget ? { fallbackTarget } : {}),
     };
     const decision = classifyNavigationIntent(intent);
 
-    if (decision.action === 'native') return;
+    if (decision.action === 'native') {
+      this.#transactions.invalidate();
+      return;
+    }
     if (decision.action === 'cancel') {
+      this.#transactions.invalidate();
       event.preventDefault();
       return;
     }
 
-    const serial = ++this.#serial;
+    const transaction = this.#transactions.begin(event.signal);
     const target = new URL(decision.url);
     try {
       event.intercept({
-        handler: () => this.#navigate(event, target, serial),
+        focusReset: 'manual',
+        scroll: 'manual',
+        handler: () => this.#navigate(event, target, transaction),
       });
     } catch (error) {
       console.error('Pinega could not intercept an eligible navigation; the browser will retain native handling.', error);
     }
   };
 
-  async #navigate(event: NavigateEvent, target: URL, serial: number): Promise<void> {
+  async #navigate(event: NavigateEvent, target: URL, transaction: NavigationTransaction): Promise<void> {
     try {
       const response = await fetch(target.href, {
         method: 'GET',
@@ -136,65 +149,84 @@ export class NavigationCoordinator {
         headers: { Accept: 'text/html' },
         signal: event.signal,
       });
-      if (this.#superseded(event, serial)) return;
+      if (!this.#transactions.isCurrent(transaction)) return;
 
       const envelopeFailure = classifyResponseEnvelope(response, target);
       if (envelopeFailure) {
-        this.#hardNavigate(target, envelopeFailure);
+        this.#hardNavigate(transaction, target, envelopeFailure);
         return;
       }
 
       const html = await response.text();
-      if (this.#superseded(event, serial)) return;
+      if (!this.#transactions.isCurrent(transaction)) return;
       if (!html) {
-        this.#hardNavigate(target, 'missing-body');
+        this.#hardNavigate(transaction, target, 'missing-body');
         return;
       }
 
       const prepared = prepareRouteDocument(html, target.href, this.#active);
-      if (this.#superseded(event, serial)) return;
+      if (!this.#transactions.isCurrent(transaction)) return;
+      if (prepared.locale !== this.#active.locale) {
+        try {
+          await prepareWebAwesomeLocale(prepared.locale);
+        } catch (error) {
+          throw new RoutePreparationError(
+            'locale-runtime',
+            `Pinega could not prepare the ${JSON.stringify(prepared.locale)} locale runtime.`,
+            { cause: error },
+          );
+        }
+      }
+      if (!this.#transactions.isCurrent(transaction)) return;
       const plan = createRouteCommitPlan(prepared, document);
-      if (this.#superseded(event, serial)) return;
+      if (!this.#transactions.isCurrent(transaction)) return;
 
-      commitRoute(plan);
-      this.#active = {
-        buildId: prepared.buildId,
-        contractVersion: prepared.contractVersion,
-        shellVersion: prepared.shellVersion,
-        routeId: prepared.routeId,
-        language: prepared.language,
-        locale: prepared.locale,
-        navigationPolicy: 'enhanced',
-      };
-      const detail: NavigationCommitDetail = {
-        url: target.href,
-        routeId: prepared.routeId,
-        navigationType: event.navigationType,
-      };
-      window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail }));
+      const outcome = this.#transactions.commit(transaction, () => {
+        const nextMain = commitRoute(plan);
+        document.documentElement.dataset.webawesomeLocale = prepared.locale;
+        this.#active = {
+          buildId: prepared.buildId,
+          contractVersion: prepared.contractVersion,
+          shellVersion: prepared.shellVersion,
+          routeId: prepared.routeId,
+          language: prepared.language,
+          locale: prepared.locale,
+          navigationPolicy: 'enhanced',
+        };
+        this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
+        event.scroll();
+        if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
+        return {
+          url: target.href,
+          routeId: prepared.routeId,
+          locale: prepared.locale,
+          navigationType: event.navigationType,
+        } satisfies NavigationCommitDetail;
+      });
+      if (outcome.committed) {
+        window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail: outcome.value }));
+      }
     } catch (error) {
-      if (this.#superseded(event, serial) || isAbortError(error)) return;
+      if (!this.#transactions.isCurrent(transaction) || isAbortError(error)) return;
       const reason = error instanceof RoutePreparationError ? error.reason : 'unknown';
-      this.#hardNavigate(target, reason);
+      this.#hardNavigate(transaction, target, reason);
     }
   }
 
-  #superseded(event: NavigateEvent, serial: number): boolean {
-    return event.signal.aborted || serial !== this.#serial;
-  }
+  #hardNavigate(transaction: NavigationTransaction, target: URL, reason: HardFallbackReason): void {
+    this.#transactions.commit(transaction, () => {
+      const identity = normalizeRouteUrl(target, location.origin);
+      this.#fallbackTarget = identity;
+      writeFallbackGuard(identity);
+      const detail: NavigationFallbackDetail = { url: target.href, reason };
+      window.dispatchEvent(new CustomEvent<NavigationFallbackDetail>('pinega:navigation-fallback', { detail }));
 
-  #hardNavigate(target: URL, reason: HardFallbackReason): void {
-    const identity = normalizeRouteUrl(target, location.origin);
-    this.#fallbackTarget = identity;
-    writeFallbackGuard(identity);
-    const detail: NavigationFallbackDetail = { url: target.href, reason };
-    window.dispatchEvent(new CustomEvent<NavigationFallbackDetail>('pinega:navigation-fallback', { detail }));
-
-    if (normalizeRouteUrl(location.href, location.origin) === identity) {
-      location.reload();
-    } else {
-      location.replace(target.href);
-    }
+      if (normalizeRouteUrl(location.href, location.origin) === identity) {
+        location.reload();
+      } else {
+        location.assign(target.href);
+      }
+    });
   }
 
   #currentFallbackTarget(): string | undefined {
@@ -204,7 +236,6 @@ export class NavigationCoordinator {
 
 function describeSource(source: Element | null): {
   kind: NavigationSourceKind;
-  language?: string;
   hasTarget: boolean;
   download: boolean;
 } {
@@ -213,16 +244,13 @@ function describeSource(source: Element | null): {
       kind: 'anchor',
       hasTarget: source.hasAttribute('target'),
       download: source.hasAttribute('download'),
-      ...(source.hreflang ? { language: source.hreflang } : {}),
     };
   }
   if (source instanceof HTMLAreaElement) {
-    const language = source.getAttribute('hreflang') ?? '';
     return {
       kind: 'area',
       hasTarget: source.hasAttribute('target'),
       download: source.hasAttribute('download'),
-      ...(language ? { language } : {}),
     };
   }
   if (source instanceof HTMLFormElement || source?.closest('form')) {

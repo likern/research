@@ -551,6 +551,14 @@ function replaceLocalePlaceholders(html, page) {
     if (!output.includes('</pinega-site-header>')) throw new TypeError(`${page.source}: missing site-header boundary for translation notices`);
     output = output.replace('</pinega-site-header>', `${notices}\n      </pinega-site-header>`);
   }
+  if (output.includes('data-pinega-navigation-announcer')) {
+    throw new TypeError(`${page.source}: navigation announcer is build-owned and must not be authored by hand`);
+  }
+  if (!output.includes('</pinega-site-header>')) throw new TypeError(`${page.source}: missing site-header boundary for navigation announcer`);
+  output = output.replace(
+    '</pinega-site-header>',
+    '</pinega-site-header>\n      <p class="pinega-visually-hidden" data-pinega-navigation-announcer role="status" aria-live="polite" aria-atomic="true"></p>',
+  );
   if (/PINEGA_LANGUAGE_SWITCHER/u.test(output)) throw new TypeError(`${page.source}: unresolved language-switcher marker`);
   return output;
 }

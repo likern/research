@@ -7,14 +7,17 @@ import './components/code-example/code-example.js';
 import './components/benchmark/benchmark.js';
 import './components/doc-search/doc-search.js';
 
-import { initializeTheme } from './theme.js';
+import { initializeTheme, refreshThemeControls } from './theme.js';
 import { getMessages } from './i18n/messages.js';
 import { initializeNavigationCoordinator } from './navigation/coordinator.js';
 import { initializeWebAwesome, type WebAwesomeRuntimeResult } from './vendor/webawesome/runtime.js';
 
 initializeTheme();
 initializeNavigationCoordinator();
-window.addEventListener('pinega:navigation-commit', () => updateRuntimeLabels());
+window.addEventListener('pinega:navigation-commit', () => {
+  refreshThemeControls();
+  updateRuntimeLabels();
+});
 void initialize();
 
 let webAwesomeRuntime: WebAwesomeRuntimeResult | undefined;
