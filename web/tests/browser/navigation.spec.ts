@@ -51,7 +51,11 @@ function requestsFor(requests: Request[], pathname: string): Request[] {
 }
 
 async function activateCoordinatorLink(page: Page, selector: string): Promise<void> {
-  await page.locator(selector).evaluate((link: HTMLAnchorElement) => link.click());
+  await page.evaluate(linkSelector => {
+    const link = document.querySelector<HTMLAnchorElement>(linkSelector);
+    if (!link) throw new TypeError(`Missing coordinator link ${linkSelector}`);
+    link.click();
+  }, selector);
 }
 
 async function instrumentTransactionEvents(page: Page): Promise<void> {
