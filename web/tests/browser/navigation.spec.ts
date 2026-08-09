@@ -87,13 +87,14 @@ test('Back and Forward traverse same-document entries through the coordinator', 
 test('selecting the active route performs zero network and zero visible commits', async ({ page }) => {
   await ready(page, '/technology/');
   await instrumentDocument(page);
+  const activeUrl = await page.evaluate(() => location.href);
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
 
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await page.waitForTimeout(100);
 
-  await expect(page).toHaveURL(/\/technology\/$/u);
+  expect(await page.evaluate(() => location.href)).toBe(activeUrl);
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '0');
   expect(requestsFor(requests, '/technology/')).toHaveLength(0);
 });
