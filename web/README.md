@@ -323,8 +323,10 @@ boundaries and compares declared static regions across authored HTML, Pinega
 shell upgrade, Web Awesome readiness, and an explicit reload. Every stage must
 retain identical geometry, direct static text, and computed visual styles for
 elements and their pseudo-elements; unexpected layout shifts have a `0.001`
-per-cycle ceiling. Stage screenshots are retained as review evidence, while
-font rasterisation noise is not treated as a layout or style change.
+per-cycle ceiling. Chromium stage screenshots are retained as review evidence;
+cross-engine pass/fail uses the deterministic signatures because Playwright's
+Firefox and WebKit screenshot path waits for the deliberately gated document
+lifecycle. Font rasterisation noise is not treated as a layout or style change.
 
 `data-visual-stability-region` declares a static region. Descendants are part of
 that contract by default. A genuinely dynamic subtree may use

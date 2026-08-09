@@ -26,7 +26,7 @@ interface RenderCycle {
 }
 
 for (const representative of representativeRoutes) {
-  test(`${representative.id} keeps declared static regions stable through first load and reload`, async ({ page }, testInfo) => {
+  test(`${representative.id} keeps declared static regions stable through first load and reload`, async ({ page, browserName }, testInfo) => {
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
     await installUnexpectedShiftProbe(page);
     const mainGate = await AssetGate.install(page, '**/assets/main.js');
@@ -39,6 +39,7 @@ for (const representative of representativeRoutes) {
       'initial',
       mainGate,
       webAwesomeGate,
+      browserName === 'chromium',
       () => page.goto(representative.route, { waitUntil: 'commit' }),
     );
     assertStableCycle(initial);
@@ -51,6 +52,7 @@ for (const representative of representativeRoutes) {
       'reload',
       mainGate,
       webAwesomeGate,
+      browserName === 'chromium',
       () => page.reload({ waitUntil: 'commit' }),
     );
     assertStableCycle(reload);
@@ -88,26 +90,27 @@ async function observeRenderCycle(
   cycle: string,
   mainGate: AssetGate,
   webAwesomeGate: AssetGate,
+  captureScreenshots: boolean,
   navigate: () => Promise<unknown>,
 ): Promise<RenderCycle> {
   await navigate();
   await mainGate.waitForRequest();
   await waitForAuthoredRender(page);
   await expect(page.locator('html')).not.toHaveAttribute('data-pinega-ready', /.+/u);
-  const authored = await capturePhase(page, `${cycle}-authored`);
+  const authored = await capturePhase(page, `${cycle}-authored`, captureScreenshots);
   await attachPhase(testInfo, routeId, authored);
 
   await mainGate.release();
   await webAwesomeGate.waitForRequest();
   await waitForAuthoredRender(page);
   await expect(page.locator('html')).not.toHaveAttribute('data-pinega-ready', /.+/u);
-  const shell = await capturePhase(page, `${cycle}-shell`);
+  const shell = await capturePhase(page, `${cycle}-shell`, captureScreenshots);
   await attachPhase(testInfo, routeId, shell);
 
   await webAwesomeGate.release();
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
   await waitForAuthoredRender(page);
-  const ready = await capturePhase(page, `${cycle}-ready`);
+  const ready = await capturePhase(page, `${cycle}-ready`, captureScreenshots);
   await attachPhase(testInfo, routeId, ready);
 
   return { authored, shell, ready, shifts: await readUnexpectedShifts(page) };

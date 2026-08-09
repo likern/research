@@ -1,4 +1,4 @@
-import type { Locator, Page, Route, TestInfo } from '@playwright/test';
+import type { Page, Route, TestInfo } from '@playwright/test';
 
 const regionSelector = '[data-visual-stability-region]';
 const dynamicSelector = '[data-visual-stability-dynamic]';
@@ -83,7 +83,7 @@ interface ElementSignature {
 export interface RegionCapture {
   id: string;
   elements: ElementSignature[];
-  screenshot: Buffer;
+  screenshot?: Buffer;
 }
 
 export interface PhaseCapture {
@@ -185,7 +185,7 @@ export async function waitForAuthoredRender(page: Page): Promise<void> {
   });
 }
 
-export async function capturePhase(page: Page, phase: string): Promise<PhaseCapture> {
+export async function capturePhase(page: Page, phase: string, captureScreenshots: boolean): Promise<PhaseCapture> {
   await page.evaluate(async () => {
     scrollTo(0, 0);
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
@@ -250,10 +250,17 @@ export async function capturePhase(page: Page, phase: string): Promise<PhaseCapt
 
   const captures: RegionCapture[] = [];
   for (const [index, signature] of signatures.entries()) {
-    const locator: Locator = page.locator(regionSelector).nth(index);
     captures.push({
       ...signature,
-      screenshot: await locator.screenshot({ animations: 'disabled', caret: 'hide', scale: 'css' }),
+      ...(captureScreenshots
+        ? {
+            screenshot: await page.locator(regionSelector).nth(index).screenshot({
+              animations: 'disabled',
+              caret: 'hide',
+              scale: 'css',
+            }),
+          }
+        : {}),
     });
   }
   return { phase, regions: captures };
@@ -327,6 +334,7 @@ function compareElements(
 
 export async function attachPhase(testInfo: TestInfo, routeId: string, capture: PhaseCapture): Promise<void> {
   for (const region of capture.regions) {
+    if (!region.screenshot) continue;
     await testInfo.attach(`${routeId}-${capture.phase}-${region.id}.png`, {
       body: region.screenshot,
       contentType: 'image/png',
