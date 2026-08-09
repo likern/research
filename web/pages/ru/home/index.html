@@ -20,11 +20,11 @@
   <body>
     <a class="pinega-skip-link" href="#main-content">Перейти к основному содержанию</a>
     <div class="pinega-page">
-      <pinega-site-header class="pinega-full-bleed">
+      <pinega-site-header data-visual-stability-region="site-header" class="pinega-full-bleed">
         <header>
           <a class="pinega-brand" href="/ru/" aria-label="Главная Pinega" aria-current="page"><span class="pinega-brand-mark" aria-hidden="true">P</span><span>Pinega</span></a>
           <nav data-primary-navigation aria-label="Основная навигация"><ul><li><a href="/ru/technology/">Технологии</a></li><li><a href="/ru/research/">Исследования</a></li><li><a href="/ru/docs/">Документация</a></li><li><a href="/ru/about/">О проекте</a></li><li><a href="https://github.com/likern/research">GitHub</a></li></ul></nav>
-          <div class="pinega-cluster"><!-- PINEGA_LANGUAGE_SWITCHER --><wa-button data-theme-toggle appearance="plain" size="s" aria-pressed="false">Использовать тёмную тему</wa-button><wa-button data-navigation-toggle appearance="outlined" size="s">Меню</wa-button></div>
+          <div class="pinega-cluster"><!-- PINEGA_LANGUAGE_SWITCHER --><button class="pinega-shell-control" type="button" data-theme-toggle aria-pressed="false"><span data-theme-label-when="light">Использовать тёмную тему</span><span data-theme-label-when="dark">Использовать светлую тему</span></button><button class="pinega-shell-control pinega-shell-control-outlined" type="button" data-navigation-toggle>Меню</button></div>
         </header>
       </pinega-site-header>
 
@@ -32,7 +32,7 @@
         <pinega-hero id="top" class="pinega-product-hero">
           <section>
             <div class="pinega-hero-copy">
-              <div class="pinega-cluster"><wa-badge variant="brand" appearance="filled-outlined" pill>Исследовательская и инженерная программа</wa-badge><span class="pinega-eyebrow">Системы баз данных · Pinega Labs</span></div>
+              <div class="pinega-cluster"><span class="pinega-programme-badge" data-visual-stability-region="programme-badge">Исследовательская и инженерная программа</span><span class="pinega-eyebrow">Системы баз данных · Pinega Labs</span></div>
               <h1><span lang="en" translate="no">Correctness under concurrency.</span></h1>
               <p>Pinega превращает исследования систем баз данных в высокопроизводительное программное обеспечение для хранения данных, транзакций, оптимизации, верификации и распределённого выполнения. Pinega Engine — первая активная программа реализации, но ещё не производственный выпуск.</p>
               <div class="pinega-hero-actions"><a class="pinega-action pinega-action-primary" href="/ru/technology/">Изучить технологические программы</a><a class="pinega-action pinega-action-secondary" href="/ru/research/">Прочитать об исследовательской программе</a></div>

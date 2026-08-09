@@ -130,6 +130,54 @@
     outline-offset: -2px;
   }
 
+  .pinega-shell-control {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    block-size: 2.5rem;
+    border: 1px solid transparent;
+    border-radius: var(--pinega-sys-radius-control);
+    background: transparent;
+    color: var(--pinega-sys-color-text-secondary);
+    padding-inline: var(--pinega-ref-space-m);
+    font-size: 0.875rem;
+    font-weight: var(--pinega-sys-font-weight-action);
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .pinega-shell-control:hover {
+    background: var(--pinega-sys-color-surface-raised);
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-shell-control:active {
+    background: var(--pinega-sys-color-surface-lowered);
+  }
+
+  .pinega-shell-control-outlined {
+    border-color: var(--pinega-sys-color-border-strong);
+  }
+
+  [data-theme-label-when='dark'] {
+    display: none;
+  }
+
+  html.pinega-dark [data-theme-label-when='light'] {
+    display: none;
+  }
+
+  html.pinega-dark [data-theme-label-when='dark'] {
+    display: inline;
+  }
+
+  html:not([data-pinega-js='true']) pinega-site-header [data-theme-toggle] {
+    display: none;
+  }
+
   .pinega-translation-notice {
     display: none;
     border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
@@ -161,12 +209,8 @@
       position: relative;
     }
 
-    pinega-site-header [data-navigation-toggle] {
-      display: inline-block;
-    }
-
-    pinega-site-header:not([data-enhanced]) [data-navigation-toggle] {
-      display: none;
+    html[data-pinega-js='true'] pinega-site-header [data-navigation-toggle] {
+      display: inline-flex;
     }
 
     pinega-site-header nav[data-primary-navigation] {
@@ -175,7 +219,7 @@
       padding-block-end: var(--pinega-ref-space-m);
     }
 
-    pinega-site-header[data-enhanced]:not([data-open]) nav[data-primary-navigation] {
+    html[data-pinega-js='true'] pinega-site-header:not([data-open]) nav[data-primary-navigation] {
       display: none;
     }
 

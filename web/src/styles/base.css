@@ -122,6 +122,31 @@
     text-transform: uppercase;
   }
 
+  .pinega-programme-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.25em;
+    min-block-size: 1em;
+    border: 1px solid var(--pinega-ref-color-river-80);
+    border-radius: var(--pinega-ref-radius-pill);
+    background: var(--pinega-ref-color-river-90);
+    color: var(--pinega-ref-color-river-30);
+    padding: 0.375em 0.625em;
+    font-size: 0.75em;
+    font-weight: var(--pinega-ref-font-weight-semibold);
+    line-height: 1;
+    user-select: none;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  html.pinega-dark .pinega-programme-badge {
+    border-color: var(--pinega-ref-color-river-30);
+    background: var(--pinega-ref-color-river-20);
+    color: var(--pinega-ref-color-river-70);
+  }
+
   .pinega-muted {
     color: var(--pinega-sys-color-text-secondary);
   }
@@ -165,8 +190,6 @@
     padding: var(--pinega-ref-space-l);
   }
 
-  wa-button[data-theme-toggle]:not(:defined),
-  wa-button[data-navigation-toggle]:not(:defined),
   wa-copy-button:not(:defined) {
     display: none;
   }

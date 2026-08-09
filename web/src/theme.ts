@@ -47,7 +47,7 @@ export function refreshThemeControls(): void {
   const dark = document.documentElement.classList.contains('pinega-dark');
   document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach(button => {
     button.setAttribute('aria-pressed', String(dark));
-    button.textContent = dark ? messages.theme.use_light : messages.theme.use_dark;
+    button.setAttribute('aria-label', dark ? messages.theme.use_light : messages.theme.use_dark);
   });
 }
 

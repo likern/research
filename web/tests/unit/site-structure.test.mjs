@@ -128,6 +128,33 @@ test('language variants are explicit peers and every page reserves the persisten
   }
 });
 
+test('initial-render shell controls and static programme labels are native stability regions', async () => {
+  for (const entry of variants) {
+    const html = sourceByRoute.get(entry.route);
+    assert.match(html, /<pinega-site-header\b[^>]*data-visual-stability-region="site-header"/u, `${entry.route}: header must opt into the temporal stability contract`);
+    assert.doesNotMatch(html, /<wa-button\b[^>]*data-(?:theme|navigation)-toggle/u, `${entry.route}: shell controls must not wait for a vendor custom-element upgrade`);
+    assert.equal((html.match(/<button\b[^>]*data-theme-toggle/gu) ?? []).length, 1, `${entry.route}: expected one native theme control`);
+    assert.equal((html.match(/<button\b[^>]*data-navigation-toggle/gu) ?? []).length, 1, `${entry.route}: expected one native navigation control`);
+    assert.match(html, /data-theme-label-when="light"/u, `${entry.route}: theme control must carry its light-mode action before JavaScript`);
+    assert.match(html, /data-theme-label-when="dark"/u, `${entry.route}: theme control must carry its dark-mode action before JavaScript`);
+  }
+
+  for (const route of ['/', '/ru/', '/docs/', '/ru/docs/', '/component-lab/']) {
+    const html = sourceByRoute.get(route);
+    assert.doesNotMatch(html, /<wa-badge variant="brand" appearance="filled-outlined" pill>/u, `${route}: static programme label must not change on Web Awesome upgrade`);
+    assert.match(html, /class="pinega-programme-badge" data-visual-stability-region="programme-badge"/u, `${route}: missing native programme-label stability region`);
+  }
+
+  const build = await read('scripts/build.mjs');
+  const stabilitySupport = await read('tests/browser/support/visual-stability.ts');
+  assert.match(build, /data-pinega-initial-render/u);
+  assert.match(build, /injectInitialRenderBootstrap\(html, page\.source\)/u);
+  assert.ok(build.indexOf('injectInitialRenderBootstrap(html, page.source)') < build.indexOf('replaceLocalePlaceholders(html, page)'));
+  assert.match(stabilitySupport, /\[data-visual-stability-dynamic\]/u, 'dynamic content must have an explicit exclusion boundary');
+  assert.match(stabilitySupport, /getBoundingClientRect/u, 'dynamic hosts still retain a stable container geometry contract');
+  assert.match(stabilitySupport, /computed\.getPropertyValue/u, 'static regions compare computed visual properties, not only DOM text');
+});
+
 test('all author-written internal routes and fragments resolve to registered durable content', () => {
   for (const entry of variants) {
     const html = sourceByRoute.get(entry.route);
