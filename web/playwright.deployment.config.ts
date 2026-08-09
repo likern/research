@@ -9,7 +9,7 @@ export default defineConfig({
   workers: 1,
   timeout: 45_000,
   forbidOnly: true,
-  retries: 1,
+  retries: 0,
   reporter: [['list'], ['html', { outputFolder: 'playwright-report-deployment', open: 'never' }]],
   outputDir: 'test-results-deployment',
   expect: { timeout: 10_000 },

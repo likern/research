@@ -11,6 +11,7 @@ import {
   normalizeRouteUrl,
   parseFeatureList,
 } from '../../navigation/contract.mjs';
+import { validateLocaleRouteContract } from '../../navigation/locale-contract.mjs';
 
 export function applyDocumentContract(html, route) {
   const { features, criticalFeatures } = deriveRouteFeatures(html);
@@ -66,6 +67,7 @@ export function validateDocumentContract(html, expected = {}) {
   if (bodyAttributes.get('data-pinega-route') !== routeId) throw new TypeError('body[data-pinega-route] must equal main[data-pinega-route].');
   if (mainAttributes.get('id') !== 'main-content') throw new TypeError('Route main must use id="main-content".');
   if (mainAttributes.get('tabindex') !== '-1') throw new TypeError('Route main must use tabindex="-1" for focus transfer.');
+  if (mainAttributes.has('aria-busy')) throw new TypeError('Static route main must not contain runtime-owned aria-busy state.');
 
   const contractVersion = requiredAttribute(rootAttributes, 'data-pinega-contract', 'html');
   const buildId = requiredAttribute(rootAttributes, 'data-pinega-build', 'html');
@@ -126,6 +128,7 @@ export function validateDocumentContract(html, expected = {}) {
   const siteHeaders = findElements(body, element => element.tagName === 'pinega-site-header');
   if (siteHeaders.length > 1) throw new TypeError('Document contains more than one pinega-site-header.');
   let shellCurrentHref = primaryCurrent.length === 1 ? attribute(primaryCurrent[0], 'href') ?? null : null;
+  let localeContract = null;
   if (siteHeaders.length === 1) {
     const siteHeader = siteHeaders[0];
     if (findElements(main, element => element === siteHeader).length === 1) {
@@ -135,7 +138,15 @@ export function validateDocumentContract(html, expected = {}) {
     if (languageSwitchers.length !== 1) {
       throw new TypeError(`pinega-site-header requires exactly one language switcher, found ${languageSwitchers.length}.`);
     }
-    validateTranslationSlots(siteHeader, languageSwitchers[0]);
+    localeContract = validateLanguageSwitcherContract({
+      siteHeader,
+      languageSwitcher: languageSwitchers[0],
+      language,
+      locale,
+      canonicalUrl,
+      alternates,
+      expected,
+    });
     const currentBrands = findElements(siteHeader, element => (
       element.tagName === 'a' && hasClass(element, 'pinega-brand') && attribute(element, 'aria-current') === 'page'
     ));
@@ -186,6 +197,8 @@ export function validateDocumentContract(html, expected = {}) {
     twitter,
     features,
     criticalFeatures,
+    locales: localeContract?.locales ?? [],
+    defaultLocale: localeContract?.defaultLocale ?? null,
     primaryNavigationCurrentHref: primaryCurrent.length === 1 ? attribute(primaryCurrent[0], 'href') ?? null : null,
     shellCurrentHref,
   };
@@ -315,25 +328,86 @@ function assertUnique(values, label) {
   if (new Set(values).size !== values.length) throw new TypeError(`Duplicate ${label}: ${JSON.stringify(values)}.`);
 }
 
-function validateTranslationSlots(siteHeader, languageSwitcher) {
+function validateLanguageSwitcherContract({
+  siteHeader,
+  languageSwitcher,
+  language,
+  locale,
+  canonicalUrl,
+  alternates,
+  expected,
+}) {
   const notices = findElements(siteHeader, element => hasAttribute(element, 'data-translation-notice'));
-  const noticesById = new Map();
-  for (const notice of notices) {
-    const id = requiredAttribute(attributes(notice), 'id', 'translation notice');
-    if (noticesById.has(id)) throw new TypeError(`Duplicate translation notice ID ${JSON.stringify(id)}.`);
-    noticesById.set(id, notice);
-  }
-  const unavailableLinks = findElements(languageSwitcher, element => hasAttribute(element, 'data-translation-unavailable'));
-  const controlledNoticeIds = [];
-  for (const link of unavailableLinks) {
-    const noticeId = requiredAttribute(attributes(link), 'aria-controls', 'unavailable translation link');
-    if (!noticesById.has(noticeId)) throw new TypeError(`Unavailable translation link references missing notice ${JSON.stringify(noticeId)}.`);
-    controlledNoticeIds.push(noticeId);
-  }
-  assertUnique(controlledNoticeIds, 'controlled translation notice');
-  if (controlledNoticeIds.length !== noticesById.size) {
-    throw new TypeError('Every translation notice must be controlled by exactly one language-switcher link.');
-  }
+  const noticeDescriptors = notices.map(notice => {
+    const values = attributes(notice);
+    const id = requiredAttribute(values, 'id', 'translation notice');
+    if (
+      values.get('role') !== 'status' ||
+      values.get('aria-live') !== 'polite' ||
+      values.get('aria-atomic') !== 'true'
+    ) {
+      throw new TypeError(`Translation notice ${JSON.stringify(id)} must be a polite atomic status region.`);
+    }
+    const message = exactlyOne(
+      findElements(notice, element => hasAttribute(element, 'data-translation-notice-message')),
+      `message for translation notice ${JSON.stringify(id)}`,
+    );
+    const messageValue = requiredAttribute(attributes(message), 'data-message', `translation notice ${JSON.stringify(id)} message`);
+    if (textContent(message).trim() !== messageValue) {
+      throw new TypeError(`Translation notice ${JSON.stringify(id)} static text must equal its data-message.`);
+    }
+    return { id, message: messageValue };
+  });
+
+  requiredAttribute(attributes(languageSwitcher), 'aria-label', 'language switcher');
+  const defaultLocale = requiredAttribute(attributes(languageSwitcher), 'data-pinega-default-locale', 'language switcher');
+  const optionElements = findElements(languageSwitcher, element => hasClass(element, 'pinega-language-option'));
+  const optionDescriptors = optionElements.map((option, index) => {
+    const values = attributes(option);
+    const optionLocale = requiredAttribute(values, 'data-pinega-locale', `language-switcher option ${index}`);
+    const label = exactlyOne(
+      findElements(option, element => hasAttribute(element, 'lang')),
+      `language label for option ${JSON.stringify(optionLocale)}`,
+    );
+    const optionLanguage = requiredAttribute(attributes(label), 'lang', `language label for option ${JSON.stringify(optionLocale)}`);
+    if (!textContent(label).trim()) throw new TypeError(`Language label for option ${JSON.stringify(optionLocale)} must not be empty.`);
+    const current = values.get('aria-current') === 'page';
+    const unavailable = hasAttribute(option, 'data-translation-unavailable');
+    if (hasAttribute(option, 'aria-current') && !current) {
+      throw new TypeError(`Language-switcher option ${JSON.stringify(optionLocale)} has an invalid aria-current value.`);
+    }
+
+    if (current) {
+      if (option.tagName === 'a' || hasAttribute(option, 'href') || unavailable || hasAttribute(option, 'aria-controls') || hasAttribute(option, 'hreflang')) {
+        throw new TypeError('Current language-switcher option must be a non-link without translation fallback state.');
+      }
+      return { locale: optionLocale, language: optionLanguage, kind: 'current', href: null, noticeId: null };
+    }
+    if (option.tagName !== 'a') throw new TypeError('Non-current language-switcher options must be links.');
+    const href = requiredAttribute(values, 'href', `language-switcher option ${JSON.stringify(optionLocale)}`);
+    if (unavailable) {
+      if (hasAttribute(option, 'hreflang')) throw new TypeError('Unavailable language-switcher option must not publish hreflang.');
+      const noticeId = requiredAttribute(values, 'aria-controls', `unavailable option ${JSON.stringify(optionLocale)}`);
+      return { locale: optionLocale, language: optionLanguage, kind: 'unavailable', href, noticeId };
+    }
+    if (hasAttribute(option, 'aria-controls')) throw new TypeError('Available language-switcher option must not control a translation notice.');
+    const hrefLanguage = requiredAttribute(values, 'hreflang', `available option ${JSON.stringify(optionLocale)}`);
+    if (hrefLanguage !== optionLanguage) throw new TypeError('Language-switcher link hreflang must match its language label.');
+    return { locale: optionLocale, language: optionLanguage, kind: 'available', href, noticeId: null };
+  });
+
+  return validateLocaleRouteContract({
+    documentLanguage: language,
+    documentLocale: locale,
+    canonicalUrl,
+    alternates,
+    defaultLocale,
+    options: optionDescriptors,
+    notices: noticeDescriptors,
+  }, {
+    ...(expected.locales ? { locales: expected.locales } : {}),
+    ...(expected.defaultLocale ? { defaultLocale: expected.defaultLocale } : {}),
+  });
 }
 
 function assertExpected(actual, expected) {
@@ -348,6 +422,10 @@ function assertExpected(actual, expected) {
     const actualAlternates = actual.alternates.map(alternate => `${alternate.language}:${alternate.href}`);
     const expectedAlternates = expected.alternates.map(alternate => `${alternate.language}:${new URL(alternate.href).href}`);
     assertSameList(actualAlternates, expectedAlternates, 'route alternates');
+  }
+  if (expected.locales) assertSameList(actual.locales, expected.locales, 'site locale options');
+  if (expected.defaultLocale && actual.defaultLocale !== expected.defaultLocale) {
+    throw new TypeError(`Document contract defaultLocale mismatch: ${JSON.stringify(actual.defaultLocale)} versus ${JSON.stringify(expected.defaultLocale)}.`);
   }
 }
 

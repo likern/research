@@ -87,6 +87,8 @@ for (const entry of variants) {
     description: entry.summary,
     canonicalUrl: entry.canonical ? `${manifest.origin}${entry.route}` : null,
     alternates: expectedRouteAlternates(entry, manifest.origin),
+    locales: Object.keys(contentIndex.site.locales),
+    defaultLocale: contentIndex.site.default_locale,
     features: manifestRoute.features,
     criticalFeatures: manifestRoute.criticalFeatures,
   });
@@ -101,17 +103,17 @@ for (const entry of variants) {
   assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${entry.output_path} must contain one h1`);
   assert.match(html, new RegExp(`<title>${escapeRegex(entry.canonical_title)}<\\/title>`, 'u'));
   assert.match(html, new RegExp(`<meta name="description" content="${escapeRegex(entry.summary)}">`, 'u'));
-  assert.match(html, new RegExp(`<nav class="pinega-language-switcher" data-pinega-language-switcher aria-label="${escapeRegex(localeMessages[entry.locale].navigation.language)}">`, 'u'));
+  assert.match(html, new RegExp(`<nav class="pinega-language-switcher" data-pinega-language-switcher data-pinega-default-locale="${escapeRegex(contentIndex.site.default_locale)}" aria-label="${escapeRegex(localeMessages[entry.locale].navigation.language)}">`, 'u'));
   for (const [locale, metadata] of Object.entries(contentIndex.site.locales)) {
     const label = `<span lang="${metadata.lang}" dir="${metadata.direction}" translate="no">${metadata.label}</span>`;
     if (locale === entry.locale) {
-      assert.match(html, new RegExp(`<span class="pinega-language-option" aria-current="page">${escapeRegex(label)}<\/span>`, 'u'));
+      assert.match(html, new RegExp(`<span class="pinega-language-option" data-pinega-locale="${escapeRegex(locale)}" aria-current="page">${escapeRegex(label)}<\/span>`, 'u'));
     } else if (entry.translations[locale]) {
-      assert.match(html, new RegExp(`<a class="pinega-language-option" href="${escapeRegex(entry.translations[locale])}" hreflang="${escapeRegex(metadata.lang)}">${escapeRegex(label)}<\/a>`, 'u'));
+      assert.match(html, new RegExp(`<a class="pinega-language-option" data-pinega-locale="${escapeRegex(locale)}" href="${escapeRegex(entry.translations[locale])}" hreflang="${escapeRegex(metadata.lang)}">${escapeRegex(label)}<\/a>`, 'u'));
     } else {
       const noticeId = `pinega-translation-unavailable-${locale}`;
       const message = localeMessages[entry.locale].navigation.translation_unavailable[locale];
-      assert.match(html, new RegExp(`<a class="pinega-language-option" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${escapeRegex(label)}<\/a>`, 'u'));
+      assert.match(html, new RegExp(`<a class="pinega-language-option" data-pinega-locale="${escapeRegex(locale)}" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${escapeRegex(label)}<\/a>`, 'u'));
       assert.match(html, new RegExp(`<aside class="pinega-translation-notice" id="${noticeId}" data-translation-notice role="status"[^>]*>[\\s\\S]*${escapeRegex(message)}`, 'u'));
     }
   }

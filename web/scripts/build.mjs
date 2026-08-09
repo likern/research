@@ -78,6 +78,8 @@ for (const page of pages) {
     description: page.summary,
     canonicalUrl: page.canonical ? `${siteOrigin}${page.route}` : null,
     alternates: expectedRouteAlternates(page),
+    locales: Object.keys(contentIndex.site.locales),
+    defaultLocale: contentIndex.site.default_locale,
     features: contracted.features,
     criticalFeatures: contracted.criticalFeatures,
   });
@@ -600,12 +602,13 @@ function renderLanguageSwitcher(page) {
   const messages = messagesFor(page.locale);
   const options = page.languages.map(language => {
     const label = `<span lang="${escapeHtml(language.lang)}" dir="${escapeHtml(language.direction)}" translate="no">${escapeHtml(language.label)}</span>`;
-    if (language.locale === page.locale) return `<span class="pinega-language-option" aria-current="page">${label}</span>`;
-    if (language.route) return `<a class="pinega-language-option" href="${escapeHtml(language.route)}" hreflang="${escapeHtml(language.lang)}">${label}</a>`;
+    const locale = ` data-pinega-locale="${escapeHtml(language.locale)}"`;
+    if (language.locale === page.locale) return `<span class="pinega-language-option"${locale} aria-current="page">${label}</span>`;
+    if (language.route) return `<a class="pinega-language-option"${locale} href="${escapeHtml(language.route)}" hreflang="${escapeHtml(language.lang)}">${label}</a>`;
     const noticeId = translationNoticeId(language.locale);
-    return `<a class="pinega-language-option" href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${label}</a>`;
+    return `<a class="pinega-language-option"${locale} href="#${noticeId}" data-translation-unavailable aria-controls="${noticeId}">${label}</a>`;
   }).join('');
-  return `<nav class="pinega-language-switcher" data-pinega-language-switcher aria-label="${escapeHtml(messages.navigation.language)}">${options}</nav>`;
+  return `<nav class="pinega-language-switcher" data-pinega-language-switcher data-pinega-default-locale="${escapeHtml(page.defaultLocale)}" aria-label="${escapeHtml(messages.navigation.language)}">${options}</nav>`;
 }
 
 function renderTranslationNotices(page) {

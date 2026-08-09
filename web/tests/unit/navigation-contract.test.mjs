@@ -15,6 +15,7 @@ import {
   normalizeRouteUrl,
   routeCacheKey,
 } from '../../navigation/contract.mjs';
+import { validateLocaleRouteContract } from '../../navigation/locale-contract.mjs';
 import { finalizeBuildIdentity, verifyBuildIdentity } from '../../scripts/lib/build-identity.mjs';
 import {
   classifyNavigationResponse,
@@ -26,6 +27,25 @@ const fixtures = resolve(root, 'fixtures/navigation');
 const buildA = 'sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 const readFixture = path => readFile(resolve(fixtures, path), 'utf8');
+
+function completeLocaleContract() {
+  return {
+    documentLanguage: 'en',
+    documentLocale: 'en',
+    canonicalUrl: 'https://pinega.example/docs/',
+    alternates: [
+      { language: 'en', href: 'https://pinega.example/docs/' },
+      { language: 'ru', href: 'https://pinega.example/ru/docs/' },
+      { language: 'x-default', href: 'https://pinega.example/docs/' },
+    ],
+    defaultLocale: 'en',
+    options: [
+      { locale: 'en', language: 'en', kind: 'current', href: null, noticeId: null },
+      { locale: 'ru', language: 'ru', kind: 'available', href: '/ru/docs/', noticeId: null },
+    ],
+    notices: [],
+  };
+}
 
 test('valid fixtures cover ordinary, long, Lit, locale, missing-translation, and build documents', async () => {
   const names = [
@@ -49,6 +69,104 @@ test('valid fixtures cover ordinary, long, Lit, locale, missing-translation, and
   assert.deepEqual(contracts[3].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
   assert.deepEqual(contracts[4].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
   assert.deepEqual(contracts[5].alternates.map(alternate => alternate.language), ['en', 'x-default']);
+});
+
+test('locale route contract closes metadata, switcher, and missing-translation state as one invariant', () => {
+  const complete = validateLocaleRouteContract(completeLocaleContract(), {
+    locales: ['en', 'ru'],
+    defaultLocale: 'en',
+    metadataOrigin: 'https://pinega.example',
+  });
+  assert.deepEqual(complete, {
+    locales: ['en', 'ru'],
+    defaultLocale: 'en',
+    metadataOrigin: 'https://pinega.example',
+  });
+
+  const missing = completeLocaleContract();
+  missing.alternates = missing.alternates.filter(alternate => alternate.language !== 'ru');
+  missing.options[1] = {
+    locale: 'ru',
+    language: 'ru',
+    kind: 'unavailable',
+    href: '#pinega-translation-unavailable-ru',
+    noticeId: 'pinega-translation-unavailable-ru',
+  };
+  missing.notices = [{
+    id: 'pinega-translation-unavailable-ru',
+    message: 'A Russian translation of this page is not available.',
+  }];
+  assert.deepEqual(validateLocaleRouteContract(missing, {
+    locales: ['en', 'ru'],
+    defaultLocale: 'en',
+  }), {
+    locales: ['en', 'ru'],
+    defaultLocale: 'en',
+    metadataOrigin: 'https://pinega.example',
+  });
+});
+
+test('locale route contract rejects every contradictory metadata or switcher boundary', () => {
+  const cases = [
+    {
+      id: 'site locale omitted',
+      mutate: contract => contract.options.pop(),
+      expected: /site locale options/u,
+    },
+    {
+      id: 'switch target disagrees with hreflang',
+      mutate: contract => { contract.options[1].href = '/ru/research/'; },
+      expected: /disagrees with hreflang/u,
+    },
+    {
+      id: 'x-default disagrees with default locale',
+      mutate: contract => { contract.alternates[2].href = 'https://pinega.example/ru/docs/'; },
+      expected: /x-default/u,
+    },
+    {
+      id: 'metadata crosses origin',
+      mutate: contract => { contract.alternates[1].href = 'https://example.com/ru/docs/'; },
+      expected: /share one origin/u,
+    },
+    {
+      id: 'unavailable locale still publishes hreflang',
+      mutate: contract => {
+        contract.options[1] = {
+          locale: 'ru',
+          language: 'ru',
+          kind: 'unavailable',
+          href: '#pinega-translation-unavailable-ru',
+          noticeId: 'pinega-translation-unavailable-ru',
+        };
+        contract.notices = [{ id: 'pinega-translation-unavailable-ru', message: 'Unavailable.' }];
+      },
+      expected: /hreflang set|must not publish/u,
+    },
+    {
+      id: 'translation notice is missing',
+      mutate: contract => {
+        contract.alternates = contract.alternates.filter(alternate => alternate.language !== 'ru');
+        contract.options[1] = {
+          locale: 'ru',
+          language: 'ru',
+          kind: 'unavailable',
+          href: '#pinega-translation-unavailable-ru',
+          noticeId: 'pinega-translation-unavailable-ru',
+        };
+      },
+      expected: /translation notices/u,
+    },
+  ];
+
+  for (const fixture of cases) {
+    const contract = completeLocaleContract();
+    fixture.mutate(contract);
+    assert.throws(
+      () => validateLocaleRouteContract(contract, { locales: ['en', 'ru'], defaultLocale: 'en' }),
+      fixture.expected,
+      fixture.id,
+    );
+  }
 });
 
 test('every registered content class has one deterministic representative route', async () => {

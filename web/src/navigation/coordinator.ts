@@ -44,6 +44,12 @@ interface NavigationFallbackDetail {
   reason: HardFallbackReason;
 }
 
+interface PendingAbortSubscription {
+  serial: number;
+  signal: AbortSignal;
+  listener: () => void;
+}
+
 export function initializeNavigationCoordinator(): NavigationCoordinator | undefined {
   const root = document.documentElement;
   if (window.__PINEGA_DISABLE_NAVIGATION__ === true) {
@@ -84,6 +90,7 @@ export class NavigationCoordinator {
   #active: ActiveRouteState;
   #activeDocumentUrl: string;
   #fallbackTarget: string | undefined;
+  #pendingAbort: PendingAbortSubscription | undefined;
   #started = false;
 
   constructor(navigation: Navigation, active: ActiveRouteState) {
@@ -119,10 +126,12 @@ export class NavigationCoordinator {
 
     if (decision.action === 'native') {
       this.#transactions.invalidate();
+      this.#clearPending();
       return;
     }
     if (decision.action === 'cancel') {
       this.#transactions.invalidate();
+      this.#clearPending();
       event.preventDefault();
       return;
     }
@@ -135,7 +144,10 @@ export class NavigationCoordinator {
         scroll: 'manual',
         handler: () => this.#navigate(event, target, transaction),
       });
+      this.#markPending(transaction);
     } catch (error) {
+      this.#transactions.invalidate();
+      this.#clearPending();
       console.error('Pinega could not intercept an eligible navigation; the browser will retain native handling.', error);
     }
   };
@@ -191,9 +203,13 @@ export class NavigationCoordinator {
           routeId: prepared.routeId,
           language: prepared.language,
           locale: prepared.locale,
+          siteLocales: this.#active.siteLocales,
+          defaultLocale: this.#active.defaultLocale,
+          metadataOrigin: this.#active.metadataOrigin,
           navigationPolicy: 'enhanced',
         };
         this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
+        this.#clearPending(transaction);
         event.scroll();
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
@@ -231,6 +247,30 @@ export class NavigationCoordinator {
 
   #currentFallbackTarget(): string | undefined {
     return this.#fallbackTarget ?? readFallbackGuard();
+  }
+
+  #markPending(transaction: NavigationTransaction): void {
+    if (!this.#transactions.isCurrent(transaction)) return;
+    this.#clearPending();
+    const listener = (): void => this.#clearPending(transaction);
+    this.#pendingAbort = { serial: transaction.serial, signal: transaction.signal, listener };
+    transaction.signal.addEventListener('abort', listener, { once: true });
+    if (transaction.signal.aborted) {
+      this.#clearPending(transaction);
+      return;
+    }
+    document.documentElement.dataset.pinegaNavigationPending = 'true';
+    document.querySelector<HTMLElement>('main')?.setAttribute('aria-busy', 'true');
+  }
+
+  #clearPending(transaction?: NavigationTransaction): void {
+    if (transaction && this.#pendingAbort?.serial !== transaction.serial) return;
+    if (this.#pendingAbort) {
+      this.#pendingAbort.signal.removeEventListener('abort', this.#pendingAbort.listener);
+      this.#pendingAbort = undefined;
+    }
+    delete document.documentElement.dataset.pinegaNavigationPending;
+    document.querySelector<HTMLElement>('main')?.removeAttribute('aria-busy');
   }
 }
 

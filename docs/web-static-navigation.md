@@ -4,12 +4,16 @@ Gate 4.0 status: **ACCEPTED BASELINE**, merged as PR #27.
 
 Gate 4.1 status: **ACCEPTED BASELINE**, merged as PR #28.
 
-Gate 4.2 status: **PROPOSED NEXT MILESTONE** until its implementing pull request
-is merged. This document does not claim that route caching, prefetch, dynamic
-route-feature imports, Lit islands, View Transitions, or a Service Worker are
-implemented.
+Gate 4.2 implementation status: **ACCEPTED BASELINE**, merged as PR #29.
 
-Gate 4.2 baseline repository state: `main@bdbb486` after Gate 4.1.
+Gate 4.2 closure status: **COMPLETE AFTER MERGE OF THIS CLOSURE CHANGE**. The
+closure adds the missing busy, locale-consistency, long-history, cancellation,
+accessibility, malformed-feature, and persistent-fallback proofs and makes a
+retried browser test a failure instead of evidence. This document does not
+claim that route caching, prefetch, dynamic route-feature imports, Lit islands,
+View Transitions, or a Service Worker are implemented.
+
+Gate 4.2 closure baseline repository state: `main@9f888bf` after PR #29.
 
 ## Decision
 
@@ -39,7 +43,7 @@ It deliberately adds no client router or navigation interception.
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | Lit 3.3.3 is present transitively through Web Awesome; Pinega-owned Lit components do not yet exist |
 | Runtime loading | One eager `main.js` entry plus esbuild-generated dependency chunks |
-| Navigation | Gate 4.1 Navigation API coordinator over complete static documents |
+| Navigation | Gate 4.2 transactional Navigation API coordinator over complete static documents |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
@@ -110,7 +114,14 @@ The invariants checked without a browser are:
   features detected in the route subtree;
 - critical features are a subset of route features;
 - title, description, canonical, alternates, and language metadata are
-  internally consistent.
+  internally consistent;
+- the language switcher declares the configured default locale and one ordered
+  option for every site locale, with exactly one current option;
+- available locale targets equal their canonical `hreflang` peers, unavailable
+  locales publish no peer and own exactly one localized polite status notice;
+- `x-default` equals the configured default-locale canonical and every metadata
+  URL remains on the trusted canonical origin;
+- authored documents never contain coordinator-owned `main[aria-busy]` state.
 
 The HTML `lang` contract follows the HTML Standard's document-language
 semantics. Custom `data-*` attributes carry Pinega-specific non-visible
@@ -522,6 +533,12 @@ After the destination DOM has committed, the handler invokes
 - A persistent empty `role="status"` region receives the localized destination
   title in the same successful commit. Aborted and active-route no-op
   operations do not announce.
+- From accepted interception until settle, only the current transaction may set
+  `html[data-pinega-navigation-pending="true"]` and `main[aria-busy="true"]`.
+  Its two-pixel progress surface is an absolute overlay at the lower edge of
+  the persistent header, so content remains available and header/main geometry
+  does not move. Supersession transfers ownership; abort or successful commit
+  clears it, and reduced-motion mode removes its animation.
 - For a new route without a fragment, the browser resets to the start after the
   handler settles. For a new route with a fragment, it scrolls only after the
   validated destination DOM exists. For `traverse`, it restores the entry's
@@ -545,14 +562,34 @@ map. Pinega performs one guarded hard reload so the destination document starts
 with a fresh module map. Gate 4.2 does not introduce route feature imports;
 their graph and failure policy remain Gate 4.4.
 
-### Evidence and post-conditions
+### Closure evidence and post-conditions
 
 The production-artifact matrix covers Chromium desktop/mobile, Firefox, and
-WebKit. It includes complete direct/no-JavaScript routes, active-route no-op,
-A→B→C supersession, pending Back, Back/Forward route and scroll restoration,
-same-route and cross-route fragments, EN↔RU shell consistency, missing
-translation, build skew, locale-chunk failure, malformed/non-HTML/404 fallback,
-and native-only routes.
+WebKit with zero Playwright retries. A failed first attempt is therefore a
+blocking failure, not a hidden flaky pass.
+
+| Gate 4.2 acceptance boundary | Deterministic proof in the exact build |
+|---|---|
+| rapid A→B and A→B→C | late fetch and response-body completion cannot mutate the winner |
+| abort during preparation | supersession is injected while `Response.text()` and the Russian locale module are pending |
+| Back during pending push | the traversal owns the final URL, DOM, metadata, announcement, and commit count |
+| Back/Forward after 10+ routes | eleven pushed routes are traversed fully backward and forward without increasing `history.length` or replacing the `Document` |
+| scroll restoration | cold traversal restores each entry after destination DOM preparation; this is also the pre-LRU eviction-miss oracle |
+| fragment present/missing | a present target resolves after commit, a missing target uses the platform top fallback, and same-route fragments remain native |
+| focus and accessibility tree | enhanced `<main>` equals the direct-load ARIA snapshot, push focus lands on `<main>`, and the polite status snapshot names the route |
+| busy state | `aria-busy`, visual progress, ownership transfer, settle cleanup, and zero header/main geometry shift are asserted |
+| locale pair and missing translation | one shared build/runtime validator closes locale options, canonical/hreflang, `x-default`, targets, and notice cardinality |
+| deployment/module skew | build mismatch and locale-chunk failure produce one guarded full-document transition with no partial commit |
+| malformed feature ID | the closed feature allowlist rejects the fetched document before commit |
+| persistent bad destination | one fallback request is followed by one native document request; malformed arrival retains the guard and cannot loop |
+
+Actual LRU eviction does not exist in Gate 4.2. Its correctness-equivalent cold
+miss is covered here; LRU ordering, bounds, eviction, and the explicit
+post-eviction replay become executable only in Gate 4.3 and remain that gate's
+merge condition. Likewise, Gate 4.2 validates the feature allowlist, while the
+generated dynamic-import graph and route-feature chunk failure belong to Gate
+4.4. These are downstream mechanisms, not unclosed Gate 4.2 transactional
+behavior.
 
 `gate-4.2-transaction-baseline.json` records same-locale push/traverse and
 cross-locale push/traverse. Every successful cold transition must have one HTML
@@ -571,11 +608,14 @@ Transition, or Service Worker enters this milestone.
 - [HTML Standard — custom `data-*` attributes](https://html.spec.whatwg.org/multipage/dom.html#embedding-custom-non-visible-data-with-the-data-*-attributes)
 - [HTML Standard — canonical links](https://html.spec.whatwg.org/multipage/links.html#link-type-canonical)
 - [HTML Standard — Navigation API](https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api)
-- [WAI-ARIA — `status` role](https://www.w3.org/TR/wai-aria-1.3/#status)
+- [WAI-ARIA 1.2 — `aria-busy`](https://www.w3.org/TR/wai-aria-1.2/#aria-busy)
+- [WAI-ARIA 1.2 — `status` role](https://www.w3.org/TR/wai-aria-1.2/#status)
 - [WCAG 2.2 — focus order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html)
 - [Navigation Timing Level 2](https://www.w3.org/TR/navigation-timing-2/)
 - [Event Timing](https://w3c.github.io/event-timing/)
 - [Layout Instability](https://wicg.github.io/layout-instability/)
 - [Long Tasks](https://w3c.github.io/longtasks/)
 - [Playwright CDP session](https://playwright.dev/docs/api/class-cdpsession)
+- [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
+- [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)
