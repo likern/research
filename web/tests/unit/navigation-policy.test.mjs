@@ -5,8 +5,8 @@ import { classifyNavigationIntent } from '../../navigation/policy.mjs';
 
 const ordinaryLink = Object.freeze({
   currentUrl: 'https://pinega.example/',
+  activeDocumentUrl: 'https://pinega.example/',
   destinationUrl: 'https://pinega.example/technology/',
-  currentLanguage: 'en',
   navigationType: 'push',
   sourceKind: 'anchor',
   canIntercept: true,
@@ -28,6 +28,10 @@ test('ordinary same-origin HTTP links and same-document traversals are intercept
     navigationType: 'traverse',
     sourceKind: 'none',
   }).action, 'intercept');
+  assert.equal(classifyNavigationIntent({
+    ...ordinaryLink,
+    destinationUrl: 'https://pinega.example/ru/technology/',
+  }).action, 'intercept');
 });
 
 test('an active route is cancelled without fetch or visible commit', () => {
@@ -41,6 +45,35 @@ test('an active route is cancelled without fetch or visible commit', () => {
   });
 });
 
+test('a URL committed ahead of its handler is not mistaken for the active document', () => {
+  assert.equal(classifyNavigationIntent({
+    ...ordinaryLink,
+    currentUrl: 'https://pinega.example/technology/',
+    activeDocumentUrl: 'https://pinega.example/',
+    destinationUrl: 'https://pinega.example/technology/',
+  }).action, 'intercept');
+
+  assert.equal(classifyNavigationIntent({
+    ...ordinaryLink,
+    currentUrl: 'https://pinega.example/technology/',
+    activeDocumentUrl: 'https://pinega.example/',
+    destinationUrl: 'https://pinega.example/technology/#optimisation',
+    hashChange: true,
+  }).action, 'intercept');
+
+  assert.deepEqual(classifyNavigationIntent({
+    ...ordinaryLink,
+    currentUrl: 'https://pinega.example/research/',
+    activeDocumentUrl: 'https://pinega.example/technology/',
+    destinationUrl: 'https://pinega.example/technology/',
+    navigationType: 'traverse',
+    sourceKind: 'none',
+  }), {
+    action: 'native',
+    reason: 'active-document-traverse',
+  });
+});
+
 test('ineligible navigation classes remain native', () => {
   const cases = [
     ['cannot-intercept', { canIntercept: false }],
@@ -50,7 +83,6 @@ test('ineligible navigation classes remain native', () => {
     ['form', { hasFormData: true, sourceKind: 'form' }],
     ['target', { hasTarget: true }],
     ['source', { sourceKind: 'none' }],
-    ['locale', { sourceLanguage: 'ru' }],
     ['cross-origin', { destinationUrl: 'https://example.com/technology/' }],
     ['non-http', { destinationUrl: 'mailto:research@pinega.example' }],
   ];

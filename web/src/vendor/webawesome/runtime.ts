@@ -12,28 +12,47 @@ export interface WebAwesomeRuntimeResult {
   proLineChart: boolean;
 }
 
-export async function initializeWebAwesome(): Promise<WebAwesomeRuntimeResult> {
+type RuntimeLocale = 'en' | 'ru';
+type RuntimeDescriptor = Pick<WebAwesomeRuntimeResult, 'source' | 'projectUrl'>;
+
+let initialization: Promise<WebAwesomeRuntimeResult> | undefined;
+const localePreparations = new Map<string, Promise<void>>();
+
+export function initializeWebAwesome(): Promise<WebAwesomeRuntimeResult> {
+  initialization ??= initializeRuntime();
+  return initialization;
+}
+
+export async function prepareWebAwesomeLocale(locale: string): Promise<void> {
+  const normalized = runtimeLocale(locale);
+  const runtime = await initializeWebAwesome();
+  await prepareRuntimeLocale(runtime, normalized);
+}
+
+async function initializeRuntime(): Promise<WebAwesomeRuntimeResult> {
   document.documentElement.dataset.webawesome = 'loading';
   const configuredProjectUrl = readProjectUrl();
-  const locale = document.documentElement.lang.toLocaleLowerCase().split('-')[0] ?? 'en';
+  const locale = runtimeLocale(document.documentElement.lang);
   let source: WebAwesomeRuntimeResult['source'] = 'npm';
 
   if (configuredProjectUrl) {
-    let projectLoaded = false;
     try {
       await loadProject(configuredProjectUrl);
-      projectLoaded = true;
-      await loadProjectTranslation(configuredProjectUrl, locale);
       source = 'project';
     } catch (error) {
-      if (projectLoaded) throw new Error(`Pinega loaded the Web Awesome project but could not load its ${locale} translation module.`, { cause: error });
       console.error('Pinega could not load the configured Web Awesome project. Falling back to the pinned Core package.', error);
-      await loadCore(locale);
+      await loadCore();
       source = 'npm-fallback';
     }
   } else {
-    await loadCore(locale);
+    await loadCore();
   }
+
+  const descriptor: RuntimeDescriptor = {
+    source,
+    ...(configuredProjectUrl ? { projectUrl: configuredProjectUrl } : {}),
+  };
+  await prepareRuntimeLocale(descriptor, locale);
 
   await Promise.all(coreComponentTags.map(tag => customElements.whenDefined(tag)));
   const proLineChart = customElements.get('wa-line-chart') !== undefined;
@@ -48,6 +67,28 @@ export async function initializeWebAwesome(): Promise<WebAwesomeRuntimeResult> {
   window.dispatchEvent(new CustomEvent(eventReady, { detail: result }));
   if (proLineChart) window.dispatchEvent(new CustomEvent(eventProReady, { detail: result }));
   return result;
+}
+
+function prepareRuntimeLocale(runtime: RuntimeDescriptor, locale: RuntimeLocale): Promise<void> {
+  const key = `${runtime.source}\u0000${runtime.projectUrl ?? ''}\u0000${locale}`;
+  const existing = localePreparations.get(key);
+  if (existing) return existing;
+  const preparation = runtime.source === 'project'
+    ? loadProjectTranslation(requiredProjectUrl(runtime), locale)
+    : loadCoreTranslation(locale);
+  localePreparations.set(key, preparation);
+  return preparation;
+}
+
+function requiredProjectUrl(runtime: RuntimeDescriptor): string {
+  if (!runtime.projectUrl) throw new TypeError('Web Awesome project runtime is missing its project URL.');
+  return runtime.projectUrl;
+}
+
+function runtimeLocale(value: string): RuntimeLocale {
+  const locale = value.toLocaleLowerCase().split('-', 1)[0];
+  if (locale === 'en' || locale === 'ru') return locale;
+  throw new TypeError(`Unsupported Web Awesome locale ${JSON.stringify(value)}.`);
 }
 
 export function onWebAwesomeProReady(callback: () => void, signal?: AbortSignal): void {
@@ -100,12 +141,15 @@ function loadProject(url: string): Promise<void> {
   });
 }
 
-async function loadCore(locale: string): Promise<void> {
+async function loadCore(): Promise<void> {
   await import('./core.js');
+}
+
+async function loadCoreTranslation(locale: RuntimeLocale): Promise<void> {
   if (locale === 'ru') await import('@awesome.me/webawesome/dist/translations/ru.js');
 }
 
-async function loadProjectTranslation(projectUrl: string, locale: string): Promise<void> {
+async function loadProjectTranslation(projectUrl: string, locale: RuntimeLocale): Promise<void> {
   if (locale === 'en') return;
   const translationUrl = new URL(`translations/${locale}.js`, projectUrl).href;
   await loadExternalModule(translationUrl, 'data-pinega-webawesome-translation');

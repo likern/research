@@ -2,22 +2,25 @@ import { getMessages } from './i18n/messages.js';
 
 const storageKey = 'pinega-color-scheme';
 type ColorScheme = 'light' | 'dark';
+let initialized = false;
 
 export function initializeTheme(): void {
+  if (initialized) return;
+  initialized = true;
   const stored = readStoredScheme();
   const media = matchMedia('(prefers-color-scheme: dark)');
   applyScheme(stored ?? (media.matches ? 'dark' : 'light'));
 
-  document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach(button => {
-    button.addEventListener('click', () => {
-      const next: ColorScheme = document.documentElement.classList.contains('pinega-dark') ? 'light' : 'dark';
-      applyScheme(next);
-      try {
-        localStorage.setItem(storageKey, next);
-      } catch {
-        // Storage is optional; the current document still updates correctly.
-      }
-    });
+  document.addEventListener('click', event => {
+    const control = event.target instanceof Element ? event.target.closest('[data-theme-toggle]') : null;
+    if (!control) return;
+    const next: ColorScheme = document.documentElement.classList.contains('pinega-dark') ? 'light' : 'dark';
+    applyScheme(next);
+    try {
+      localStorage.setItem(storageKey, next);
+    } catch {
+      // Storage is optional; the current document still updates correctly.
+    }
   });
 
   media.addEventListener('change', event => {
@@ -26,7 +29,6 @@ export function initializeTheme(): void {
 }
 
 function applyScheme(scheme: ColorScheme): void {
-  const messages = getMessages();
   const root = document.documentElement;
   const dark = scheme === 'dark';
   root.classList.toggle('pinega-dark', dark);
@@ -35,12 +37,18 @@ function applyScheme(scheme: ColorScheme): void {
   root.classList.toggle('wa-light', !dark);
   root.style.colorScheme = scheme;
 
+  refreshThemeControls();
+
+  window.dispatchEvent(new CustomEvent('pinega:theme-change', { detail: { scheme } }));
+}
+
+export function refreshThemeControls(): void {
+  const messages = getMessages();
+  const dark = document.documentElement.classList.contains('pinega-dark');
   document.querySelectorAll<HTMLElement>('[data-theme-toggle]').forEach(button => {
     button.setAttribute('aria-pressed', String(dark));
     button.textContent = dark ? messages.theme.use_light : messages.theme.use_dark;
   });
-
-  window.dispatchEvent(new CustomEvent('pinega:theme-change', { detail: { scheme } }));
 }
 
 function readStoredScheme(): ColorScheme | undefined {

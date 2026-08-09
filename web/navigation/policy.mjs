@@ -7,10 +7,12 @@ export function classifyNavigationIntent(intent) {
   if (!intent || typeof intent !== 'object') throw new TypeError('Navigation intent must be an object.');
 
   let current;
+  let activeDocumentIdentity;
   let destination;
   try {
     current = new URL(intent.currentUrl);
     destination = new URL(intent.destinationUrl, current);
+    activeDocumentIdentity = normalizeRouteUrl(intent.activeDocumentUrl, current.origin);
   } catch {
     return native('invalid-url');
   }
@@ -33,34 +35,26 @@ export function classifyNavigationIntent(intent) {
   }
 
   if (intent.navigationType === 'reload') return native('reload');
-  if (intent.hashChange === true) return native('fragment');
+  if (intent.hashChange === true && destinationIdentity === activeDocumentIdentity) return native('fragment');
   if (intent.downloadRequested === true) return native('download');
   if (intent.hasFormData === true || intent.sourceKind === 'form') return native('form');
 
-  if (intent.navigationType === 'traverse') return intercept(destination.href);
+  if (intent.navigationType === 'traverse') {
+    return destinationIdentity === activeDocumentIdentity
+      ? native('active-document-traverse')
+      : intercept(destination.href);
+  }
   if (!interceptedNavigationTypes.has(intent.navigationType)) return native('navigation-type');
   if (!linkSources.has(intent.sourceKind)) return native('source');
   if (intent.hasTarget === true) return native('target');
 
-  if (intent.sourceLanguage && !samePrimaryLanguage(intent.sourceLanguage, intent.currentLanguage)) {
-    return native('locale');
-  }
-
-  if (destination.href === current.href) {
+  if (destination.href === current.href && destinationIdentity === activeDocumentIdentity) {
     return intent.cancelable === true
       ? { action: 'cancel', reason: 'active-route', url: destination.href }
       : native('active-route-not-cancelable');
   }
 
   return intercept(destination.href);
-}
-
-function samePrimaryLanguage(left, right) {
-  return primaryLanguage(left) === primaryLanguage(right);
-}
-
-function primaryLanguage(value) {
-  return String(value).trim().toLocaleLowerCase().split('-', 1)[0];
 }
 
 function native(reason) {

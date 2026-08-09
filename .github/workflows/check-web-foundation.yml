@@ -126,7 +126,7 @@ jobs:
       - name: Run browser and accessibility tests against the exact build
         run: npm run test:browser
 
-      - name: Record the Gate 4 MPA reference and Gate 4.1 navigation baseline
+      - name: Record the Gate 4 MPA reference and Gate 4.2 transaction baseline
         env:
           PINEGA_BASELINE_PROFILE: github-ubuntu-24.04-node-26.7-playwright-1.62.1
           PINEGA_DEPLOYMENT_SOURCE_SHA: ${{ steps.preview-identity.outputs.source-sha }}

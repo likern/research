@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const malformedFixture = await readFile(resolve(root, 'fixtures/navigation/malformed.html'), 'utf8');
+const transactionEventsKey = 'pinega-test-navigation-transaction-events';
 
 async function ready(page: Page, route: string): Promise<void> {
   const response = await page.goto(route, { waitUntil: 'commit' });
@@ -34,6 +35,23 @@ async function activateCoordinatorLink(page: Page, selector: string): Promise<vo
   await page.locator(selector).evaluate((link: HTMLAnchorElement) => link.click());
 }
 
+async function instrumentTransactionEvents(page: Page): Promise<void> {
+  await page.evaluate(storageKey => {
+    sessionStorage.setItem(storageKey, '[]');
+    const record = (type: string, detail: unknown): void => {
+      const events = JSON.parse(sessionStorage.getItem(storageKey) ?? '[]') as unknown[];
+      events.push({ type, detail });
+      sessionStorage.setItem(storageKey, JSON.stringify(events));
+    };
+    window.addEventListener('pinega:navigation-commit', event => {
+      record('commit', (event as CustomEvent).detail);
+    });
+    window.addEventListener('pinega:navigation-fallback', event => {
+      record('fallback', (event as CustomEvent).detail);
+    });
+  }, transactionEventsKey);
+}
+
 test('eligible navigation commits validated route state without replacing the Document or shell', async ({ page }) => {
   await ready(page, '/');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
@@ -53,6 +71,8 @@ test('eligible navigation commits validated route state without replacing the Do
   await expect(page.locator('pinega-site-header a.pinega-brand')).not.toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-primary-navigation] a[href="/technology/"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('[data-pinega-language-switcher] a[hreflang="ru"]')).toHaveAttribute('href', '/ru/technology/');
+  await expect(page.locator('main')).toBeFocused();
+  await expect(page.locator('[data-pinega-navigation-announcer]')).toHaveText('Technology — Pinega');
 
   const runtime = await page.evaluate(() => ({
     timeOrigin: performance.timeOrigin,
@@ -91,17 +111,64 @@ test('selecting the active route performs zero network and zero visible commits'
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
 
+  await page.locator('[data-primary-navigation] a[href="/technology/"]').focus();
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await page.waitForTimeout(100);
 
   expect(await page.evaluate(() => ({
     url: location.href,
     commits: document.documentElement.dataset.testNavigationCommits,
-  }))).toEqual({ url: activeUrl, commits: '0' });
+    activeHref: document.activeElement?.getAttribute('href'),
+    announcement: document.querySelector('[data-pinega-navigation-announcer]')?.textContent,
+  }))).toEqual({ url: activeUrl, commits: '0', activeHref: '/technology/', announcement: '' });
   expect(requestsFor(requests, '/technology/')).toHaveLength(0);
 });
 
-test('a superseded response cannot commit over the latest navigation', async ({ page }) => {
+test('a repeated pending destination remains eligible until its document commits', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  let firstRequestStarted: (() => void) | undefined;
+  let releaseFirstRequest: (() => void) | undefined;
+  const started = new Promise<void>(resolveStarted => {
+    firstRequestStarted = resolveStarted;
+  });
+  const release = new Promise<void>(resolveRelease => {
+    releaseFirstRequest = resolveRelease;
+  });
+  let fetches = 0;
+  await page.route('**/technology/', async route => {
+    if (route.request().resourceType() !== 'fetch') {
+      await route.continue();
+      return;
+    }
+    fetches += 1;
+    if (fetches !== 1) {
+      await route.continue();
+      return;
+    }
+    firstRequestStarted?.();
+    await release;
+    try {
+      await route.continue();
+    } catch {
+      // Repeating the destination aborts the earlier transaction.
+    }
+  });
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await started;
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  await expect(page.locator('main')).toBeFocused();
+  releaseFirstRequest?.();
+  await page.waitForTimeout(100);
+  expect(fetches).toBe(2);
+  await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
+});
+
+test('slow A, fast B, then C leaves late A unable to mutate any committed route state', async ({ page }) => {
   await ready(page, '/');
   await instrumentDocument(page);
   let releaseTechnology: (() => void) | undefined;
@@ -131,28 +198,190 @@ test('a superseded response cannot commit over the latest navigation', async ({ 
   await page.evaluate(() => document.querySelector<HTMLElement>('[data-primary-navigation] a[href="/research/"]')?.click());
   await expect(page).toHaveURL(/\/research\/$/u);
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Research is part');
+  await page.evaluate(() => document.querySelector<HTMLElement>('[data-primary-navigation] a[href="/about/"]')?.click());
+  await expect(page).toHaveURL(/\/about\/$/u);
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('A programme for building');
   releaseTechnology?.();
   await page.waitForTimeout(100);
 
-  await expect(page).toHaveURL(/\/research\/$/u);
-  await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
-  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
+  expect(await page.evaluate(() => ({
+    url: location.pathname,
+    title: document.title,
+    routeId: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+    heading: document.querySelector('h1')?.textContent?.trim(),
+    canonical: document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href,
+    currentHref: document.querySelector<HTMLAnchorElement>('[data-primary-navigation] a[aria-current="page"]')?.getAttribute('href'),
+    focusRoute: document.activeElement?.closest('main')?.getAttribute('data-pinega-route'),
+    announcement: document.querySelector('[data-pinega-navigation-announcer]')?.textContent,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({
+    url: '/about/',
+    title: 'About Pinega and Pinega Labs',
+    routeId: 'about',
+    heading: 'A programme for building defensible database technology.',
+    canonical: 'https://pinega.example/about/',
+    currentHref: '/about/',
+    focusRoute: 'about',
+    announcement: 'About Pinega and Pinega Labs',
+    commits: '2',
+  });
 });
 
-test('cross-locale navigation remains a truthful native document transition', async ({ page }) => {
-  await ready(page, '/docs/');
+test('Back supersedes a pending push and late work cannot overwrite the traversed entry', async ({ page }) => {
+  await ready(page, '/');
   await instrumentDocument(page);
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page).toHaveURL(/\/technology\/$/u);
+
+  let releaseResearch: (() => void) | undefined;
+  let researchStarted: (() => void) | undefined;
+  const started = new Promise<void>(resolveStarted => {
+    researchStarted = resolveStarted;
+  });
+  const release = new Promise<void>(resolveRelease => {
+    releaseResearch = resolveRelease;
+  });
+  await page.route('**/research/', async route => {
+    if (route.request().resourceType() !== 'fetch') {
+      await route.continue();
+      return;
+    }
+    researchStarted?.();
+    await release;
+    try {
+      await route.continue();
+    } catch {
+      // Back is expected to abort the pending push fetch.
+    }
+  });
+
+  await page.evaluate(() => document.querySelector<HTMLAnchorElement>('[data-primary-navigation] a[href="/research/"]')?.click());
+  await started;
+  await page.evaluate(() => history.back());
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+  releaseResearch?.();
+  await page.waitForTimeout(100);
+
+  expect(await page.evaluate(() => ({
+    path: location.pathname,
+    routeId: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+    title: document.title,
+    canonical: document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href,
+    currentHref: document.querySelector<HTMLAnchorElement>('[data-primary-navigation] a[aria-current="page"]')?.getAttribute('href'),
+    announcement: document.querySelector('[data-pinega-navigation-announcer]')?.textContent,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({
+    path: '/technology/',
+    routeId: 'technology',
+    title: 'Technology — Pinega',
+    canonical: 'https://pinega.example/technology/',
+    currentHref: '/technology/',
+    announcement: 'Technology — Pinega',
+    commits: '1',
+  });
+});
+
+test('new-route fragments scroll after commit while same-route fragments stay native', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+  });
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
+
+  await activateCoordinatorLink(page, 'a[href="/technology/#optimisation"]');
+  await expect(page).toHaveURL(/\/technology\/#optimisation$/u);
+  await expect(page.locator('main')).toBeFocused();
+  await expect.poll(() => page.evaluate(() => {
+    const target = document.getElementById('optimisation');
+    const header = document.querySelector('pinega-site-header');
+    if (!target || !header) return false;
+    const top = target.getBoundingClientRect().top;
+    return scrollY > 0 && top >= header.getBoundingClientRect().bottom - 1 && top < innerHeight;
+  })).toBe(true);
+  expect(requestsFor(requests, '/technology/').map(request => request.resourceType())).toEqual(['fetch']);
+
+  const requestCount = requests.length;
+  await activateCoordinatorLink(page, 'a[href="#engine-architecture"]');
+  await expect(page).toHaveURL(/\/technology\/#engine-architecture$/u);
+  await expect.poll(() => page.evaluate(() => {
+    const target = document.getElementById('engine-architecture');
+    const header = document.querySelector('pinega-site-header');
+    if (!target || !header) return false;
+    const top = target.getBoundingClientRect().top;
+    return top >= header.getBoundingClientRect().bottom - 1 && top < innerHeight;
+  })).toBe(true);
+  expect(requests).toHaveLength(requestCount);
+  await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
+});
+
+test('Back and Forward restore each entry scroll position after route content exists', async ({ page }) => {
+  await ready(page, '/');
+  await instrumentDocument(page);
+  const homeScroll = await page.evaluate(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    const target = Math.min(1200, Math.max(1, document.documentElement.scrollHeight - innerHeight));
+    scrollTo(0, target);
+    return scrollY;
+  });
+  expect(homeScroll).toBeGreaterThan(0);
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+  const technologyScroll = await page.evaluate(() => {
+    const target = Math.min(700, Math.max(1, document.documentElement.scrollHeight - innerHeight));
+    scrollTo(0, target);
+    return scrollY;
+  });
+  expect(technologyScroll).toBeGreaterThan(0);
+
+  await page.evaluate(() => history.back());
+  await expect(page).toHaveURL(/127\.0\.0\.1:4173\/$/u);
+  await expect.poll(() => page.evaluate(expected => Math.abs(scrollY - expected), homeScroll)).toBeLessThan(3);
+
+  await page.evaluate(() => history.forward());
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect.poll(() => page.evaluate(expected => Math.abs(scrollY - expected), technologyScroll)).toBeLessThan(3);
+});
+
+test('cross-locale navigation commits one truthful localized shell transaction', async ({ page }) => {
+  await ready(page, '/docs/');
+  const timeOrigin = await instrumentDocument(page);
+  const requests: Request[] = [];
+  page.on('request', request => requests.push(request));
+  await page.locator('[data-theme-toggle]').click();
+  await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
 
   await page.locator('[data-pinega-language-switcher] a[href="/ru/docs/"]').click();
 
   await expect(page).toHaveURL(/\/ru\/docs\/$/u);
   await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-locale', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-webawesome-locale', 'ru');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
-  await expect(page.locator('pinega-site-header')).not.toHaveAttribute('data-test-shell-identity', 'preserved');
+  await expect(page.locator('pinega-site-header')).toHaveAttribute('data-test-shell-identity', 'preserved');
   await expect(page.locator('[data-primary-navigation] a[href="/ru/docs/"]')).toHaveText('Документация');
-  expect(requestsFor(requests, '/ru/docs/').map(request => request.resourceType())).toEqual(['document']);
+  await expect(page.locator('[data-primary-navigation] a[href="/ru/docs/"]')).toHaveAttribute('aria-current', 'page');
+  await expect(page.locator('.pinega-skip-link')).toHaveText('Перейти к основному содержанию');
+  await expect(page.locator('footer.pinega-site-footer')).toContainText('Исследования и инженерия систем баз данных');
+  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать светлую тему');
+  await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
+  await expect(page.locator('main')).toBeFocused();
+  await expect(page.locator('[data-pinega-navigation-announcer]')).toHaveText('Документация — Pinega');
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', 'https://pinega.example/ru/docs/');
+  await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveAttribute('href', 'https://pinega.example/docs/');
+  expect(await page.evaluate(() => ({
+    timeOrigin: performance.timeOrigin,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({ timeOrigin, commits: '1' });
+  expect(requestsFor(requests, '/ru/docs/').map(request => request.resourceType())).toEqual(['fetch']);
+
+  await page.locator('[data-theme-toggle]').click();
+  await expect(page.locator('html')).toHaveClass(/pinega-light/u);
+  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать тёмную тему');
 });
 
 test('native-only route policy protects shell-incompatible internal documents', async ({ page }) => {
@@ -199,6 +428,86 @@ for (const fault of [
     expect(requestTypes).toEqual(['fetch', 'document']);
   });
 }
+
+test('a two-build deployment race hard-reloads once without a partial old-shell commit', async ({ page }) => {
+  const requestTypes: string[] = [];
+  const replacementBuild = `sha256-${'f'.repeat(64)}`;
+  let injected = false;
+  await page.route('**/technology/', async route => {
+    const type = route.request().resourceType();
+    requestTypes.push(type);
+    if (type === 'fetch' && !injected) {
+      injected = true;
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        /data-pinega-build="sha256-[a-f0-9]{64}"/u,
+        `data-pinega-build="${replacementBuild}"`,
+      );
+      await route.fulfill({ response, body });
+      return;
+    }
+    await route.continue();
+  });
+  await ready(page, '/');
+  await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
+
+  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
+
+  await expect(page).toHaveURL(/\/technology\/$/u);
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await expect(page.locator('pinega-site-header')).not.toHaveAttribute('data-test-shell-identity', 'preserved');
+  expect(requestTypes).toEqual(['fetch', 'document']);
+  expect(await page.evaluate(storageKey => ({
+    events: JSON.parse(sessionStorage.getItem(storageKey) ?? '[]'),
+    fallbackGuard: sessionStorage.getItem('pinega-navigation-hard-fallback-v1'),
+  }), transactionEventsKey)).toEqual({
+    events: [{
+      type: 'fallback',
+      detail: { url: 'http://127.0.0.1:4173/technology/', reason: 'build-mismatch' },
+    }],
+    fallbackGuard: null,
+  });
+});
+
+test('a failed locale chunk abandons the old module map and succeeds through one native reload', async ({ page }) => {
+  const requestTypes: string[] = [];
+  let failedLocaleChunk = 0;
+  await page.route(/\/assets\/chunks\/ru-[^/?]+\.js(?:\?.*)?$/u, async route => {
+    if (failedLocaleChunk === 0) {
+      failedLocaleChunk += 1;
+      await route.abort('failed');
+      return;
+    }
+    await route.continue();
+  });
+  page.on('request', request => {
+    if (new URL(request.url()).pathname === '/ru/docs/') requestTypes.push(request.resourceType());
+  });
+  await ready(page, '/docs/');
+  await instrumentDocument(page);
+  await instrumentTransactionEvents(page);
+
+  await page.locator('[data-pinega-language-switcher] a[href="/ru/docs/"]').click();
+
+  await expect(page).toHaveURL(/\/ru\/docs\/$/u);
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-webawesome-locale', 'ru');
+  await expect(page.locator('pinega-site-header')).not.toHaveAttribute('data-test-shell-identity', 'preserved');
+  expect(failedLocaleChunk).toBe(1);
+  expect(requestTypes).toEqual(['fetch', 'document']);
+  expect(await page.evaluate(storageKey => ({
+    events: JSON.parse(sessionStorage.getItem(storageKey) ?? '[]'),
+    fallbackGuard: sessionStorage.getItem('pinega-navigation-hard-fallback-v1'),
+  }), transactionEventsKey)).toEqual({
+    events: [{
+      type: 'fallback',
+      detail: { url: 'http://127.0.0.1:4173/ru/docs/', reason: 'locale-runtime' },
+    }],
+    fallbackGuard: null,
+  });
+});
 
 test('a real 404 falls back to one native localized not-found document', async ({ page }) => {
   await ready(page, '/');

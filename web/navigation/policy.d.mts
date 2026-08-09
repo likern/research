@@ -2,11 +2,10 @@ export type NavigationSourceKind = 'anchor' | 'area' | 'form' | 'other' | 'none'
 
 export interface NavigationIntent {
   currentUrl: string;
+  activeDocumentUrl: string;
   destinationUrl: string;
-  currentLanguage: string;
   navigationType: string;
   sourceKind: NavigationSourceKind;
-  sourceLanguage?: string;
   fallbackTarget?: string;
   canIntercept: boolean;
   cancelable: boolean;

@@ -2,14 +2,24 @@ import { defineCustomElement } from '../../internal/define.js';
 import { ensureId } from '../../internal/dom.js';
 
 class PinegaSiteHeader extends HTMLElement {
-  #controller: AbortController | undefined;
+  #lifetimeController: AbortController | undefined;
+  #controlController: AbortController | undefined;
   #button?: HTMLElement;
   #navigation?: HTMLElement;
 
   connectedCallback(): void {
-    this.#controller?.abort();
-    this.#controller = new AbortController();
-    this.addEventListener('click', this.#handleLanguageSelection, { signal: this.#controller.signal });
+    this.#lifetimeController?.abort();
+    this.#lifetimeController = new AbortController();
+    window.addEventListener('pinega:navigation-commit', this.#handleNavigationCommit, {
+      signal: this.#lifetimeController.signal,
+    });
+    this.#bindControls();
+  }
+
+  #bindControls(): void {
+    this.#controlController?.abort();
+    this.#controlController = new AbortController();
+    this.addEventListener('click', this.#handleLanguageSelection, { signal: this.#controlController.signal });
 
     const button = this.querySelector<HTMLElement>('[data-navigation-toggle]');
     const navigation = this.querySelector<HTMLElement>('nav[data-primary-navigation]');
@@ -22,15 +32,20 @@ class PinegaSiteHeader extends HTMLElement {
     button.setAttribute('aria-expanded', 'false');
     this.dataset.enhanced = 'true';
 
-    button.addEventListener('click', this.#handleToggle, { signal: this.#controller.signal });
-    this.addEventListener('keydown', this.#handleKeyDown, { signal: this.#controller.signal });
-    navigation.addEventListener('click', this.#handleNavigationClick, { signal: this.#controller.signal });
+    this.#setOpen(false);
+    button.addEventListener('click', this.#handleToggle, { signal: this.#controlController.signal });
+    this.addEventListener('keydown', this.#handleKeyDown, { signal: this.#controlController.signal });
+    navigation.addEventListener('click', this.#handleNavigationClick, { signal: this.#controlController.signal });
   }
 
   disconnectedCallback(): void {
-    this.#controller?.abort();
-    this.#controller = undefined;
+    this.#lifetimeController?.abort();
+    this.#controlController?.abort();
+    this.#lifetimeController = undefined;
+    this.#controlController = undefined;
   }
+
+  #handleNavigationCommit = (): void => this.#bindControls();
 
   #handleToggle = (): void => {
     this.#setOpen(this.#button?.getAttribute('aria-expanded') !== 'true');

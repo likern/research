@@ -70,6 +70,15 @@ test('deployed navigation and static assets load without browser console errors'
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
   await expect(page.locator('pinega-site-header')).toHaveAttribute('data-deployment-shell', 'persistent');
   expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+
+  await page.locator('[data-pinega-language-switcher] a[href="/ru/docs/"]').click();
+  await expect(page).toHaveURL(/\/ru\/docs\/$/u);
+  await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+  await expect(page.locator('html')).toHaveAttribute('data-webawesome-locale', 'ru');
+  await expect(page.locator('pinega-site-header')).toHaveAttribute('data-deployment-shell', 'persistent');
+  await expect(page.locator('footer.pinega-site-footer')).toContainText('Исследования и инженерия систем баз данных');
+  await expect(page.locator('main')).toBeFocused();
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
   expect(errors).toEqual([]);
 });
 
