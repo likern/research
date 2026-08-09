@@ -3,17 +3,16 @@ import './styles/index.css';
 import './components/site-header/site-header.js';
 import './components/hero/hero.js';
 import './components/evidence/evidence.js';
-import './components/code-example/code-example.js';
-import './components/benchmark/benchmark.js';
-import './components/doc-search/doc-search.js';
 
 import { initializeTheme, refreshThemeControls } from './theme.js';
+import { DynamicFeatureGraph } from './features/runtime.js';
 import { getMessages } from './i18n/messages.js';
 import { initializeNavigationCoordinator } from './navigation/coordinator.js';
 import { initializeWebAwesome, type WebAwesomeRuntimeResult } from './vendor/webawesome/runtime.js';
 
 initializeTheme();
-initializeNavigationCoordinator();
+const featureGraph = new DynamicFeatureGraph();
+initializeNavigationCoordinator(featureGraph);
 window.addEventListener('pinega:navigation-commit', () => {
   refreshThemeControls();
   updateRuntimeLabels();
@@ -25,7 +24,11 @@ let webAwesomeRuntime: WebAwesomeRuntimeResult | undefined;
 async function initialize(): Promise<void> {
   try {
     const messages = getMessages();
+    const main = document.querySelector<HTMLElement>('main#main-content');
+    if (!main) throw new TypeError('Pinega document has no main#main-content.');
     webAwesomeRuntime = await initializeWebAwesome();
+    await featureGraph.initializeRoute(main);
+    document.documentElement.dataset.pinegaFeatureGraph = 'dynamic';
     document.documentElement.dataset.pinegaReady = 'true';
     updateRuntimeLabels(messages);
   } catch (error) {

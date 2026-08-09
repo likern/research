@@ -13,4 +13,5 @@ interface HTMLElementTagNameMap {
   'pinega-code-example': HTMLElement;
   'pinega-benchmark': HTMLElement;
   'pinega-doc-search': HTMLElement;
+  'pinega-diagram-viewer': HTMLElement;
 }

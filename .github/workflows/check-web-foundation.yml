@@ -98,8 +98,18 @@ jobs:
       - name: Run token and architecture tests
         run: npm run test:unit
 
-      - name: Build the multi-page website once
+      - name: Build the multi-page website
         run: npm run build
+
+      - name: Prove the production graph is reproducible
+        shell: bash
+        run: |
+          set -euo pipefail
+          reproducibility_root="$(mktemp -d)"
+          trap 'rm -rf "$reproducibility_root"' EXIT
+          cp -a dist "$reproducibility_root/reference"
+          npm run build
+          diff --recursive --brief "$reproducibility_root/reference" dist
 
       - name: Enforce build and performance budgets
         run: npm run check:build
@@ -126,7 +136,7 @@ jobs:
       - name: Run browser and accessibility tests against the exact build
         run: npm run test:browser
 
-      - name: Record the Gate 4 MPA reference and Gate 4.2 transaction baseline
+      - name: Record the Gate 4 navigation baselines
         env:
           PINEGA_BASELINE_PROFILE: github-ubuntu-24.04-node-26.7-playwright-1.62.1
           PINEGA_DEPLOYMENT_SOURCE_SHA: ${{ steps.preview-identity.outputs.source-sha }}

@@ -14,6 +14,11 @@ import {
   responseAllowsRouteCache,
   type RouteCacheSnapshot,
 } from '../../navigation/route-cache.mjs';
+import {
+  DynamicFeatureGraph,
+  FeatureRuntimeError,
+  type RouteFeaturePhases,
+} from '../features/runtime.js';
 import { prepareWebAwesomeLocale } from '../vendor/webawesome/runtime.js';
 import {
   RoutePreparationError,
@@ -31,6 +36,7 @@ const fallbackStorageKey = 'pinega-navigation-hard-fallback-v1';
 type HardFallbackReason =
   | 'build-mismatch'
   | 'content-type'
+  | 'feature-module'
   | 'http-status'
   | 'locale-runtime'
   | 'malformed-contract'
@@ -47,6 +53,7 @@ interface NavigationCommitDetail {
   navigationType: NavigationType;
   preparation: NavigationPreparationDetail;
   cache: NavigationCacheDetail;
+  features: RouteFeaturePhases;
 }
 
 interface NavigationFallbackDetail {
@@ -107,7 +114,7 @@ class NavigationPreparationError extends Error {
   }
 }
 
-export function initializeNavigationCoordinator(): NavigationCoordinator | undefined {
+export function initializeNavigationCoordinator(featureGraph: DynamicFeatureGraph): NavigationCoordinator | undefined {
   const root = document.documentElement;
   if (window.__PINEGA_DISABLE_NAVIGATION__ === true) {
     root.dataset.pinegaNavigation = 'disabled';
@@ -130,7 +137,7 @@ export function initializeNavigationCoordinator(): NavigationCoordinator | undef
       root.dataset.pinegaNavigation = 'native-policy';
       return undefined;
     }
-    const coordinator = new NavigationCoordinator(window.navigation, active);
+    const coordinator = new NavigationCoordinator(window.navigation, active, featureGraph);
     coordinator.start();
     root.dataset.pinegaNavigation = 'enhanced';
     root.dataset.pinegaRouteCache = 'native-lru';
@@ -147,6 +154,7 @@ export class NavigationCoordinator {
   readonly #transactions = new NavigationTransactionGate();
   readonly #cache = new NativeRouteCache<PreparedRoute>();
   readonly #preparations = new InFlightRoutePreparations<PreparedNavigation>();
+  readonly #featureGraph: DynamicFeatureGraph;
   readonly #scrollPositions = new Map<string, RememberedScrollPosition>();
   readonly #scrollDisposalKeys = new Set<string>();
   #active: ActiveRouteState;
@@ -155,9 +163,10 @@ export class NavigationCoordinator {
   #pendingAbort: PendingAbortSubscription | undefined;
   #started = false;
 
-  constructor(navigation: Navigation, active: ActiveRouteState) {
+  constructor(navigation: Navigation, active: ActiveRouteState, featureGraph: DynamicFeatureGraph) {
     this.#navigation = navigation;
     this.#active = active;
+    this.#featureGraph = featureGraph;
     this.#activeDocumentUrl = normalizeRouteUrl(location.href, location.origin);
     if (window.__PINEGA_INITIAL_RESPONSE_NO_STORE__ !== true) {
       const bootRoute = prepareActiveRouteDocument(document, active);
@@ -258,6 +267,19 @@ export class NavigationCoordinator {
         }
       }
       if (!this.#transactions.isCurrent(transaction)) return;
+      try {
+        await this.#featureGraph.prepareCritical(prepared.features);
+      } catch (error) {
+        throw new RoutePreparationError(
+          'feature-module',
+          error instanceof FeatureRuntimeError
+            ? `Pinega could not prepare critical feature ${JSON.stringify(error.featureId)}.`
+            : 'Pinega could not prepare the destination critical feature graph.',
+          { cause: error },
+        );
+      }
+      if (!this.#transactions.isCurrent(transaction)) return;
+      const featurePhases = this.#featureGraph.describe(prepared.features);
       const materializeStarted = performance.now();
       const plan = createRouteCommitPlan(prepared, document);
       const materializeMs = performance.now() - materializeStarted;
@@ -319,10 +341,19 @@ export class NavigationCoordinator {
             weightBytes: prepared.weightBytes,
           },
           cache,
+          features: featurePhases,
         } satisfies NavigationCommitDetail;
       });
       if (outcome.committed) {
         outcome.value.preparation.commitMs = performance.now() - commitStarted;
+        const committedMain = document.querySelector<HTMLElement>('main#main-content');
+        if (committedMain) {
+          try {
+            this.#featureGraph.activateRoute(committedMain, prepared.features);
+          } catch (error) {
+            console.error('Pinega could not activate the committed deferred feature graph; semantic HTML remains active.', error);
+          }
+        }
         if (rememberedScroll) this.#scheduleRememberedScrollCorrection(transaction, rememberedScroll);
         window.dispatchEvent(new CustomEvent<NavigationCommitDetail>('pinega:navigation-commit', { detail: outcome.value }));
       }

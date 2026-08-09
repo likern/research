@@ -13,6 +13,7 @@ import {
 } from '../navigation/contract.mjs';
 import { verifyBuildIdentity } from './lib/build-identity.mjs';
 import { validateDocumentContract } from './lib/document-contract.mjs';
+import { createRouteRequestManifest } from './lib/feature-graph.mjs';
 
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const diagramIds = ['buffer-frame-lifecycle', 'linearizability-overlap', 'version-chain-snapshot'];
@@ -38,6 +39,8 @@ const required = [
   'favicon.svg',
   'assets/main.js',
   'assets/main.css',
+  'assets/feature-graph.json',
+  'assets/vite-manifest.json',
   'content/README.md',
   'content/content-index.json',
   'content/content.schema.json',
@@ -58,6 +61,8 @@ const required = [
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
 
 const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
+const featureGraph = JSON.parse(await readFile(resolve(root, 'assets/feature-graph.json'), 'utf8'));
+const viteManifest = JSON.parse(await readFile(resolve(root, 'assets/vite-manifest.json'), 'utf8'));
 const manifestRoutes = new Map(manifest.routes.map(entry => [`${entry.id}:${entry.locale}`, entry]));
 
 const files = await walk(root);
@@ -94,6 +99,18 @@ for (const entry of variants) {
   });
   assert.deepEqual(contract.features, manifestRoute.features, `${entry.route}: manifest route features`);
   assert.deepEqual(contract.criticalFeatures, manifestRoute.criticalFeatures, `${entry.route}: manifest critical route features`);
+  assert.deepEqual(
+    manifestRoute.requests,
+    createRouteRequestManifest(featureGraph, viteManifest, ROUTE_FEATURE_DEFINITIONS, entry.locale, contract.features),
+    `${entry.route}: deterministic request manifest`,
+  );
+  for (const phase of ['shell', 'critical', 'deferred', 'viewport', 'moduleMapReuse']) {
+    assert.equal(new Set(manifestRoute.requests[phase]).size, manifestRoute.requests[phase].length, `${entry.route}: duplicate ${phase} request`);
+    for (const url of manifestRoute.requests[phase]) {
+      assert.match(url, /^\/assets\/[A-Za-z0-9._/-]+$/u, `${entry.route}: invalid ${phase} asset URL`);
+      assert.ok(await isFile(resolve(root, url.slice(1))), `${entry.route}: missing ${phase} asset ${url}`);
+    }
+  }
   assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:|PINEGA_DOC_[A-Z_]+|PINEGA_LANGUAGE_SWITCHER/u, `${entry.output_path} contains an unresolved build marker`);
   assert.match(html, /\/assets\/main\.css/u);
   assert.match(html, /\/assets\/main\.js/u);
@@ -131,12 +148,18 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 4);
+assert.equal(manifest.schemaVersion, 5);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
 assert.deepEqual(manifest.navigation.nativeRouteIds, NATIVE_NAVIGATION_ROUTE_IDS);
 assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFINITIONS);
+assert.deepEqual(manifest.navigation.featureGraph, {
+  schemaVersion: 1,
+  assetManifest: '/assets/feature-graph.json',
+  viteManifest: '/assets/vite-manifest.json',
+  lit: featureGraph.lit,
+});
 assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
 assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);
 await verifyBuildIdentity(root, manifest.build.id, [...variants.map(entry => entry.output_path), 'site-manifest.json']);
@@ -147,6 +170,38 @@ assert.deepEqual(manifest.routes.map(entry => entry.route), variants.map(entry =
 assert.deepEqual(manifest.routes.filter(entry => entry.sitemap).map(entry => entry.route), variants.filter(entry => entry.sitemap).map(entry => entry.route));
 assert.deepEqual(manifest.routes.filter(entry => entry.searchable).map(entry => entry.route), variants.filter(entry => entry.searchable).map(entry => entry.route));
 assert.deepEqual(manifest.diagrams.map(entry => entry.id).toSorted(), diagramIds.toSorted());
+assert.equal(featureGraph.schemaVersion, 1);
+assert.equal(featureGraph.kind, 'pinega-dynamic-feature-graph');
+assert.equal(featureGraph.bundler.name, 'vite');
+assert.equal(featureGraph.bundler.version, '8.2.1');
+assert.equal(featureGraph.entry.script, '/assets/main.js');
+assert.equal(featureGraph.entry.stylesheet, '/assets/main.css');
+assert.deepEqual(featureGraph.features.map(feature => ({
+  id: feature.id,
+  element: feature.element,
+  loading: feature.loading,
+  implementation: feature.implementation,
+  source: feature.source,
+})), ROUTE_FEATURE_DEFINITIONS.map(feature => ({
+  id: feature.id,
+  element: feature.element,
+  loading: feature.loading,
+  implementation: feature.implementation,
+  source: feature.module,
+})));
+assert.equal(featureGraph.lit.deduplicated, true);
+assert.deepEqual(featureGraph.lit.packages, {
+  '@lit/reactive-element': '2.1.2',
+  lit: '3.3.3',
+  'lit-element': '4.2.2',
+  'lit-html': '3.3.3',
+});
+const coreManifest = viteManifest['src/vendor/webawesome/core.ts'];
+const diagramManifest = viteManifest['src/features/diagram-viewer.ts'];
+const litManifestKey = Object.keys(viteManifest).find(key => `/assets/${viteManifest[key].file}` === featureGraph.lit.runtimeChunk);
+assert.ok(litManifestKey, 'Vite manifest must expose the verified Lit runtime chunk');
+assert.ok(coreManifest.imports.includes(litManifestKey), 'Web Awesome Core must import the shared Lit runtime');
+assert.ok(diagramManifest.imports.includes(litManifestKey), 'diagram-viewer must import the shared Lit runtime');
 
 const englishDocsManifest = JSON.parse(await readFile(resolve(root, 'content/en/documentation-manifest.json'), 'utf8'));
 assert.equal(englishDocsManifest.schema_version, 2);

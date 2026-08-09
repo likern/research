@@ -11,12 +11,17 @@ closure adds the missing busy, locale-consistency, long-history, cancellation,
 accessibility, malformed-feature, and persistent-fallback proofs and makes a
 retried browser test a failure instead of evidence.
 
-Gate 4.3 status: **IMPLEMENTATION UNDER REVIEW**. This change adds the bounded
+Gate 4.3 status: **ACCEPTED BASELINE**, merged as PR #31. It adds the bounded
 native-template LRU, boot-route capture, eviction, `no-store` policy, and
-same-route in-flight preparation reuse. It becomes accepted baseline only
-after its dedicated pull request is merged.
+same-route in-flight preparation reuse.
 
-Gate 4.3 base repository state: `main@d2b93f0` after PR #30.
+Gate 4.4 status: **IMPLEMENTATION UNDER REVIEW**. This change adds the closed
+dynamic-feature registry, critical/deferred/viewport scheduling, verified Vite
+chunk graph, browser module-map reuse, and a Pinega Lit island sharing one Lit
+runtime with Web Awesome. It becomes accepted baseline only after its dedicated
+pull request is merged.
+
+Gate 4.4 base repository state: `main@3953d04` after PR #31.
 
 ## Decision
 
@@ -42,17 +47,18 @@ It deliberately adds no client router or navigation interception.
 |---|---|
 | Publishing model | 39 localized static HTML variants from 20 logical entries |
 | Locale model | English unprefixed routes and Russian `/ru/` routes; content registry schema v3 |
-| Build | Node 26 build script with esbuild 0.28.1; this repository does not currently use Vite |
+| Build | Node 26 build script with Vite 8.2.1 for the browser graph and esbuild 0.28.1 only for the temporary Node diagram renderer |
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
-| Lit | Lit 3.3.3 is present transitively through Web Awesome; Pinega-owned Lit components do not yet exist |
-| Runtime loading | One eager `main.js` entry plus esbuild-generated dependency chunks |
+| Lit | One root Lit 3.3.3 installation shared by Web Awesome and the Pinega diagram island |
+| Runtime loading | Shell-eager `main.js` plus allowlisted Vite dynamic entries classified as critical, deferred, or viewport |
 | Navigation | Gate 4.3 transactional Navigation API coordinator with a bounded in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
-This inventory changes an earlier planning assumption: future dynamic-import
-work must be verified against the actual esbuild chunk graph unless a separate
-review deliberately changes bundlers.
+Gate 4.4 deliberately changes the browser bundler. Correctness is checked
+against Vite's emitted Rollup-compatible output and generated manifest rather
+than inferred from source imports or hand-authored preload hints. esbuild
+remains isolated to the build-time Node diagram renderer.
 
 ## Architectural invariants
 
@@ -158,15 +164,15 @@ content edit.
 
 ## Route-feature contract
 
-Gate 4.0 does not add dynamic imports. It establishes their closed vocabulary
-and derives route requirements from the real semantic elements, avoiding a
-second manually synchronized per-locale route table.
+Gate 4.0 established the closed vocabulary and derived route requirements from
+the real semantic elements. Gate 4.4 now binds every ID to one literal import
+and loading phase without adding a second per-locale route table.
 
-| Feature ID | Semantic element | Current owner | Future loading class |
+| Feature ID | Semantic element | Runtime owner | Loading class |
 |---|---|---|---|
 | `benchmark` | `pinega-benchmark` | Native element | critical |
 | `code-example` | `pinega-code-example` | Native element | deferred |
-| `diagram-viewer` | `pinega-diagram-viewer` | Contract fixture for future Lit island | viewport |
+| `diagram-viewer` | `pinega-diagram-viewer` | Lit light-DOM lifecycle island | viewport |
 | `doc-topic-filter` | `pinega-doc-search` | Native element | deferred |
 
 `pinega-site-header`, `pinega-hero`, and `pinega-evidence` remain shell-eager in
@@ -174,9 +180,11 @@ the current boundary. An unknown `pinega-*` element under route `<main>` is a
 build error until it is explicitly classified. Web Awesome `wa-*` elements are
 vendor primitives and are not Pinega route feature IDs.
 
-The generated site-manifest schema is version 4 and projects `features` and
-`criticalFeatures` for every localized route. Gate 4.4 may change how those
-modules are delivered, but it must not silently change their meaning.
+The generated site-manifest schema is version 5. It projects `features`,
+`criticalFeatures`, and deterministic shell/critical/deferred/viewport request
+manifests for every localized route. `/assets/feature-graph.json` records the
+verified source-to-chunk mapping and `/assets/vite-manifest.json` preserves the
+underlying bundler graph.
 
 ## Route-owned metadata whitelist
 
@@ -566,8 +574,8 @@ left native, and arrival clears the guard.
 
 A rejected locale chunk is never retried inside the failed document's module
 map. Pinega performs one guarded hard reload so the destination document starts
-with a fresh module map. Gate 4.2 does not introduce route feature imports;
-their graph and failure policy remain Gate 4.4.
+with a fresh module map. Gate 4.2 did not introduce route feature imports;
+their graph and failure policy were delivered later by Gate 4.4.
 
 ### Closure evidence and post-conditions
 
@@ -597,10 +605,9 @@ failure after the trace already shows a complete response and ready DOM.
 Actual LRU eviction did not exist in Gate 4.2. Its correctness-equivalent cold
 miss is covered here; LRU ordering, bounds, eviction, and explicit
 post-eviction replay are implemented and tested by Gate 4.3. Likewise, Gate
-4.2 validates the feature allowlist, while the
-generated dynamic-import graph and route-feature chunk failure belong to Gate
-4.4. These are downstream mechanisms, not unclosed Gate 4.2 transactional
-behavior.
+4.2 validates the feature allowlist, while Gate 4.4 supplies the generated
+dynamic-import graph and route-feature chunk-failure policy. These are
+downstream mechanisms, not unclosed Gate 4.2 transactional behavior.
 
 The historical Gate 4.2 baseline established one HTML fetch per cold
 transition. Gate 4.3 supersedes that measurement with a mixed cold/warm
@@ -709,6 +716,78 @@ cross-locale transitions. `gate-4.3-route-cache-stress.json` records the
 100-route heap/eviction study. The numeric heap envelope detects gross leaks;
 it is not a user-facing latency or Web Vitals claim.
 
+## Gate 4.4 dynamic feature graph
+
+### Closed registry and loading phases
+
+The route contract remains the only data input. A closed registry maps each
+allowlisted ID to one source literal and one literal `import()` callback.
+Neither fetched HTML nor any dataset value can become an import specifier. The
+registry validates evaluated module identity, element name, and implementation
+kind before recording success.
+
+One application `Map` coalesces concurrent requests for an ID. A fulfilled
+promise stays reusable for the lifetime of the live `Document`, matching the
+browser module map's single evaluation by resolved module URL. A rejected or
+contradictory module is removed from application success state. Critical
+failure crosses the existing guarded hard-navigation boundary so the retry
+receives a fresh browser module map.
+
+The only route-owned loading classes are:
+
+- `critical`: import after the complete destination contract and locale runtime
+  validate, but before route materialization and visible commit;
+- `deferred`: begin only after the synchronous commit; failure leaves the
+  canonical semantic HTML active;
+- `viewport`: observe the real feature elements with an
+  `IntersectionObserver` and a 256 px near-viewport margin; disconnect the old
+  route observer at the next activation.
+
+Imports are not abortable. The navigation transaction is therefore checked
+again after every critical await, and the feature runtime owns a separate
+route serial so a late deferred or viewport completion cannot mutate a removed
+route. Intent, hover, idle, and speculative prefetch remain outside Gate 4.4.
+
+### Vite graph and request manifests
+
+Vite emits stable `/assets/main.js` and `/assets/main.css` shell URLs plus
+hashed dynamic feature chunks. The build consumes Vite's own manifest and
+emitted chunk/module records. It fails unless:
+
+- the main entry exposes exactly the closed set of feature dynamic entries;
+- every feature entry is hashed and every referenced asset exists;
+- each Lit runtime module occurs in exactly one output chunk;
+- Web Awesome Core and `pinega-diagram-viewer` reach that same Lit chunk;
+- `package-lock.json` contains one root installation of `lit`, `lit-html`,
+  `lit-element`, and `@lit/reactive-element` with no nested duplicates.
+
+`resolve.dedupe` names all four Lit packages, while the graph proof verifies
+the result rather than treating configuration as evidence. CI also performs
+two clean production builds and recursively compares their output before it
+tests, attests, and deploys the exact second artifact.
+
+Each route's schema-v5 request manifest partitions the actual transitive
+closure into shell, critical, deferred, and viewport requests. Assets already
+loaded through the shell are listed under `moduleMapReuse` instead of counted
+again as feature requests. No manual `modulepreload` or import map is required
+for correctness.
+
+### Lit ownership and evidence
+
+`pinega-diagram-viewer` is the first Pinega-owned Lit island. It returns its
+host as the render root, so the SSG-produced SVG, caption, transcript, model
+download, and no-JavaScript representation remain canonical light DOM. Lit
+owns only the element lifecycle; route replacement invokes normal disconnect
+cleanup. Web Awesome remains the source of generic controls and never becomes
+the application router or global `<main>` renderer.
+
+Build checks prove static package/chunk deduplication. Browser tests additionally
+assert the exact Lit diagnostic version arrays, one shared Lit request before
+and after viewport activation, one request per feature chunk, deferred
+activation after commit, locale-route module reuse, and critical chunk failure
+with zero partial commit. The complete matrix runs with zero retries in
+Chromium desktop/mobile, Firefox, and WebKit against one immutable artifact.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
@@ -716,6 +795,8 @@ it is not a user-facing latency or Web Vitals claim.
 - [HTML Standard — canonical links](https://html.spec.whatwg.org/multipage/links.html#link-type-canonical)
 - [HTML Standard — Navigation API](https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api)
 - [HTML Standard — the `template` element](https://html.spec.whatwg.org/multipage/scripting.html#the-template-element)
+- [HTML Standard — JavaScript module maps](https://html.spec.whatwg.org/multipage/webappapis.html#module-map)
+- [Intersection Observer](https://www.w3.org/TR/intersection-observer/)
 - [ECMAScript — keyed collections and `Map` insertion order](https://tc39.es/ecma262/multipage/keyed-collections.html)
 - [Fetch Standard](https://fetch.spec.whatwg.org/)
 - [Resource Timing](https://www.w3.org/TR/resource-timing/)
@@ -731,3 +812,7 @@ it is not a user-facing latency or Web Vitals claim.
 - [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
 - [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)
+- [Vite — backend integration and build manifest](https://vite.dev/guide/backend-integration)
+- [Vite — dependency deduplication](https://vite.dev/config/shared-options#resolve-dedupe)
+- [Lit — development-mode duplicate-version diagnostics](https://lit.dev/docs/tools/development/)
+- [Web Awesome — usage and Lit foundation](https://webawesome.com/docs/usage/)

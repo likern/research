@@ -22,7 +22,12 @@
     margin-block: var(--pinega-ref-space-2xl);
   }
 
-  .pinega-diagram-feature > .pinega-semantic-diagram {
+  pinega-diagram-viewer {
+    display: block;
+  }
+
+  .pinega-diagram-feature > .pinega-semantic-diagram,
+  .pinega-diagram-feature > pinega-diagram-viewer > .pinega-semantic-diagram {
     margin-block-end: 0;
   }
 

@@ -24,7 +24,8 @@
     "test": "npm run tokens:check && npm run typecheck && npm run test:unit && npm run build && npm run check:build && npm run test:browser && npm run test:visual"
   },
   "dependencies": {
-    "@awesome.me/webawesome": "3.11.0"
+    "@awesome.me/webawesome": "3.11.0",
+    "lit": "3.3.3"
   },
   "devDependencies": {
     "@playwright/test": "1.62.1",
@@ -32,6 +33,7 @@
     "axe-core": "4.13.0",
     "esbuild": "0.28.1",
     "parse5": "8.0.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vite": "8.2.1"
   }
 }
