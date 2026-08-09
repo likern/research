@@ -6,14 +6,17 @@ Gate 4.1 status: **ACCEPTED BASELINE**, merged as PR #28.
 
 Gate 4.2 implementation status: **ACCEPTED BASELINE**, merged as PR #29.
 
-Gate 4.2 closure status: **COMPLETE AFTER MERGE OF PR #30**. The
+Gate 4.2 closure status: **ACCEPTED BASELINE**, merged as PR #30. The
 closure adds the missing busy, locale-consistency, long-history, cancellation,
 accessibility, malformed-feature, and persistent-fallback proofs and makes a
-retried browser test a failure instead of evidence. This document does not
-claim that route caching, prefetch, dynamic route-feature imports, Lit islands,
-View Transitions, or a Service Worker are implemented.
+retried browser test a failure instead of evidence.
 
-Gate 4.2 closure baseline repository state: `main@9f888bf` after PR #29.
+Gate 4.3 status: **IMPLEMENTATION UNDER REVIEW**. This change adds the bounded
+native-template LRU, boot-route capture, eviction, `no-store` policy, and
+same-route in-flight preparation reuse. It becomes accepted baseline only
+after its dedicated pull request is merged.
+
+Gate 4.3 base repository state: `main@d2b93f0` after PR #30.
 
 ## Decision
 
@@ -43,7 +46,7 @@ It deliberately adds no client router or navigation interception.
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | Lit 3.3.3 is present transitively through Web Awesome; Pinega-owned Lit components do not yet exist |
 | Runtime loading | One eager `main.js` entry plus esbuild-generated dependency chunks |
-| Navigation | Gate 4.2 transactional Navigation API coordinator over complete static documents |
+| Navigation | Gate 4.3 transactional Navigation API coordinator with a bounded in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
@@ -67,7 +70,7 @@ review deliberately changes bundlers.
    navigation; deployments are never mixed inside one document.
 7. **Truthful language.** `lang`, route locale, content language, canonical
    metadata, and missing-translation UI remain consistent.
-8. **Prototype cache only.** A later route cache stores inert templates and
+8. **Prototype cache only.** The route cache stores inert templates and
    immutable metadata, not live page state.
 9. **Local component ownership.** Lit may own only a component render root;
    it never owns global `<main>` or document navigation.
@@ -591,24 +594,120 @@ failure after the trace already shows a complete response and ready DOM.
 | malformed feature ID | the closed feature allowlist rejects the fetched document before commit |
 | persistent bad destination | one fallback request is followed by one native document request; malformed arrival retains the guard and cannot loop |
 
-Actual LRU eviction does not exist in Gate 4.2. Its correctness-equivalent cold
-miss is covered here; LRU ordering, bounds, eviction, and the explicit
-post-eviction replay become executable only in Gate 4.3 and remain that gate's
-merge condition. Likewise, Gate 4.2 validates the feature allowlist, while the
+Actual LRU eviction did not exist in Gate 4.2. Its correctness-equivalent cold
+miss is covered here; LRU ordering, bounds, eviction, and explicit
+post-eviction replay are implemented and tested by Gate 4.3. Likewise, Gate
+4.2 validates the feature allowlist, while the
 generated dynamic-import graph and route-feature chunk failure belong to Gate
 4.4. These are downstream mechanisms, not unclosed Gate 4.2 transactional
 behavior.
 
-`gate-4.2-transaction-baseline.json` records same-locale push/traverse and
-cross-locale push/traverse. Every successful cold transition must have one HTML
-fetch, zero document requests, one visible commit, the same `timeOrigin`, one
-Navigation Timing entry, the same site-header instance, and the expected locale
-and announcement. Numeric latency budgets remain deferred.
+The historical Gate 4.2 baseline established one HTML fetch per cold
+transition. Gate 4.3 supersedes that measurement with a mixed cold/warm
+baseline described below. Numeric latency budgets remain deferred.
 
-After Gate 4.2, transactional navigation correctness is an accepted
-pre-condition for Gate 4.3 parsed-template LRU work. No route cache, in-flight
-reuse, prefetch, dynamic route-feature import, global Lit render root, View
-Transition, or Service Worker enters this milestone.
+After Gate 4.2, transactional navigation correctness is the accepted
+pre-condition for parsed-template LRU work.
+
+## Gate 4.3 parsed-route native-template LRU
+
+Gate 4.3 keeps the cache inside the current live `Document`; Reload or native
+fallback creates a fresh cache. It adds no Service Worker, persistent storage,
+intent prefetch, feature import graph, global Lit render root, or retained live
+page DOM.
+
+### Key, value, and activation contract
+
+The key is `buildId + U+0000 + normalized route URL`. Normalization preserves
+path, trailing-slash policy, and content-affecting query order, but excludes the
+fragment. A hit is accepted only after its build, shell, and document-contract
+identity still match the active route. Looking up a candidate does not update
+recency; only the successful synchronous commit activates and touches it.
+
+The value is a frozen `PreparedRoute` containing immutable scalar metadata and
+one detached `<template>`. Its template content stores clean prototypes of the
+route `<main>`, localized shell projection, skip link, footer, and route-owned
+head metadata. Activation performs one `template.content.cloneNode(true)` and
+derives every commit node from that single fresh fragment. It never moves a
+previous live `<main>` back into the cache.
+
+The boot route is captured from the browser's already-parsed direct document,
+without `DOMParser`. `PerformanceNavigationTiming.decodedBodySize` supplies its
+source-byte weight when available; a UTF-8 serialization length is the
+conservative fallback. A fetched miss records the exact UTF-8 response-body
+bytes and parses once in a detached `DOMParser` document.
+
+### Bounds and eviction study
+
+The production corpus used to select the initial bounds contains 39 localized
+HTML documents, 654,375 source bytes, and 16,955 parsed nodes. Estimated weight
+uses:
+
+```text
+source UTF-8 bytes + node count × 256 bytes
+```
+
+The ten heaviest current documents total approximately 1.90 MiB under that
+conservative heuristic. The first accepted configuration therefore has two
+independent limits:
+
+- 10 entries;
+- 2 MiB estimated weight.
+
+The active prototype is pinned until another route commits. A commit changes
+the pin before enforcing bounds, so the previous route becomes the oldest
+eligible eviction candidate while the new active prototype remains protected.
+An individual route heavier than the weight limit is usable for the current
+commit but is not retained. Eviction removes only detached route prototypes and
+metadata; the browser module map is unaffected.
+
+A response whose `Cache-Control` contains `no-store` is validated and may
+commit, but never enters the application cache. A build mismatch clears the
+whole LRU before guarded native navigation. Failed, malformed, superseded, and
+aborted preparations are never inserted because insertion occurs only inside
+the winning synchronous commit. The artifact test server therefore serves
+ordinary HTML with `no-cache` (storable only with HTTP revalidation), while
+live-reload HTML remains `no-store` and injects an early boot-policy marker so
+its initial route is not captured. Final Cloudflare header budgets remain the
+Gate 4.7 delivery decision.
+
+### In-flight ownership
+
+An independent `Map<RouteKey, Promise<PreparedRoute>>` exists outside the LRU.
+The coordinator owns its internal `AbortController`; an individual
+`NavigateEvent.signal` does not own the shared fetch. Repeating the same pending
+destination attaches to the existing promise and produces one fetch and one
+parse. Starting a different destination aborts every non-matching in-flight
+entry. Settle always removes the map entry, and only the latest transaction may
+materialize, cache, or commit its result.
+
+### Evidence and observability
+
+Every `pinega:navigation-commit` detail distinguishes `network`, `in-flight`,
+and `cache`, and records network/parse/materialize counts, phase durations,
+source bytes, prototype nodes, estimated weight, cache occupancy, configured
+bounds, and eviction count. A warm hit is structurally required to report zero
+HTML requests, zero `DOMParser` calls, one materialization, and one visible
+commit.
+
+The acceptance matrix covers:
+
+- boot-route and fetched-route warm Back/Forward with zero network and parsing;
+- LRU order, independent entry/weight limits, active pinning, oversize routes,
+  and `no-store` in pure unit tests;
+- eleven-route traversal with real eviction and cold replay;
+- repeated pending destination reuse with one shared fetch;
+- fresh form value, `<details>` state, selection, and Custom Element
+  connect/disconnect on each activation, including removal of an external
+  listener in `disconnectedCallback()`;
+- a 100-route forced-idle/forced-GC Chromium study whose cache never exceeds
+  either limit and whose post-GC heap growth must remain within a 12 MiB
+  diagnostic envelope.
+
+`gate-4.3-route-cache-baseline.json` records cold and warm same-locale and
+cross-locale transitions. `gate-4.3-route-cache-stress.json` records the
+100-route heap/eviction study. The numeric heap envelope detects gross leaks;
+it is not a user-facing latency or Web Vitals claim.
 
 ## Normative and implementation references
 
@@ -616,6 +715,10 @@ Transition, or Service Worker enters this milestone.
 - [HTML Standard — custom `data-*` attributes](https://html.spec.whatwg.org/multipage/dom.html#embedding-custom-non-visible-data-with-the-data-*-attributes)
 - [HTML Standard — canonical links](https://html.spec.whatwg.org/multipage/links.html#link-type-canonical)
 - [HTML Standard — Navigation API](https://html.spec.whatwg.org/multipage/nav-history-apis.html#navigation-api)
+- [HTML Standard — the `template` element](https://html.spec.whatwg.org/multipage/scripting.html#the-template-element)
+- [ECMAScript — keyed collections and `Map` insertion order](https://tc39.es/ecma262/multipage/keyed-collections.html)
+- [Fetch Standard](https://fetch.spec.whatwg.org/)
+- [Resource Timing](https://www.w3.org/TR/resource-timing/)
 - [WAI-ARIA 1.2 — `aria-busy`](https://www.w3.org/TR/wai-aria-1.2/#aria-busy)
 - [WAI-ARIA 1.2 — `status` role](https://www.w3.org/TR/wai-aria-1.2/#status)
 - [WCAG 2.2 — focus order](https://www.w3.org/WAI/WCAG22/Understanding/focus-order.html)

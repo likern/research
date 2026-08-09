@@ -14,6 +14,7 @@ import {
   type TranslationNoticeDescriptor,
   type ValidatedLocaleRouteContract,
 } from '../../navigation/locale-contract.mjs';
+import { estimateRouteWeight } from '../../navigation/route-cache.mjs';
 
 export type RoutePreparationFailure =
   | 'build-mismatch'
@@ -35,25 +36,32 @@ export interface ActiveRouteState {
 }
 
 export interface PreparedRoute {
-  buildId: string;
-  contractVersion: string;
-  shellVersion: string;
-  routeId: string;
-  language: string;
-  locale: string;
-  direction: 'ltr' | 'rtl';
-  title: string;
-  features: string[];
-  criticalFeatures: string[];
-  page: string;
+  readonly buildId: string;
+  readonly contractVersion: string;
+  readonly shellVersion: string;
+  readonly routeId: string;
+  readonly language: string;
+  readonly locale: string;
+  readonly direction: 'ltr' | 'rtl';
+  readonly title: string;
+  readonly features: readonly string[];
+  readonly criticalFeatures: readonly string[];
+  readonly page: string;
+  readonly routeTemplate: HTMLTemplateElement;
+  readonly sourceBytes: number;
+  readonly nodeCount: number;
+  readonly weightBytes: number;
+  readonly shellCurrentHref: string | null;
+}
+
+interface MaterializedRoutePrototype {
   main: HTMLElement;
-  routeMetadata: Element[];
   siteHeader: HTMLElement;
   siteFooter: HTMLElement;
   skipLink: HTMLAnchorElement;
   languageSwitcher: HTMLElement;
   translationNotices: HTMLElement[];
-  shellCurrentHref: string | null;
+  routeMetadata: Element[];
 }
 
 interface RouteCommitPlan {
@@ -168,6 +176,27 @@ export function prepareRouteDocument(
 ): PreparedRoute {
   const destination = routeUrl(destinationUrl, 'destination URL');
   const parsed = new DOMParser().parseFromString(html, 'text/html');
+  return prepareDocumentPrototype(parsed, destination, active, new TextEncoder().encode(html).byteLength);
+}
+
+export function prepareActiveRouteDocument(
+  document: Document,
+  active: ActiveRouteState,
+): PreparedRoute {
+  const destination = routeUrl(document.URL, 'active document URL');
+  const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+  const sourceBytes = navigationEntry?.decodedBodySize && navigationEntry.decodedBodySize > 0
+    ? navigationEntry.decodedBodySize
+    : new TextEncoder().encode(document.documentElement.outerHTML).byteLength;
+  return prepareDocumentPrototype(document, destination, active, sourceBytes);
+}
+
+function prepareDocumentPrototype(
+  parsed: Document,
+  destination: URL,
+  active: ActiveRouteState,
+  sourceBytes: number,
+): PreparedRoute {
   const root = parsed.documentElement;
   const head = parsed.head;
   const body = parsed.body;
@@ -275,7 +304,16 @@ export function prepareRouteDocument(
   }
   validateLocaleShell(siteHeader, siteFooter, primaryNavigation, language, destination);
 
-  return {
+  const routeMetadata = [...head.children].filter(isRouteMetadataElement);
+  const routeTemplate = createRouteTemplate(parsed, {
+    main,
+    siteHeader,
+    siteFooter,
+    skipLink,
+    routeMetadata,
+  });
+  const nodeCount = countPrototypeNodes(routeTemplate.content);
+  return Object.freeze({
     buildId,
     contractVersion,
     shellVersion,
@@ -284,18 +322,15 @@ export function prepareRouteDocument(
     locale,
     direction,
     title,
-    features,
-    criticalFeatures,
+    features: Object.freeze(features),
+    criticalFeatures: Object.freeze(criticalFeatures),
     page,
-    main,
-    routeMetadata: [...head.children].filter(isRouteMetadataElement),
-    siteHeader,
-    siteFooter,
-    skipLink,
-    languageSwitcher,
-    translationNotices,
+    routeTemplate,
+    sourceBytes,
+    nodeCount,
+    weightBytes: estimateRouteWeight(sourceBytes, nodeCount),
     shellCurrentHref,
-  };
+  });
 }
 
 export function createRouteCommitPlan(prepared: PreparedRoute, document: Document): RouteCommitPlan {
@@ -320,6 +355,7 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
     'active language switcher',
   );
   const activeRouteMarkers = routeMarkerElements(activeHeader);
+  const materialized = materializeRoutePrototype(prepared);
   const localeChanged = prepared.locale !== root.dataset.locale || prepared.language !== root.lang;
   let nextRouteMarker: HTMLElement | undefined;
 
@@ -336,23 +372,93 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
     root,
     body,
     activeMain,
-    nextMain: document.importNode(prepared.main, true),
+    nextMain: materialized.main,
     activeHeader,
-    nextHeaderChildren: [...prepared.siteHeader.childNodes].map(node => document.importNode(node, true)),
+    nextHeaderChildren: [...materialized.siteHeader.childNodes],
     activeSiteFooter,
-    nextSiteFooter: document.importNode(prepared.siteFooter, true),
+    nextSiteFooter: materialized.siteFooter,
     activeSkipLink,
-    nextSkipLink: document.importNode(prepared.skipLink, true),
+    nextSkipLink: materialized.skipLink,
     activeAnnouncer,
     activeLanguageSwitcher,
-    nextLanguageSwitcher: document.importNode(prepared.languageSwitcher, true),
+    nextLanguageSwitcher: materialized.languageSwitcher,
     activeTranslationNotices: [...activeHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')],
-    nextTranslationNotices: prepared.translationNotices.map(notice => document.importNode(notice, true)),
+    nextTranslationNotices: materialized.translationNotices,
     activeRouteMetadata: [...document.head.children].filter(isRouteMetadataElement),
-    nextRouteMetadata: prepared.routeMetadata.map(element => document.importNode(element, true)),
+    nextRouteMetadata: materialized.routeMetadata,
     activeRouteMarkers,
     ...(nextRouteMarker ? { nextRouteMarker } : {}),
   };
+}
+
+function createRouteTemplate(
+  owner: Document,
+  prototype: {
+    main: HTMLElement;
+    siteHeader: HTMLElement;
+    siteFooter: HTMLElement;
+    skipLink: HTMLAnchorElement;
+    routeMetadata: Element[];
+  },
+): HTMLTemplateElement {
+  const template = owner.createElement('template');
+  template.content.append(
+    prototype.main.cloneNode(true),
+    prototype.siteHeader.cloneNode(true),
+    prototype.siteFooter.cloneNode(true),
+    prototype.skipLink.cloneNode(true),
+    ...prototype.routeMetadata.map(element => element.cloneNode(true)),
+  );
+  return template;
+}
+
+function materializeRoutePrototype(prepared: PreparedRoute): MaterializedRoutePrototype {
+  const fragment = prepared.routeTemplate.content.cloneNode(true) as DocumentFragment;
+  if (fragment.childNodes.length !== fragment.children.length) {
+    throw malformed('Prepared route prototype contains unexpected top-level non-element nodes.');
+  }
+  const [main, siteHeader, siteFooter, skipLink, ...routeMetadata] = [...fragment.children];
+  if (!(main instanceof HTMLElement) || main.localName !== 'main') {
+    throw malformed('Prepared route prototype has no main root.');
+  }
+  if (!(siteHeader instanceof HTMLElement) || siteHeader.localName !== 'pinega-site-header') {
+    throw malformed('Prepared route prototype has no site-header root.');
+  }
+  if (!(siteFooter instanceof HTMLElement) || !siteFooter.matches('footer.pinega-site-footer')) {
+    throw malformed('Prepared route prototype has no site-footer root.');
+  }
+  if (!(skipLink instanceof HTMLAnchorElement) || !skipLink.matches('a.pinega-skip-link')) {
+    throw malformed('Prepared route prototype has no skip-link root.');
+  }
+  if (routeMetadata.length === 0 || routeMetadata.some(element => !isRouteMetadataElement(element))) {
+    throw malformed('Prepared route prototype contains invalid route metadata.');
+  }
+  const languageSwitcher = exactlyOne(
+    [...siteHeader.querySelectorAll<HTMLElement>('[data-pinega-language-switcher]')],
+    'prepared language switcher',
+  );
+  const translationNotices = [...siteHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')];
+  return {
+    main,
+    siteHeader,
+    siteFooter,
+    skipLink,
+    languageSwitcher,
+    translationNotices,
+    routeMetadata,
+  };
+}
+
+function countPrototypeNodes(fragment: DocumentFragment): number {
+  let count = 0;
+  const pending = [...fragment.childNodes];
+  while (pending.length > 0) {
+    const node = pending.pop();
+    if (!node) continue;
+    count += 1;
+    pending.push(...node.childNodes);
+  }
+  return count;
 }
 
 export function commitRoute(plan: RouteCommitPlan): HTMLElement {

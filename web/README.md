@@ -232,8 +232,39 @@ commit.
 Build/shell mismatch, malformed responses, native-only routes, and locale
 chunk failures commit nothing. They use one per-destination session guard and
 one native reload/assignment; a failed module is not retried inside the old
-module map. Route cache, prefetch, route-feature imports, Lit islands, View
-Transitions, and Service Workers remain outside Gate 4.2.
+module map. These are the accepted Gate 4.2 semantics on which the route cache
+depends.
+
+## Gate 4.3 Native route LRU
+
+The coordinator now stores validated route-owned prototypes in an inert native
+`<template>` LRU for the lifetime of the current `Document`. Its cache key is
+the build ID plus normalized same-origin URL without the fragment. The direct
+boot route is captured from the already-parsed document; a fetched route is
+inserted only by the winning transaction after validation and commit.
+
+Warm activation performs one fresh `template.content` clone, zero HTML
+requests, and zero `DOMParser` calls. Live form values, `<details>` state,
+selection, Custom Element instances, listeners, observers, and timers are not
+cache state. Removed components receive their normal `disconnectedCallback()`;
+the next activation connects fresh instances.
+
+The initial measured bounds are 10 entries and 2 MiB estimated weight, using
+`source bytes + 256 bytes × prototype nodes`. The current 39-document corpus is
+654,375 source bytes and 16,955 parsed nodes; its ten heaviest complete
+documents total approximately 1.90 MiB by the same conservative heuristic.
+The active route is pinned until the next successful commit. Entry and weight
+limits evict independently, oversize entries are not retained, and
+`Cache-Control: no-store` responses may commit but never enter the LRU.
+The ordinary artifact server exposes HTML as `no-cache`; live-reload responses
+remain `no-store`.
+
+A separate in-flight registry reuses one fetch and one parse when the same
+pending destination is selected again. Its cancellation belongs to the
+coordinator rather than the first `NavigateEvent`: a different destination
+aborts orphaned work, while a replacement consumer for the same route retains
+the shared preparation. Failed, aborted, or superseded work cannot populate
+the cache.
 
 The raw, non-gating MPA measurement can be generated after a production build:
 
@@ -244,11 +275,13 @@ The raw, non-gating MPA measurement can be generated after a production build:
 
 CI runs both measurements with the pinned Chromium profile and uploads
 `artifacts/baseline/gate-4-mpa-baseline.json` plus
-`artifacts/baseline/gate-4.2-transaction-baseline.json`. The latter covers
-same-locale and cross-locale push/traverse transitions and enforces structural
-performance—one HTML fetch, zero new Document requests, one commit, the
-expected locale/focus/announcement state, and preserved shell identity. A
-single run remains diagnostic input, not a latency or Web Vitals budget.
+`artifacts/baseline/gate-4.3-route-cache-baseline.json` and
+`artifacts/baseline/gate-4.3-route-cache-stress.json`. The mixed baseline
+requires one HTML fetch/parse for a cold route and zero for a warm route while
+preserving one materialization, one commit, locale/focus/announcement state,
+and shell identity. The stress artifact records 100 route operations, forced
+idle/GC, maximum cache occupancy and heap growth. A single run remains
+diagnostic input, not a latency or Web Vitals budget.
 
 ## Topic filter versus search
 
@@ -410,10 +443,11 @@ The closure matrix also exercises response-body and locale-module
 supersession, Back/Forward after eleven pushed routes, a missing fragment,
 direct-versus-enhanced ARIA snapshots, busy-state geometry and ownership,
 malformed locale/feature contracts, and a persistently malformed destination.
-Both local and deployed Playwright configurations use zero retries, so CI does
-not convert a first-attempt failure into a passing gate.
+Gate 4.3 adds boot/fetched warm-hit proofs, zero-network/zero-parse
+instrumentation, `no-store`, in-flight reuse, fresh component/form/details
+state, LRU bounds/eviction, post-eviction cold replay, and the 100-route
+forced-GC study. Both local and deployed Playwright configurations use zero
+retries, so CI does not convert a first-attempt failure into a passing gate.
 
-Gate 4.2 has no route cache: cold Back/Forward preparation is the correctness
-oracle for a future eviction miss. LRU bounds and actual post-eviction replay
-remain Gate 4.3; generated route-feature imports and their chunk failures
-remain Gate 4.4.
+Generated route-feature imports and their chunk failures remain Gate 4.4;
+prefetch remains Gate 4.5.

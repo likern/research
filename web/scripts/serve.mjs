@@ -8,7 +8,7 @@ const defaultRoot = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const defaultHost = '127.0.0.1';
 const defaultPort = Number(process.env.PORT ?? 4173);
 const liveReloadPath = '/_pinega/live-reload';
-const liveReloadScript = `<script data-pinega-live-reload>new EventSource('${liveReloadPath}').onmessage=()=>location.reload();</script>`;
+const liveReloadScript = `<script data-pinega-live-reload>window.__PINEGA_INITIAL_RESPONSE_NO_STORE__=true;new EventSource('${liveReloadPath}').onmessage=()=>location.reload();</script>`;
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.html', 'text/html; charset=utf-8'],
@@ -146,9 +146,10 @@ async function isFile(path) {
 }
 
 async function sendFile(path, method, response, status, liveReload) {
+  const extension = extname(path);
   const headers = {
-    'Content-Type': mimeTypes.get(extname(path)) ?? 'application/octet-stream',
-    'Cache-Control': 'no-store',
+    'Content-Type': mimeTypes.get(extension) ?? 'application/octet-stream',
+    'Cache-Control': liveReload || extension !== '.html' ? 'no-store' : 'no-cache',
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Content-Type-Options': 'nosniff',
@@ -158,7 +159,7 @@ async function sendFile(path, method, response, status, liveReload) {
     response.end();
     return;
   }
-  if (liveReload && extname(path) === '.html') {
+  if (liveReload && extension === '.html') {
     const html = await readFile(path, 'utf8');
     response.end(injectLiveReload(html));
     return;
