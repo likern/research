@@ -1,9 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
+import { openReadyDocument } from './support/direct-document.js';
 
-async function ready(page: Page) {
-  const response = await page.goto('/research/', { waitUntil: 'domcontentloaded' });
-  expect(response?.status()).toBe(200);
-  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+async function ready(page: Page): Promise<void> {
+  await openReadyDocument(page, '/research/');
 }
 
 test('research page exposes three accessible figures from shared semantic models', async ({ page }) => {

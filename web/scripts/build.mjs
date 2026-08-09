@@ -25,6 +25,7 @@ const diagramBuildRoot = resolve(dist, '.diagram-build');
 const projectUrl = process.env.PINEGA_WEB_AWESOME_PROJECT_URL ?? '';
 const siteOrigin = normalizeSiteOrigin(process.env.PINEGA_SITE_ORIGIN ?? 'https://pinega.example');
 const documentationSectionIds = ['start', 'tutorials', 'how-to', 'concepts', 'reference', 'contributing'];
+const initialRenderBootstrap = `<script data-pinega-initial-render>(()=>{const e=document.documentElement;e.dataset.pinegaJs='true';let t;try{t=localStorage.getItem('pinega-color-scheme')}catch{}const a=t==='light'||t==='dark'?t:matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light',n=a==='dark';e.classList.toggle('pinega-dark',n);e.classList.toggle('wa-dark',n);e.classList.toggle('pinega-light',!n);e.classList.toggle('wa-light',!n);e.style.colorScheme=a})()</script>`;
 const contentIndex = validateContentIndex(JSON.parse(await readFile(resolve(contentRoot, 'content-index.json'), 'utf8')));
 validateNativeNavigationRoutes(contentIndex);
 const localeMessages = await loadLocaleMessages(contentIndex.site.locales);
@@ -78,6 +79,7 @@ for (const page of pages) {
   validatePageSource(source, page);
   let html = source
     .replaceAll('{{SITE_ORIGIN}}', escapeHtml(siteOrigin));
+  html = injectInitialRenderBootstrap(html, page.source);
   html = replaceLocalePlaceholders(html, page);
   html = html.replace(
     '<!-- PINEGA_PROJECT_META -->',
@@ -592,6 +594,17 @@ function replaceLocalePlaceholders(html, page) {
   );
   if (/PINEGA_LANGUAGE_SWITCHER/u.test(output)) throw new TypeError(`${page.source}: unresolved language-switcher marker`);
   return output;
+}
+
+function injectInitialRenderBootstrap(html, source) {
+  const stylesheet = '<link rel="stylesheet" href="/assets/main.css">';
+  if ((html.match(/<link rel="stylesheet" href="\/assets\/main\.css">/gu) ?? []).length !== 1) {
+    throw new TypeError(`${source}: expected exactly one main stylesheet for the initial-render bootstrap`);
+  }
+  if (html.includes('data-pinega-initial-render')) {
+    throw new TypeError(`${source}: the initial-render bootstrap is build-owned`);
+  }
+  return html.replace(stylesheet, `${initialRenderBootstrap}\n    ${stylesheet}`);
 }
 
 function renderLocaleMetadata(page) {

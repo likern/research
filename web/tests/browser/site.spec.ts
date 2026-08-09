@@ -326,7 +326,7 @@ test('Russian unknown routes use the Russian 404, locale messages, and peer swit
   await expect(switcher.getByRole('link', { name: 'English' })).toHaveAttribute('href', '/404.html');
   await expect(switcher.locator('[aria-current="page"]')).toHaveText('Русский');
   await expect(page.locator('[data-translation-notice]')).toHaveCount(0);
-  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать тёмную тему');
+  await expect(page.locator('[data-theme-toggle]')).toHaveAttribute('aria-label', 'Использовать тёмную тему');
 });
 
 test('selecting an unavailable language keeps the current page and announces localized status', async ({ page }) => {

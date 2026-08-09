@@ -50,6 +50,7 @@ interface NetworkRecord {
 
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const artifactPath = resolve(webRoot, 'artifacts/baseline/gate-4-mpa-baseline.json');
+const initialRenderClsBudget = 0.01;
 const packageMetadata = JSON.parse(await readFile(resolve(webRoot, 'package.json'), 'utf8')) as {
   engines: { node: string };
   devDependencies: Record<string, string>;
@@ -178,8 +179,11 @@ test('records the static MPA reference with the coordinator explicitly disabled'
     },
     policy: {
       numericBudgetsEnforced: false,
+      visualStabilityBudgetsEnforced: true,
+      initialRenderClsBudget,
+      budgetedScenarios: ['initial-direct-load', 'cold-reload-cost'],
       repetitions: 1,
-      note: 'Raw diagnostic baseline only. Gate 4.0 intentionally sets no latency or Web Vitals threshold from one noisy run.',
+      note: 'Latency, memory, and interaction metrics remain diagnostic. Initial direct load and cold reload enforce a deterministic CLS ceiling; temporal region invariants are covered by the browser visual-stability suite.',
     },
     scenarios,
   };
@@ -201,6 +205,11 @@ test('records the static MPA reference with the coordinator explicitly disabled'
     }
     expect(Number.isFinite(scenario.actionDurationMs), scenario.id).toBe(true);
     expect(scenario.buildId, scenario.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
+  }
+  for (const scenarioId of ['initial-direct-load', 'cold-reload-cost']) {
+    const scenario = scenarios.find(candidate => candidate.id === scenarioId);
+    expect(scenario, scenarioId).toBeDefined();
+    expect(scenario?.webVitals.cls, scenarioId).toBeLessThanOrEqual(initialRenderClsBudget);
   }
   await mkdir(dirname(artifactPath), { recursive: true });
   await writeFile(artifactPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');

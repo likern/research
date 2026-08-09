@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "test:unit": "node --test ../design/tests/*.test.mjs tests/unit/*.test.mjs",
     "test:browser": "playwright test tests/browser",
+    "test:stability": "playwright test tests/browser/visual-stability.spec.ts",
     "test:deployment": "playwright test --config=playwright.deployment.config.ts",
     "measure:baseline": "playwright test --config=playwright.baseline.config.ts",
     "test:visual": "playwright test tests/visual --project=chromium-desktop",

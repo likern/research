@@ -51,7 +51,11 @@ function requestsFor(requests: Request[], pathname: string): Request[] {
 }
 
 async function activateCoordinatorLink(page: Page, selector: string): Promise<void> {
-  await page.locator(selector).evaluate((link: HTMLAnchorElement) => link.click());
+  await page.evaluate(linkSelector => {
+    const link = document.querySelector<HTMLAnchorElement>(linkSelector);
+    if (!link) throw new TypeError(`Missing coordinator link ${linkSelector}`);
+    link.click();
+  }, selector);
 }
 
 async function instrumentTransactionEvents(page: Page): Promise<void> {
@@ -825,7 +829,7 @@ test('cross-locale navigation commits one truthful localized shell transaction',
   await expect(page.locator('[data-primary-navigation] a[href="/ru/docs/"]')).toHaveAttribute('aria-current', 'page');
   await expect(page.locator('.pinega-skip-link')).toHaveText('Перейти к основному содержанию');
   await expect(page.locator('footer.pinega-site-footer')).toContainText('Исследования и инженерия систем баз данных');
-  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать светлую тему');
+  await expect(page.locator('[data-theme-toggle]')).toHaveAttribute('aria-label', 'Использовать светлую тему');
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(page.locator('main')).toBeFocused();
   await expect(page.locator('[data-pinega-navigation-announcer]')).toHaveText('Документация — Pinega');
@@ -839,7 +843,7 @@ test('cross-locale navigation commits one truthful localized shell transaction',
 
   await page.locator('[data-theme-toggle]').click();
   await expect(page.locator('html')).toHaveClass(/pinega-light/u);
-  await expect(page.locator('[data-theme-toggle]')).toHaveText('Использовать тёмную тему');
+  await expect(page.locator('[data-theme-toggle]')).toHaveAttribute('aria-label', 'Использовать тёмную тему');
 });
 
 test('native-only route policy protects shell-incompatible internal documents', async ({ page }) => {

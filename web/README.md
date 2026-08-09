@@ -281,7 +281,8 @@ requires one HTML fetch/parse for a cold route and zero for a warm route while
 preserving one materialization, one commit, locale/focus/announcement state,
 and shell identity. The stress artifact records 100 route operations, forced
 idle/GC, maximum cache occupancy and heap growth. A single run remains
-diagnostic input, not a latency or Web Vitals budget.
+diagnostic input for latency and memory; initial direct load and cold reload
+enforce a `0.01` CLS ceiling.
 
 ## Gate 4.4 Dynamic feature graph
 
@@ -313,6 +314,26 @@ Critical chunk failure commits nothing and performs one guarded native
 navigation into a fresh module map. Deferred and viewport failure preserve the
 semantic fallback. Intent/idle prefetch and Service Worker behavior remain out
 of scope; prefetch remains Gate 4.5.
+
+## Initial-render visual-stability contract
+
+`tests/browser/visual-stability.spec.ts` tests time, not only the final DOM. It
+holds `/assets/main.js` and the hashed Web Awesome Core chunk at separate
+boundaries and compares declared static regions across authored HTML, Pinega
+shell upgrade, Web Awesome readiness, and an explicit reload. Every stage must
+retain identical geometry, direct static text, and computed visual styles for
+elements and their pseudo-elements; unexpected layout shifts have a `0.001`
+per-cycle ceiling. Chromium stage screenshots are retained as review evidence;
+cross-engine pass/fail uses the deterministic signatures because Playwright's
+Firefox and WebKit screenshot path waits for the deliberately gated document
+lifecycle. Font rasterisation noise is not treated as a layout or style change.
+
+`data-visual-stability-region` declares a static region. Descendants are part of
+that contract by default. A genuinely dynamic subtree may use
+`data-visual-stability-dynamic`: its content is excluded, but the marked host's
+bounding box and visual container styles remain stable. This permits, for
+example, a changing image inside a fixed-size slot without permitting the slot
+to resize, move surrounding content, or change padding/background during load.
 
 ## Topic filter versus search
 
@@ -356,6 +377,13 @@ Native HTML owns content and document semantics. CSS owns presentation,
 responsive adaptation, and visual state. JavaScript owns lifecycle and
 interaction enhancement. Public pages remain meaningful before Custom Elements
 register and without the licensed Web Awesome Pro project.
+
+Initial-render controls and static labels follow the same ownership rule. The
+theme and mobile-navigation controls are native buttons, and programme labels
+are native spans; they do not depend on a later vendor Custom Element upgrade.
+A build-owned bootstrap selects the stored or system colour scheme before the
+main stylesheet is applied, so the first rendered frame already uses the final
+theme geometry and colours.
 
 ## Shared semantic diagrams
 
@@ -462,6 +490,7 @@ with-env {
 ^npm run build
 ^npm run check:build
 ^npm run test:browser
+^npm run test:stability
 ^npm run test:visual
 ```
 
@@ -483,7 +512,10 @@ state, LRU bounds/eviction, post-eviction cold replay, and the 100-route
 forced-GC study. Gate 4.4 adds the closed literal registry, phase ordering,
 module-map reuse, esbuild metafile verification, deterministic per-route
 request manifests, Lit/Web Awesome deduplication, and critical chunk-failure
-fallback.
+fallback. The initial-render stability gate additionally widens both main-module
+and vendor-upgrade windows, compares pre-/mid-/post-upgrade frames, repeats the
+contract after reload, attributes unexpected shifts, and enforces the MPA CLS
+budget.
 Both local and deployed Playwright configurations use zero retries, so CI does
 not convert a first-attempt failure into a passing gate. Prefetch remains Gate
 4.5.
