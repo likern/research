@@ -1,0 +1,72 @@
+import { normalizeRouteUrl } from './contract.mjs';
+
+const linkSources = new Set(['anchor', 'area']);
+const interceptedNavigationTypes = new Set(['push', 'replace']);
+
+export function classifyNavigationIntent(intent) {
+  if (!intent || typeof intent !== 'object') throw new TypeError('Navigation intent must be an object.');
+
+  let current;
+  let destination;
+  try {
+    current = new URL(intent.currentUrl);
+    destination = new URL(intent.destinationUrl, current);
+  } catch {
+    return native('invalid-url');
+  }
+
+  if (!['http:', 'https:'].includes(destination.protocol) || destination.username || destination.password) {
+    return native('non-http');
+  }
+  if (destination.origin !== current.origin) return native('cross-origin');
+  if (intent.canIntercept !== true) return native('cannot-intercept');
+
+  const destinationIdentity = normalizeRouteUrl(destination, current.origin);
+  if (intent.fallbackTarget) {
+    try {
+      if (normalizeRouteUrl(intent.fallbackTarget, current.origin) === destinationIdentity) {
+        return native('fallback-guard');
+      }
+    } catch {
+      // A corrupt optional guard must not make an otherwise valid link unsafe.
+    }
+  }
+
+  if (intent.navigationType === 'reload') return native('reload');
+  if (intent.hashChange === true) return native('fragment');
+  if (intent.downloadRequested === true) return native('download');
+  if (intent.hasFormData === true || intent.sourceKind === 'form') return native('form');
+
+  if (intent.navigationType === 'traverse') return intercept(destination.href);
+  if (!interceptedNavigationTypes.has(intent.navigationType)) return native('navigation-type');
+  if (!linkSources.has(intent.sourceKind)) return native('source');
+  if (intent.hasTarget === true) return native('target');
+
+  if (intent.sourceLanguage && !samePrimaryLanguage(intent.sourceLanguage, intent.currentLanguage)) {
+    return native('locale');
+  }
+
+  if (destination.href === current.href) {
+    return intent.cancelable === true
+      ? { action: 'cancel', reason: 'active-route', url: destination.href }
+      : native('active-route-not-cancelable');
+  }
+
+  return intercept(destination.href);
+}
+
+function samePrimaryLanguage(left, right) {
+  return primaryLanguage(left) === primaryLanguage(right);
+}
+
+function primaryLanguage(value) {
+  return String(value).trim().toLocaleLowerCase().split('-', 1)[0];
+}
+
+function native(reason) {
+  return { action: 'native', reason };
+}
+
+function intercept(url) {
+  return { action: 'intercept', reason: 'eligible', url };
+}

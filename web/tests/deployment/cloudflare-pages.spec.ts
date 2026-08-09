@@ -58,9 +58,18 @@ test('deployed navigation and static assets load without browser console errors'
     expect(response.status(), assetUrl).toBeLessThan(400);
   }
 
+  const timeOrigin = await page.evaluate(() => {
+    const header = document.querySelector<HTMLElement>('pinega-site-header');
+    if (!header) throw new Error('Missing deployed site header');
+    header.dataset.deploymentShell = 'persistent';
+    return performance.timeOrigin;
+  });
   await page.getByRole('link', { name: 'Documentation' }).first().click();
   await expect(page).toHaveURL(/\/docs\/$/u);
   await expect(page.getByRole('main')).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
+  await expect(page.locator('pinega-site-header')).toHaveAttribute('data-deployment-shell', 'persistent');
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
   expect(errors).toEqual([]);
 });
 

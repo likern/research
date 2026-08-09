@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import {
   BUILD_ID_ALGORITHM,
   DOCUMENT_CONTRACT_VERSION,
+  NATIVE_NAVIGATION_ROUTE_IDS,
   ROUTE_FEATURE_DEFINITIONS,
   ROUTE_OWNED_METADATA,
   SHELL_VERSION,
@@ -100,7 +101,7 @@ for (const entry of variants) {
   assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${entry.output_path} must contain one h1`);
   assert.match(html, new RegExp(`<title>${escapeRegex(entry.canonical_title)}<\\/title>`, 'u'));
   assert.match(html, new RegExp(`<meta name="description" content="${escapeRegex(entry.summary)}">`, 'u'));
-  assert.match(html, new RegExp(`<nav class="pinega-language-switcher" aria-label="${escapeRegex(localeMessages[entry.locale].navigation.language)}">`, 'u'));
+  assert.match(html, new RegExp(`<nav class="pinega-language-switcher" data-pinega-language-switcher aria-label="${escapeRegex(localeMessages[entry.locale].navigation.language)}">`, 'u'));
   for (const [locale, metadata] of Object.entries(contentIndex.site.locales)) {
     const label = `<span lang="${metadata.lang}" dir="${metadata.direction}" translate="no">${metadata.label}</span>`;
     if (locale === entry.locale) {
@@ -132,6 +133,7 @@ assert.equal(manifest.schemaVersion, 4);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
+assert.deepEqual(manifest.navigation.nativeRouteIds, NATIVE_NAVIGATION_ROUTE_IDS);
 assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFINITIONS);
 assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
 assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);

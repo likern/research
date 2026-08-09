@@ -3,6 +3,11 @@ export const SHELL_VERSION = '4.0';
 export const BUILD_ID_ALGORITHM = 'sha256-normalized-artifact-v1';
 export const BUILD_ID_PLACEHOLDER = '__PINEGA_BUILD_ID__';
 
+export const NATIVE_NAVIGATION_ROUTE_IDS = Object.freeze([
+  'component-lab',
+  'not-found',
+]);
+
 export const ROUTE_FEATURE_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'benchmark',
@@ -39,12 +44,16 @@ export const SHELL_CUSTOM_ELEMENTS = Object.freeze([
 export const ROUTE_OWNED_METADATA = Object.freeze([
   'title',
   'meta[name="description"]',
+  'meta[name="robots"]',
   'link[rel="canonical"]',
   'link[rel="alternate"][hreflang]',
   'meta[property^="og:"]',
   'meta[name^="twitter:"]',
-  'html[lang][dir]',
+  'html[lang][dir][data-page][data-locale]',
   'body[data-pinega-route]',
+  'pinega-site-header [data-pinega-language-switcher]',
+  'pinega-site-header [data-translation-notice]',
+  'pinega-site-header .pinega-brand[aria-current="page"]',
   '[data-primary-navigation] [aria-current="page"]',
 ]);
 

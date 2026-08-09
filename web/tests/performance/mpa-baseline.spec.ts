@@ -55,12 +55,18 @@ const packageMetadata = JSON.parse(await readFile(resolve(webRoot, 'package.json
   devDependencies: Record<string, string>;
 };
 
-test('records the static MPA cost before same-document navigation', async ({ browser }) => {
+test('records the static MPA reference with the coordinator explicitly disabled', async ({ browser }) => {
   const scenarios: ScenarioResult[] = [];
-  const createContext = () => browser.newContext({
-    viewport: { width: 1440, height: 1000 },
-    serviceWorkers: 'block',
-  });
+  const createContext = async () => {
+    const context = await browser.newContext({
+      viewport: { width: 1440, height: 1000 },
+      serviceWorkers: 'block',
+    });
+    await context.addInitScript(() => {
+      window.__PINEGA_DISABLE_NAVIGATION__ = true;
+    });
+    return context;
+  };
   scenarios.push(await measureScenario(createContext, {
     id: 'initial-direct-load',
     description: 'Cold direct load of the canonical homepage.',
