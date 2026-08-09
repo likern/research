@@ -16,10 +16,10 @@ native-template LRU, boot-route capture, eviction, `no-store` policy, and
 same-route in-flight preparation reuse.
 
 Gate 4.4 status: **IMPLEMENTATION UNDER REVIEW**. This change adds the closed
-dynamic-feature registry, critical/deferred/viewport scheduling, verified Vite
-chunk graph, browser module-map reuse, and a Pinega Lit island sharing one Lit
-runtime with Web Awesome. It becomes accepted baseline only after its dedicated
-pull request is merged.
+dynamic-feature registry, critical/deferred/viewport scheduling, a verified
+production bundle graph based on the esbuild metafile, browser module-map
+reuse, and a Pinega Lit island sharing one Lit runtime with Web Awesome. It
+becomes accepted baseline only after its dedicated pull request is merged.
 
 Gate 4.4 base repository state: `main@3953d04` after PR #31.
 
@@ -47,18 +47,18 @@ It deliberately adds no client router or navigation interception.
 |---|---|
 | Publishing model | 39 localized static HTML variants from 20 logical entries |
 | Locale model | English unprefixed routes and Russian `/ru/` routes; content registry schema v3 |
-| Build | Node 26 build script with Vite 8.2.1 for the browser graph and esbuild 0.28.1 only for the temporary Node diagram renderer |
+| Build | Node 26 build script with esbuild 0.28.1 for both the browser graph and the temporary Node diagram renderer |
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | One root Lit 3.3.3 installation shared by Web Awesome and the Pinega diagram island |
-| Runtime loading | Shell-eager `main.js` plus allowlisted Vite dynamic entries classified as critical, deferred, or viewport |
+| Runtime loading | Shell-eager `main.js` plus allowlisted esbuild dynamic entries classified as critical, deferred, or viewport |
 | Navigation | Gate 4.3 transactional Navigation API coordinator with a bounded in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
 
-Gate 4.4 deliberately changes the browser bundler. Correctness is checked
-against Vite's emitted Rollup-compatible output and generated manifest rather
-than inferred from source imports or hand-authored preload hints. esbuild
-remains isolated to the build-time Node diagram renderer.
+Gate 4.4 retains esbuild as the single project bundler. Correctness is checked
+against esbuild's emitted production `metafile` rather than inferred from
+source imports or hand-authored preload hints. The verifier consumes the real
+output graph after code splitting and before the artifact is accepted.
 
 ## Architectural invariants
 
@@ -183,8 +183,8 @@ vendor primitives and are not Pinega route feature IDs.
 The generated site-manifest schema is version 5. It projects `features`,
 `criticalFeatures`, and deterministic shell/critical/deferred/viewport request
 manifests for every localized route. `/assets/feature-graph.json` records the
-verified source-to-chunk mapping and `/assets/vite-manifest.json` preserves the
-underlying bundler graph.
+verified source-to-chunk mapping and `/assets/bundle-manifest.json` preserves
+the underlying esbuild metafile.
 
 ## Route-owned metadata whitelist
 
@@ -748,30 +748,45 @@ again after every critical await, and the feature runtime owns a separate
 route serial so a late deferred or viewport completion cannot mutate a removed
 route. Intent, hover, idle, and speculative prefetch remain outside Gate 4.4.
 
-### Vite graph and request manifests
+### esbuild metafile and request manifests
 
-Vite emits stable `/assets/main.js` and `/assets/main.css` shell URLs plus
-hashed dynamic feature chunks. The build consumes Vite's own manifest and
-emitted chunk/module records. It fails unless:
+esbuild emits stable `/assets/main.js` and `/assets/main.css` shell URLs plus
+hashed dynamic feature chunks. The build consumes `result.metafile`, including
+each output's `entryPoint`, `imports`, import `kind`, `inputs`, `cssBundle`, and
+byte count. It fails unless:
 
-- the main entry exposes exactly the closed set of feature dynamic entries;
-- every feature entry is hashed and every referenced asset exists;
+- the graph exposes exactly the closed feature entries plus the two known Web
+  Awesome shell entries;
+- every non-main entry is reachable only through native `dynamic-import` edges;
+- every feature entry is hashed and every internal edge resolves to an emitted
+  asset;
 - each Lit runtime module occurs in exactly one output chunk;
 - Web Awesome Core and `pinega-diagram-viewer` reach that same Lit chunk;
 - `package-lock.json` contains one root installation of `lit`, `lit-html`,
   `lit-element`, and `@lit/reactive-element` with no nested duplicates.
 
-`resolve.dedupe` names all four Lit packages, while the graph proof verifies
-the result rather than treating configuration as evidence. CI also performs
-two clean production builds and recursively compares their output before it
-tests, attests, and deploys the exact second artifact.
+No bundler-specific dedupe override is required: npm's locked package graph
+resolves the four Lit packages to one root installation, and the metafile proof
+verifies the emitted result rather than treating resolution configuration as
+evidence. The independent build checker reconstructs the feature graph from
+the persisted metafile, checks every output byte count, and compares it with
+`feature-graph.json`. CI also performs two clean production builds and
+recursively compares their output before it tests, attests, and deploys the
+exact second artifact.
 
-Vite's automatic dynamic-import dependency preloading is disabled. Each phase
-starts a native import directly, and the browser follows that module's static
-dependency graph. The emitted-code verifier rejects Vite's preload wrapper;
-this preserves the fresh-module-map hard-fallback boundary in WebKit after an
-intentionally failed chunk instead of coupling retry correctness to a preload
-cache.
+esbuild preserves each literal `import()` as a native dynamic-import edge and
+does not inject a dependency-preload wrapper. Each phase therefore starts a
+native import directly and the browser follows that module's static dependency
+graph. This preserves the fresh-module-map hard-fallback boundary in WebKit
+after an intentionally failed chunk instead of coupling retry correctness to
+a synthetic preload cache.
+
+esbuild documents code splitting as work in progress and records a known
+ordering issue for shared chunks. Gate 4.4 therefore does not permit feature
+correctness to depend on side-effect order across split entry points. The
+zero-retry browser matrix executes the real minified production artifact in
+Chromium, Firefox, and WebKit; any future cross-chunk ordering dependency must
+add a direct regression test or reopen the bundler decision.
 
 Each route's schema-v5 request manifest partitions the actual transitive
 closure into shell, critical, deferred, and viewport requests. Assets already
@@ -819,8 +834,7 @@ Chromium desktop/mobile, Firefox, and WebKit against one immutable artifact.
 - [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
 - [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)
-- [Vite — backend integration and build manifest](https://vite.dev/guide/backend-integration)
-- [Vite — dependency deduplication](https://vite.dev/config/shared-options#resolve-dedupe)
-- [Vite — module preload build control](https://vite.dev/config/build-options#build-modulepreload)
+- [esbuild — code splitting](https://esbuild.github.io/api/#splitting)
+- [esbuild — build metadata](https://esbuild.github.io/api/#metafile)
 - [Lit — development-mode duplicate-version diagnostics](https://lit.dev/docs/tools/development/)
 - [Web Awesome — usage and Lit foundation](https://webawesome.com/docs/usage/)

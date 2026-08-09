@@ -10,40 +10,18 @@ const definition = Object.freeze({
   implementation: 'lit',
   module: 'src/features/diagram-viewer.ts',
 });
-const manifest = {
-  '_lit-ABCDEFGH.js': { file: 'chunks/lit-ABCDEFGH.js', name: 'lit' },
-  'node_modules/@awesome.me/webawesome/dist/translations/ru.js': {
-    file: 'chunks/ru-ABCDEFGH.js',
-    src: 'node_modules/@awesome.me/webawesome/dist/translations/ru.js',
-    isDynamicEntry: true,
-  },
-  'src/features/diagram-viewer.ts': {
-    file: 'chunks/diagram-viewer-ABCDEFGH.js',
-    src: 'src/features/diagram-viewer.ts',
-    isDynamicEntry: true,
-    imports: ['src/main.ts', '_lit-ABCDEFGH.js'],
-  },
-  'src/main.ts': {
-    file: 'main.js',
-    src: 'src/main.ts',
-    isEntry: true,
-    dynamicImports: [
-      'src/features/diagram-viewer.ts',
-      'src/vendor/webawesome/core.ts',
-      'node_modules/@awesome.me/webawesome/dist/translations/ru.js',
-    ],
-  },
-  'src/vendor/webawesome/core.ts': {
-    file: 'chunks/core-ABCDEFGH.js',
-    src: 'src/vendor/webawesome/core.ts',
-    isDynamicEntry: true,
-    imports: ['src/main.ts', '_lit-ABCDEFGH.js'],
-  },
-};
+const paths = Object.freeze({
+  main: 'dist/assets/main.js',
+  css: 'dist/assets/main.css',
+  core: 'dist/assets/chunks/core-ABCDEFGH.js',
+  russian: 'dist/assets/chunks/ru-ABCDEFGH.js',
+  diagram: 'dist/assets/chunks/diagram-viewer-ABCDEFGH.js',
+  lit: 'dist/assets/chunks/lit-ABCDEFGH.js',
+});
 const litModules = [
-  '/workspace/web/node_modules/@lit/reactive-element/reactive-element.js',
-  '/workspace/web/node_modules/lit-element/lit-element.js',
-  '/workspace/web/node_modules/lit-html/lit-html.js',
+  'node_modules/@lit/reactive-element/reactive-element.js',
+  'node_modules/lit-element/lit-element.js',
+  'node_modules/lit-html/lit-html.js',
 ];
 const packageLock = {
   packages: {
@@ -54,29 +32,60 @@ const packageLock = {
   },
 };
 
-function bundle(extraChunks = []) {
+function metafile(extraOutputs = {}) {
   return {
-    output: [{
-      type: 'chunk',
-      fileName: 'chunks/lit-ABCDEFGH.js',
-      code: '',
-      modules: Object.fromEntries(litModules.map(moduleId => [moduleId, {}])),
-    }, {
-      type: 'chunk',
-      fileName: 'main.js',
-      code: '',
-      modules: { '/workspace/web/src/main.ts': {} },
-    }, ...extraChunks],
+    inputs: {},
+    outputs: {
+      [paths.main]: {
+        entryPoint: 'src/main.ts',
+        cssBundle: paths.css,
+        imports: [
+          { path: paths.core, kind: 'dynamic-import' },
+          { path: paths.russian, kind: 'dynamic-import' },
+          { path: paths.diagram, kind: 'dynamic-import' },
+        ],
+        inputs: { 'src/main.ts': { bytesInOutput: 10 } },
+      },
+      [paths.css]: { imports: [], inputs: {} },
+      [paths.core]: {
+        entryPoint: 'src/vendor/webawesome/core.ts',
+        imports: [{ path: paths.lit, kind: 'import-statement' }],
+        inputs: { 'src/vendor/webawesome/core.ts': { bytesInOutput: 10 } },
+      },
+      [paths.russian]: {
+        entryPoint: 'node_modules/@awesome.me/webawesome/dist/translations/ru.js',
+        imports: [],
+        inputs: {},
+      },
+      [paths.diagram]: {
+        entryPoint: 'src/features/diagram-viewer.ts',
+        imports: [{ path: paths.lit, kind: 'import-statement' }],
+        inputs: { 'src/features/diagram-viewer.ts': { bytesInOutput: 10 } },
+      },
+      [paths.lit]: {
+        imports: [],
+        inputs: Object.fromEntries(litModules.map(moduleId => [moduleId, { bytesInOutput: 10 }])),
+      },
+      ...extraOutputs,
+    },
   };
 }
 
-test('verified Vite graph derives viewport requests and explicit shell module-map reuse', () => {
+test('verified esbuild graph derives viewport requests and explicit shell module-map reuse', () => {
   const verified = createVerifiedFeatureGraph({
     definitions: [definition],
-    manifest,
-    bundle: bundle(),
+    metafile: metafile(),
     packageLock,
-    viteVersion: '8.2.1',
+    esbuildVersion: '0.28.1',
+  });
+  assert.deepEqual(verified.graph.bundler, {
+    name: 'esbuild',
+    version: '0.28.1',
+    metafile: '/assets/bundle-manifest.json',
+    format: 'esm',
+    splitting: true,
+    minified: true,
+    dynamicImports: 'native',
   });
   assert.equal(verified.graph.features[0].chunk, '/assets/chunks/diagram-viewer-ABCDEFGH.js');
   assert.deepEqual(verified.graph.lit, {
@@ -101,46 +110,54 @@ test('verified Vite graph derives viewport requests and explicit shell module-ma
     critical: [],
     deferred: [],
     viewport: ['/assets/chunks/diagram-viewer-ABCDEFGH.js'],
-    moduleMapReuse: ['/assets/chunks/lit-ABCDEFGH.js', '/assets/main.js'],
+    moduleMapReuse: ['/assets/chunks/lit-ABCDEFGH.js'],
   });
 });
 
-test('Vite verification fails if a Lit runtime module is duplicated or a feature entry is omitted', () => {
+test('esbuild verification fails if a Lit runtime module is duplicated or a feature entry is omitted', () => {
   assert.throws(() => createVerifiedFeatureGraph({
     definitions: [definition],
-    manifest,
-    bundle: bundle([{
-      type: 'chunk',
-      fileName: 'chunks/duplicate-ABCDEFGH.js',
-      code: '',
-      modules: { [litModules[0]]: {} },
-    }]),
+    metafile: metafile({
+      'dist/assets/chunks/duplicate-ABCDEFGH.js': {
+        imports: [],
+        inputs: { [litModules[0]]: { bytesInOutput: 10 } },
+      },
+    }),
     packageLock,
-    viteVersion: '8.2.1',
+    esbuildVersion: '0.28.1',
   }), /multiple chunks/u);
 
-  const missing = structuredClone(manifest);
-  missing['src/main.ts'].dynamicImports = ['src/vendor/webawesome/core.ts'];
+  const missing = metafile();
+  missing.outputs[paths.main].imports = missing.outputs[paths.main].imports
+    .filter(imported => imported.path !== paths.diagram);
   assert.throws(() => createVerifiedFeatureGraph({
     definitions: [definition],
-    manifest: missing,
-    bundle: bundle(),
+    metafile: missing,
     packageLock,
-    viteVersion: '8.2.1',
-  }), /dynamic feature entries mismatch/u);
+    esbuildVersion: '0.28.1',
+  }), /not reachable/u);
 });
 
-test('Vite verification rejects automatic dependency-preload wrappers', () => {
+test('esbuild verification rejects static feature edges and external production imports', () => {
+  const staticFeature = metafile();
+  staticFeature.outputs[paths.main].imports.find(imported => imported.path === paths.diagram).kind = 'import-statement';
   assert.throws(() => createVerifiedFeatureGraph({
     definitions: [definition],
-    manifest,
-    bundle: bundle([{
-      type: 'chunk',
-      fileName: 'chunks/preload-ABCDEFGH.js',
-      code: 'const __vite__mapDeps = () => [];',
-      modules: {},
-    }]),
+    metafile: staticFeature,
     packageLock,
-    viteVersion: '8.2.1',
-  }), /dependency preloading must remain disabled/u);
+    esbuildVersion: '0.28.1',
+  }), /native dynamic-import edges/u);
+
+  const external = metafile();
+  external.outputs[paths.main].imports.push({
+    path: 'https://example.invalid/runtime.js',
+    kind: 'dynamic-import',
+    external: true,
+  });
+  assert.throws(() => createVerifiedFeatureGraph({
+    definitions: [definition],
+    metafile: external,
+    packageLock,
+    esbuildVersion: '0.28.1',
+  }), /must be self-contained/u);
 });

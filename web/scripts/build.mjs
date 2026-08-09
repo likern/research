@@ -1,8 +1,7 @@
-import { build as esbuild } from 'esbuild';
+import { build as esbuild, version as esbuildVersion } from 'esbuild';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { build as viteBuild, version as viteVersion } from 'vite';
 
 import {
   BUILD_ID_ALGORITHM,
@@ -38,19 +37,36 @@ await mkdir(resolve(dist, 'assets'), { recursive: true });
 await mkdir(diagramBuildRoot, { recursive: true });
 const diagrams = await buildSemanticDiagrams();
 
-const viteBundle = await viteBuild({
-  configFile: resolve(root, 'vite.config.mjs'),
+const browserBundle = await esbuild({
+  absWorkingDir: root,
+  entryPoints: ['src/main.ts'],
+  outdir: resolve(dist, 'assets'),
+  bundle: true,
+  splitting: true,
+  format: 'esm',
+  target: ['es2022'],
+  sourcemap: true,
+  entryNames: '[name]',
+  chunkNames: 'chunks/[name]-[hash]',
+  assetNames: '[name]-[hash]',
+  minify: true,
+  legalComments: 'eof',
   define: { __PINEGA_WEB_AWESOME_PROJECT_URL__: JSON.stringify(projectUrl) },
+  metafile: true,
+  logLevel: 'info',
 });
-const viteManifest = JSON.parse(await readFile(resolve(dist, 'assets/vite-manifest.json'), 'utf8'));
 const packageLock = JSON.parse(await readFile(resolve(root, 'package-lock.json'), 'utf8'));
 const verifiedFeatures = createVerifiedFeatureGraph({
   definitions: ROUTE_FEATURE_DEFINITIONS,
-  manifest: viteManifest,
-  bundle: viteBundle,
+  metafile: browserBundle.metafile,
   packageLock,
-  viteVersion,
+  esbuildVersion,
 });
+await writeFile(
+  resolve(dist, 'assets/bundle-manifest.json'),
+  `${JSON.stringify(browserBundle.metafile, null, 2)}\n`,
+  'utf8',
+);
 await writeFile(
   resolve(dist, 'assets/feature-graph.json'),
   `${JSON.stringify(verifiedFeatures.graph, null, 2)}\n`,
@@ -137,7 +153,7 @@ await writeFile(
       featureGraph: {
         schemaVersion: verifiedFeatures.graph.schemaVersion,
         assetManifest: '/assets/feature-graph.json',
-        viteManifest: verifiedFeatures.graph.bundler.manifest,
+        bundleManifest: verifiedFeatures.graph.bundler.metafile,
         lit: verifiedFeatures.graph.lit,
       },
       routeOwnedMetadata: ROUTE_OWNED_METADATA,

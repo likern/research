@@ -292,21 +292,22 @@ commit, deferred modules start after commit, and viewport modules use a 256 px
 near-viewport `IntersectionObserver`. Late imports are guarded by route
 ownership, so they cannot mutate a route that has already been replaced.
 
-Vite 8.2.1 owns the browser bundle. The build verifies its emitted manifest and
-chunk/module graph, writes `/assets/feature-graph.json`, and projects a
-deterministic request manifest into every schema-v5 route entry. Concurrent
-feature requests share one application promise, while the browser module map
-reuses each successfully evaluated module by URL. No route data becomes an
-import specifier. Vite automatic dependency preloading is disabled and rejected
-in emitted code, so each phase uses the native module graph and a failed chunk
-can cross into the existing fresh-module-map fallback boundary.
+esbuild 0.28.1 remains the browser bundler. The build verifies the emitted
+production `metafile`, preserves it as `/assets/bundle-manifest.json`, writes
+`/assets/feature-graph.json`, and projects a deterministic request manifest
+into every schema-v5 route entry. Concurrent feature requests share one
+application promise, while the browser module map reuses each successfully
+evaluated module by URL. No route data becomes an import specifier. esbuild
+preserves the literal `import()` edges without injecting a dependency-preload
+wrapper, so each phase uses the native module graph and a failed chunk can
+cross into the existing fresh-module-map fallback boundary.
 
 `pinega-diagram-viewer` is a viewport-loaded Lit light-DOM lifecycle island.
 The SSG SVG, caption, transcript, and model link remain canonical with or
-without JavaScript. `lit` is a pinned direct dependency; Vite dedupes the four
-Lit package entry points, and build plus browser checks prove that Web Awesome
-and the Pinega island consume one runtime chunk and one set of runtime version
-markers.
+without JavaScript. `lit` is a pinned direct dependency; the npm lock graph has
+one root installation for all four Lit packages, and metafile plus browser
+checks prove that Web Awesome and the Pinega island consume one runtime chunk
+and one set of runtime version markers.
 
 Critical chunk failure commits nothing and performs one guarded native
 navigation into a fresh module map. Deferred and viewport failure preserve the
@@ -480,8 +481,9 @@ Gate 4.3 adds boot/fetched warm-hit proofs, zero-network/zero-parse
 instrumentation, `no-store`, in-flight reuse, fresh component/form/details
 state, LRU bounds/eviction, post-eviction cold replay, and the 100-route
 forced-GC study. Gate 4.4 adds the closed literal registry, phase ordering,
-module-map reuse, Vite output verification, deterministic per-route request
-manifests, Lit/Web Awesome deduplication, and critical chunk-failure fallback.
+module-map reuse, esbuild metafile verification, deterministic per-route
+request manifests, Lit/Web Awesome deduplication, and critical chunk-failure
+fallback.
 Both local and deployed Playwright configurations use zero retries, so CI does
 not convert a first-attempt failure into a passing gate. Prefetch remains Gate
 4.5.

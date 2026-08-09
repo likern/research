@@ -1,10 +1,11 @@
+const outputRoot = 'dist/assets/';
 const mainSource = 'src/main.ts';
 const webAwesomeCoreSource = 'src/vendor/webawesome/core.ts';
 const webAwesomeRussianSource = 'node_modules/@awesome.me/webawesome/dist/translations/ru.js';
 const litRuntimeModuleSuffixes = [
-  '/node_modules/@lit/reactive-element/reactive-element.js',
-  '/node_modules/lit-element/lit-element.js',
-  '/node_modules/lit-html/lit-html.js',
+  'node_modules/@lit/reactive-element/reactive-element.js',
+  'node_modules/lit-element/lit-element.js',
+  'node_modules/lit-html/lit-html.js',
 ];
 const litPackagePaths = [
   'node_modules/@lit/reactive-element',
@@ -15,37 +16,48 @@ const litPackagePaths = [
 
 export function createVerifiedFeatureGraph({
   definitions,
-  manifest,
-  bundle,
+  metafile,
   packageLock,
-  viteVersion,
+  esbuildVersion,
 }) {
-  if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
-    throw new TypeError('Vite manifest must be an object.');
+  const outputs = metafileOutputs(metafile);
+  validateOutputGraph(outputs);
+
+  const entryOutputs = indexEntryOutputs(outputs);
+  const mainOutputPath = requiredEntryOutput(entryOutputs, mainSource);
+  const mainOutput = requiredOutput(outputs, mainOutputPath);
+  if (outputAssetPath(mainOutputPath) !== 'main.js') {
+    throw new TypeError('esbuild main entry must remain the stable assets/main.js shell URL.');
   }
-  const entry = requiredManifestEntry(manifest, mainSource);
-  if (entry.isEntry !== true || entry.file !== 'main.js') {
-    throw new TypeError('Vite main entry must remain the stable assets/main.js shell URL.');
+  if (typeof mainOutput.cssBundle !== 'string' || outputAssetPath(mainOutput.cssBundle) !== 'main.css') {
+    throw new TypeError('esbuild main entry must expose the stable assets/main.css stylesheet URL.');
   }
 
   const featureSources = definitions.map(definition => definition.module);
-  const generatedFeatureSources = (entry.dynamicImports ?? [])
+  const generatedFeatureSources = [...entryOutputs.keys()]
     .filter(source => source.startsWith('src/features/'))
     .toSorted();
-  assertSameList(generatedFeatureSources, [...featureSources].toSorted(), 'Vite dynamic feature entries');
+  assertSameList(generatedFeatureSources, [...featureSources].toSorted(), 'esbuild dynamic feature entries');
 
-  const chunks = outputChunks(bundle);
-  if (chunks.some(chunk => chunk.code.includes('__vite__mapDeps'))) {
-    throw new TypeError('Vite automatic dynamic-import dependency preloading must remain disabled.');
-  }
-  const moduleLocations = new Map();
-  for (const chunk of chunks) {
-    for (const moduleId of Object.keys(chunk.modules)) {
-      const locations = moduleLocations.get(moduleId) ?? [];
-      locations.push(chunk.fileName);
-      moduleLocations.set(moduleId, locations);
+  const expectedDynamicSources = [
+    ...featureSources,
+    webAwesomeCoreSource,
+    webAwesomeRussianSource,
+  ].toSorted();
+  const generatedDynamicSources = [...entryOutputs.keys()]
+    .filter(source => source !== mainSource)
+    .toSorted();
+  assertSameList(generatedDynamicSources, expectedDynamicSources, 'esbuild dynamic entries');
+  const reachableFromMain = outputClosure(outputs, mainOutputPath, { includeDynamic: true });
+  for (const source of expectedDynamicSources) {
+    const entryPath = requiredEntryOutput(entryOutputs, source);
+    if (!reachableFromMain.has(entryPath)) {
+      throw new TypeError(`esbuild entry ${JSON.stringify(source)} is not reachable from the main output graph.`);
     }
+    assertNativeDynamicEntry(outputs, entryPath, source);
   }
+
+  const moduleLocations = indexInputLocations(outputs);
   for (const [moduleId, locations] of moduleLocations) {
     if (isLitModule(moduleId) && locations.length !== 1) {
       throw new TypeError(`Lit module ${moduleId} was emitted into multiple chunks: ${locations.join(', ')}.`);
@@ -61,12 +73,13 @@ export function createVerifiedFeatureGraph({
     throw new TypeError(`Lit runtime primitives are split across unexpected chunks: ${litRuntimeChunks.join(', ')}.`);
   }
   const litRuntimeFile = litRuntimeChunks[0];
-  const litManifestKey = Object.keys(manifest).find(key => manifest[key]?.file === litRuntimeFile);
-  if (!litManifestKey) throw new TypeError(`Vite manifest does not expose Lit runtime chunk ${litRuntimeFile}.`);
 
-  const coreClosure = manifestClosure(manifest, webAwesomeCoreSource);
-  const diagramClosure = manifestClosure(manifest, requiredFeature(definitions, 'diagram-viewer').module);
-  if (!coreClosure.has(litManifestKey) || !diagramClosure.has(litManifestKey)) {
+  const coreOutputPath = requiredEntryOutput(entryOutputs, webAwesomeCoreSource);
+  const diagramSource = requiredFeature(definitions, 'diagram-viewer').module;
+  const diagramOutputPath = requiredEntryOutput(entryOutputs, diagramSource);
+  const coreClosure = outputClosure(outputs, coreOutputPath);
+  const diagramClosure = outputClosure(outputs, diagramOutputPath);
+  if (!coreClosure.has(litRuntimeFile) || !diagramClosure.has(litRuntimeFile)) {
     throw new TypeError('Web Awesome Core and the Lit diagram island must import one shared Lit runtime chunk.');
   }
 
@@ -85,22 +98,23 @@ export function createVerifiedFeatureGraph({
   }
 
   const features = definitions.map(definition => {
-    const dynamicEntry = requiredManifestEntry(manifest, definition.module);
-    if (dynamicEntry.isDynamicEntry !== true || !/^chunks\/[a-z0-9][a-z0-9.-]*-[A-Za-z0-9_-]{8}\.js$/u.test(dynamicEntry.file)) {
-      throw new TypeError(`Feature ${definition.id} is not a hashed Vite dynamic entry: ${JSON.stringify(dynamicEntry.file)}.`);
+    const dynamicEntryPath = requiredEntryOutput(entryOutputs, definition.module);
+    const dynamicEntryFile = outputAssetPath(dynamicEntryPath);
+    if (!/^chunks\/[a-z0-9][a-z0-9.-]*-[A-Z0-9]{8}\.js$/u.test(dynamicEntryFile)) {
+      throw new TypeError(`Feature ${definition.id} is not a hashed esbuild dynamic entry: ${JSON.stringify(dynamicEntryFile)}.`);
     }
-    const closure = manifestClosure(manifest, definition.module);
+    const closure = outputClosure(outputs, dynamicEntryPath);
     return Object.freeze({
       id: definition.id,
       element: definition.element,
       loading: definition.loading,
       implementation: definition.implementation,
       source: definition.module,
-      chunk: assetUrl(dynamicEntry.file),
+      chunk: assetUrl(dynamicEntryPath),
       imports: Object.freeze(
         [...closure]
-          .filter(key => key !== definition.module)
-          .map(key => assetUrl(requiredManifestEntry(manifest, key).file))
+          .filter(path => path !== dynamicEntryPath)
+          .map(assetUrl)
           .toSorted(),
       ),
     });
@@ -110,19 +124,22 @@ export function createVerifiedFeatureGraph({
     schemaVersion: 1,
     kind: 'pinega-dynamic-feature-graph',
     bundler: {
-      name: 'vite',
-      version: viteVersion,
-      manifest: '/assets/vite-manifest.json',
-      modulePreload: false,
+      name: 'esbuild',
+      version: esbuildVersion,
+      metafile: '/assets/bundle-manifest.json',
+      format: 'esm',
+      splitting: true,
+      minified: true,
+      dynamicImports: 'native',
     },
     entry: {
       source: mainSource,
-      script: '/assets/main.js',
-      stylesheet: '/assets/main.css',
+      script: assetUrl(mainOutputPath),
+      stylesheet: assetUrl(mainOutput.cssBundle),
     },
     shell: {
-      webAwesomeCore: assetUrl(requiredManifestEntry(manifest, webAwesomeCoreSource).file),
-      webAwesomeRussianTranslation: assetUrl(requiredManifestEntry(manifest, webAwesomeRussianSource).file),
+      webAwesomeCore: assetUrl(coreOutputPath),
+      webAwesomeRussianTranslation: assetUrl(requiredEntryOutput(entryOutputs, webAwesomeRussianSource)),
     },
     features,
     lit: {
@@ -133,33 +150,38 @@ export function createVerifiedFeatureGraph({
         if (!metadata?.version) throw new TypeError(`Missing locked version for ${path}.`);
         return [path.slice('node_modules/'.length), metadata.version];
       })),
-      consumers: [webAwesomeCoreSource, requiredFeature(definitions, 'diagram-viewer').module],
+      consumers: [webAwesomeCoreSource, diagramSource],
     },
   };
 
   return Object.freeze({
     graph: deepFreeze(featureGraph),
     routeRequests(locale, featureIds) {
-      return createRouteRequestManifest(featureGraph, manifest, definitions, locale, featureIds);
+      return createRouteRequestManifest(featureGraph, metafile, definitions, locale, featureIds);
     },
   });
 }
 
-export function createRouteRequestManifest(featureGraph, manifest, definitions, locale, featureIds) {
-  const shellKeys = new Set([
-    ...manifestClosure(manifest, mainSource),
-    ...manifestClosure(manifest, webAwesomeCoreSource),
-    ...(locale === 'ru' ? manifestClosure(manifest, webAwesomeRussianSource) : []),
+export function createRouteRequestManifest(featureGraph, metafile, definitions, locale, featureIds) {
+  const outputs = metafileOutputs(metafile);
+  const entryOutputs = indexEntryOutputs(outputs);
+  const shellOutputs = new Set([
+    ...outputClosure(outputs, requiredEntryOutput(entryOutputs, mainSource)),
+    ...outputClosure(outputs, requiredEntryOutput(entryOutputs, webAwesomeCoreSource)),
+    ...(locale === 'ru'
+      ? outputClosure(outputs, requiredEntryOutput(entryOutputs, webAwesomeRussianSource))
+      : []),
   ]);
-  const shell = new Set(['/assets/main.css']);
-  for (const key of shellKeys) shell.add(assetUrl(requiredManifestEntry(manifest, key).file));
+  const shell = new Set([featureGraph.entry.stylesheet]);
+  for (const path of shellOutputs) shell.add(assetUrl(path));
 
   const phaseAssets = { critical: new Set(), deferred: new Set(), viewport: new Set() };
   const reused = new Set();
   for (const featureId of featureIds) {
     const definition = requiredFeature(definitions, featureId);
-    for (const key of manifestClosure(manifest, definition.module)) {
-      const url = assetUrl(requiredManifestEntry(manifest, key).file);
+    const featureOutputPath = requiredEntryOutput(entryOutputs, definition.module);
+    for (const path of outputClosure(outputs, featureOutputPath)) {
+      const url = assetUrl(path);
       if (shell.has(url)) reused.add(url);
       else phaseAssets[definition.loading].add(url);
     }
@@ -175,32 +197,103 @@ export function createRouteRequestManifest(featureGraph, manifest, definitions, 
   });
 }
 
-function outputChunks(bundle) {
-  const outputs = Array.isArray(bundle) ? bundle : [bundle];
-  const chunks = outputs.flatMap(output => output?.output ?? []).filter(item => item.type === 'chunk');
-  if (chunks.length === 0) throw new TypeError('Vite build returned no output chunks for verification.');
-  return chunks;
+function metafileOutputs(metafile) {
+  if (!metafile || typeof metafile !== 'object' || Array.isArray(metafile)) {
+    throw new TypeError('esbuild metafile must be an object.');
+  }
+  const outputs = metafile.outputs;
+  if (!outputs || typeof outputs !== 'object' || Array.isArray(outputs)) {
+    throw new TypeError('esbuild metafile must expose an outputs graph.');
+  }
+  return outputs;
 }
 
-function manifestClosure(manifest, source) {
+function validateOutputGraph(outputs) {
+  for (const [outputPath, output] of Object.entries(outputs)) {
+    outputAssetPath(outputPath);
+    if (!output || typeof output !== 'object' || Array.isArray(output)) {
+      throw new TypeError(`Invalid esbuild output record ${JSON.stringify(outputPath)}.`);
+    }
+    for (const imported of output.imports ?? []) {
+      if (imported.external === true) {
+        throw new TypeError(`esbuild production output must be self-contained, found external import ${JSON.stringify(imported.path)}.`);
+      }
+      requiredOutput(outputs, imported.path);
+    }
+  }
+}
+
+function indexEntryOutputs(outputs) {
+  const entries = new Map();
+  for (const [outputPath, output] of Object.entries(outputs)) {
+    if (typeof output.entryPoint !== 'string') continue;
+    const source = normalizePath(output.entryPoint);
+    if (entries.has(source)) {
+      throw new TypeError(`esbuild entry ${JSON.stringify(source)} has multiple outputs.`);
+    }
+    entries.set(source, normalizePath(outputPath));
+  }
+  if (!entries.has(mainSource)) throw new TypeError(`esbuild metafile is missing ${JSON.stringify(mainSource)}.`);
+  return entries;
+}
+
+function indexInputLocations(outputs) {
+  const locations = new Map();
+  for (const [outputPath, output] of Object.entries(outputs)) {
+    if (!outputPath.endsWith('.js')) continue;
+    for (const moduleId of Object.keys(output.inputs ?? {})) {
+      const normalizedModuleId = normalizePath(moduleId);
+      const moduleOutputs = locations.get(normalizedModuleId) ?? [];
+      moduleOutputs.push(normalizePath(outputPath));
+      locations.set(normalizedModuleId, moduleOutputs);
+    }
+  }
+  return locations;
+}
+
+function assertNativeDynamicEntry(outputs, entryPath, source) {
+  const incoming = [];
+  for (const [importerPath, output] of Object.entries(outputs)) {
+    for (const imported of output.imports ?? []) {
+      if (normalizePath(imported.path) === entryPath) {
+        incoming.push({ importerPath: normalizePath(importerPath), kind: imported.kind });
+      }
+    }
+  }
+  if (incoming.length === 0 || incoming.some(edge => edge.kind !== 'dynamic-import')) {
+    throw new TypeError(`esbuild entry ${JSON.stringify(source)} must be reachable only through native dynamic-import edges.`);
+  }
+}
+
+function outputClosure(outputs, sourcePath, { includeDynamic = false } = {}) {
   const visited = new Set();
-  const pending = [source];
+  const pending = [sourcePath];
   while (pending.length > 0) {
-    const key = pending.pop();
-    if (!key || visited.has(key)) continue;
-    visited.add(key);
-    const entry = requiredManifestEntry(manifest, key);
-    pending.push(...(entry.imports ?? []));
+    const path = pending.pop();
+    if (!path || visited.has(path)) continue;
+    visited.add(path);
+    const output = requiredOutput(outputs, path);
+    for (const imported of output.imports ?? []) {
+      if (!includeDynamic && imported.kind === 'dynamic-import') continue;
+      pending.push(normalizePath(imported.path));
+    }
   }
   return visited;
 }
 
-function requiredManifestEntry(manifest, source) {
-  const entry = manifest[source];
-  if (!entry || typeof entry !== 'object' || typeof entry.file !== 'string') {
-    throw new TypeError(`Vite manifest is missing ${JSON.stringify(source)}.`);
+function requiredOutput(outputs, path) {
+  const normalized = normalizePath(path);
+  const output = outputs[normalized];
+  if (!output || typeof output !== 'object' || Array.isArray(output)) {
+    throw new TypeError(`esbuild metafile is missing output ${JSON.stringify(normalized)}.`);
   }
-  return entry;
+  return output;
+}
+
+function requiredEntryOutput(entryOutputs, source) {
+  const path = entryOutputs.get(source);
+  if (!path) throw new TypeError(`esbuild metafile is missing entry ${JSON.stringify(source)}.`);
+  return path;
 }
 
 function requiredFeature(definitions, featureId) {
@@ -209,16 +302,26 @@ function requiredFeature(definitions, featureId) {
   return definition;
 }
 
-function assetUrl(file) {
-  if (typeof file !== 'string' || file.startsWith('/') || file.includes('..')) {
-    throw new TypeError(`Invalid Vite asset path ${JSON.stringify(file)}.`);
+function assetUrl(outputPath) {
+  return `/assets/${outputAssetPath(outputPath)}`;
+}
+
+function outputAssetPath(outputPath) {
+  const path = normalizePath(outputPath);
+  if (!path.startsWith(outputRoot) || path.includes('/../') || path.endsWith('/..')) {
+    throw new TypeError(`Invalid esbuild asset path ${JSON.stringify(outputPath)}.`);
   }
-  return `/assets/${file}`;
+  const relative = path.slice(outputRoot.length);
+  const segments = relative.split('/');
+  if (!relative || relative.startsWith('/') || segments.some(segment => !segment || segment === '.' || segment === '..')) {
+    throw new TypeError(`Invalid esbuild asset path ${JSON.stringify(outputPath)}.`);
+  }
+  return relative;
 }
 
 function isLitModule(moduleId) {
   const path = normalizePath(moduleId);
-  return /\/node_modules\/(?:@lit\/reactive-element|lit|lit-element|lit-html)(?:\/|$)/u.test(path);
+  return /(?:^|\/)node_modules\/(?:@lit\/reactive-element|lit|lit-element|lit-html)(?:\/|$)/u.test(path);
 }
 
 function normalizePath(value) {
