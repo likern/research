@@ -8,31 +8,23 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
   expect(probe.status(), `${route} should return HTTP ${expectedStatus}`).toBe(expectedStatus);
   await probe.dispose();
 
-  const controller = new AbortController();
-  let navigationFailure: unknown;
-  const navigation = page.goto(target, {
-    signal: controller.signal,
-    timeout: 0,
-    waitUntil: 'commit',
-  }).catch(error => {
-    navigationFailure = error;
-    return null;
-  });
+  await page.evaluate(targetUrl => {
+    const link = document.createElement('a');
+    link.href = targetUrl;
+    link.target = '_self';
+    link.hidden = true;
+    document.body.append(link);
+    setTimeout(() => link.click(), 0);
+  }, target);
 
-  try {
-    await expect.poll(async () => {
-      if (navigationFailure) throw navigationFailure;
-      try {
-        return await page.evaluate(() => ({
-          href: location.href,
-          ready: document.documentElement.dataset.pinegaReady,
-        }));
-      } catch {
-        return undefined;
-      }
-    }).toEqual({ href: target, ready: 'true' });
-  } finally {
-    controller.abort('Pinega application readiness observed');
-    await navigation;
-  }
+  await expect.poll(async () => {
+    try {
+      return await page.evaluate(() => ({
+        href: location.href,
+        ready: document.documentElement.dataset.pinegaReady,
+      }));
+    } catch {
+      return undefined;
+    }
+  }).toEqual({ href: target, ready: 'true' });
 }
