@@ -134,7 +134,7 @@
     color: var(--pinega-ref-color-river-30);
     padding: 0.375em 0.625em;
     font-size: 0.75em;
-    font-weight: var(--pinega-ref-font-weight-semibold);
+    font-weight: var(--pinega-ref-font-weight-medium);
     line-height: 1;
     user-select: none;
     vertical-align: middle;
