@@ -7,6 +7,7 @@
     min-block-size: var(--pinega-component-header-height);
     border-block-end: 1px solid color-mix(in oklab, var(--pinega-sys-color-border-subtle) 78%, transparent);
     background: color-mix(in oklab, var(--pinega-sys-color-surface-canvas) 88%, transparent);
+    color: var(--pinega-sys-color-text-primary);
     backdrop-filter: blur(1rem) saturate(125%);
   }
 

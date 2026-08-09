@@ -222,9 +222,13 @@ export async function capturePhase(page: Page, phase: string, captureScreenshots
         const computed = getComputedStyle(element);
         const pseudo = (name: '::before' | '::after'): PseudoSignature => {
           const styles = getComputedStyle(element, name);
+          const content = styles.content;
+          const rendered = styles.display !== 'none' && content !== 'none' && content !== 'normal';
           return {
-            content: styles.content,
-            styles: Object.fromEntries(properties.map(property => [property, styles.getPropertyValue(property)])),
+            content,
+            styles: rendered
+              ? Object.fromEntries(properties.map(property => [property, styles.getPropertyValue(property)]))
+              : {},
           };
         };
         const rect = element.getBoundingClientRect();
