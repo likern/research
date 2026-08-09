@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "representatives": [
+    { "contentType": "about", "id": "about", "locale": "en", "route": "/about/" },
+    { "contentType": "documentation-contributing", "id": "docs-review-release-gates", "locale": "en", "route": "/docs/contributing/review-and-release-gates/" },
+    { "contentType": "documentation-explanation", "id": "docs-pinega-programme", "locale": "en", "route": "/docs/concepts/pinega-programme/" },
+    { "contentType": "documentation-how-to", "id": "docs-build-site", "locale": "en", "route": "/docs/how-to/build-the-site/" },
+    { "contentType": "documentation-landing", "id": "documentation", "locale": "en", "route": "/docs/" },
+    { "contentType": "documentation-reference", "id": "docs-repository-layout", "locale": "en", "route": "/docs/reference/repository-layout/" },
+    { "contentType": "documentation-start", "id": "getting-started", "locale": "en", "route": "/docs/getting-started/" },
+    { "contentType": "documentation-tutorial", "id": "docs-research-workspace", "locale": "en", "route": "/docs/start/research-workspace/" },
+    { "contentType": "internal-validation", "id": "component-lab", "locale": "en", "route": "/component-lab/" },
+    { "contentType": "landing", "id": "home", "locale": "en", "route": "/" },
+    { "contentType": "research-catalogue", "id": "research", "locale": "en", "route": "/research/" },
+    { "contentType": "system", "id": "not-found", "locale": "en", "route": "/404.html" },
+    { "contentType": "technology-catalogue", "id": "technology", "locale": "en", "route": "/technology/" }
+  ]
+}

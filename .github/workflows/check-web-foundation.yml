@@ -9,6 +9,7 @@ on:
       - "web/**"
       - "docs/web-foundation.md"
       - "docs/web-delivery-gate-1.md"
+      - "docs/web-static-navigation.md"
       - ".github/workflows/check-web-foundation.yml"
   pull_request:
     types:
@@ -20,6 +21,7 @@ on:
       - "web/**"
       - "docs/web-foundation.md"
       - "docs/web-delivery-gate-1.md"
+      - "docs/web-static-navigation.md"
       - ".github/workflows/check-web-foundation.yml"
   workflow_dispatch:
 
@@ -124,6 +126,13 @@ jobs:
       - name: Run browser and accessibility tests against the exact build
         run: npm run test:browser
 
+      - name: Record the Gate 4 MPA navigation baseline
+        env:
+          PINEGA_BASELINE_PROFILE: github-ubuntu-24.04-node-26.7-playwright-1.62.1
+          PINEGA_DEPLOYMENT_SOURCE_SHA: ${{ steps.preview-identity.outputs.source-sha }}
+          PINEGA_DEPLOYMENT_TESTED_SHA: ${{ steps.preview-identity.outputs.tested-sha }}
+        run: npm run measure:baseline
+
       - name: Verify committed visual baselines against the exact build
         run: npm run test:visual
 
@@ -183,6 +192,7 @@ jobs:
             web/tests/visual
             web/test-results
             web/playwright-report
+            web/artifacts/baseline
             web/artifacts/diagnostics/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 30

@@ -1,0 +1,117 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import test from 'node:test';
+
+import {
+  DOCUMENT_CONTRACT_VERSION,
+  ROUTE_FEATURE_DEFINITIONS,
+  SHELL_VERSION,
+  normalizeRouteUrl,
+  routeCacheKey,
+} from '../../navigation/contract.mjs';
+import { finalizeBuildIdentity, verifyBuildIdentity } from '../../scripts/lib/build-identity.mjs';
+import {
+  classifyNavigationResponse,
+  validateDocumentContract,
+} from '../../scripts/lib/document-contract.mjs';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const fixtures = resolve(root, 'fixtures/navigation');
+const buildA = 'sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
+const readFixture = path => readFile(resolve(fixtures, path), 'utf8');
+
+test('valid fixtures cover ordinary, long, Lit, locale, missing-translation, and build documents', async () => {
+  const names = [
+    'normal.html',
+    'long-doc.html',
+    'lit-feature.html',
+    'multilingual-en.html',
+    'multilingual-ru.html',
+    'missing-translation.html',
+    'build-old.html',
+    'build-new.html',
+  ];
+  const contracts = await Promise.all(names.map(async name => validateDocumentContract(await readFixture(name), {
+    siteOrigin: 'https://pinega.example',
+  })));
+  assert.ok(contracts.every(contract => contract.contractVersion === DOCUMENT_CONTRACT_VERSION));
+  assert.ok(contracts.every(contract => contract.shellVersion === SHELL_VERSION));
+  assert.deepEqual(contracts[2].features, ['diagram-viewer']);
+  assert.equal(contracts[2].criticalFeatures.length, 0);
+  assert.equal(ROUTE_FEATURE_DEFINITIONS.find(feature => feature.id === 'diagram-viewer')?.implementation, 'lit');
+  assert.deepEqual(contracts[3].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
+  assert.deepEqual(contracts[4].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
+  assert.deepEqual(contracts[5].alternates.map(alternate => alternate.language), ['en', 'x-default']);
+});
+
+test('every registered content class has one deterministic representative route', async () => {
+  const contentIndex = JSON.parse(await readFile(resolve(root, '../content/content-index.json'), 'utf8'));
+  const fixture = JSON.parse(await readFixture('page-classes.json'));
+  assert.equal(fixture.schemaVersion, 1);
+  const contentTypes = [...new Set(contentIndex.entries.map(entry => entry.content_type))].sort();
+  assert.deepEqual(fixture.representatives.map(representative => representative.contentType), contentTypes);
+  assert.equal(new Set(fixture.representatives.map(representative => representative.route)).size, fixture.representatives.length);
+  for (const representative of fixture.representatives) {
+    const entry = contentIndex.entries.find(candidate => candidate.id === representative.id);
+    assert.ok(entry, `Unknown representative entry ${representative.id}`);
+    assert.equal(entry.content_type, representative.contentType);
+    assert.equal(entry.locales[representative.locale]?.route, representative.route);
+  }
+});
+
+test('malformed route documents fail before they can become prepared routes', async () => {
+  assert.throws(
+    () => validateDocumentContract(readFileSync(resolve(fixtures, 'malformed.html'), 'utf8')),
+    /data-pinega-route|data-pinega-shell/u,
+  );
+});
+
+test('URL normalization preserves content-affecting queries and trailing-slash policy but excludes fragments', () => {
+  const origin = 'https://pinega.example';
+  assert.equal(
+    normalizeRouteUrl('/docs/?topic=mvcc&utm_source=research#target', origin),
+    'https://pinega.example/docs/?topic=mvcc&utm_source=research',
+  );
+  assert.notEqual(normalizeRouteUrl('/docs', origin), normalizeRouteUrl('/docs/', origin));
+  assert.notEqual(normalizeRouteUrl('/docs/?a=1&b=2', origin), normalizeRouteUrl('/docs/?b=2&a=1', origin));
+  assert.throws(() => normalizeRouteUrl('https://example.com/docs/', origin), /must remain/u);
+  assert.equal(
+    routeCacheKey(buildA, '/docs/#one', origin),
+    routeCacheKey(buildA, '/docs/#two', origin),
+  );
+});
+
+test('response fixtures define hard-navigation boundaries without browser state', async () => {
+  const cases = JSON.parse(await readFixture('response-cases.json'));
+  for (const fixture of cases) {
+    const body = fixture.body === null ? null : await readFixture(fixture.body);
+    const result = classifyNavigationResponse({ ...fixture, body }, {
+      siteOrigin: 'https://pinega.example',
+      buildId: buildA,
+      shellVersion: SHELL_VERSION,
+    });
+    assert.equal(result.outcome, fixture.outcome, fixture.id);
+    if (fixture.reason) assert.equal(result.reason, fixture.reason, fixture.id);
+  }
+});
+
+test('normalized artifact identity is deterministic and ignores delivery provenance only', async t => {
+  const directory = await mkdtemp(resolve(tmpdir(), 'pinega-build-contract-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await mkdir(resolve(directory, 'route'), { recursive: true });
+  await writeFile(resolve(directory, 'route/index.html'), '<html data-pinega-build="__PINEGA_BUILD_ID__"></html>', 'utf8');
+  await writeFile(resolve(directory, 'site-manifest.json'), '{"build":"__PINEGA_BUILD_ID__"}\n', 'utf8');
+  const identityPaths = ['route/index.html', 'site-manifest.json'];
+  const buildId = await finalizeBuildIdentity(directory, identityPaths);
+  await verifyBuildIdentity(directory, buildId, identityPaths);
+  await mkdir(resolve(directory, '.well-known'), { recursive: true });
+  await writeFile(resolve(directory, '.well-known/pinega-deployment.json'), '{"run":1}\n', 'utf8');
+  await verifyBuildIdentity(directory, buildId, identityPaths);
+  await writeFile(resolve(directory, 'payload.txt'), 'changed\n', 'utf8');
+  await assert.rejects(verifyBuildIdentity(directory, buildId, identityPaths), /identity mismatch/u);
+});

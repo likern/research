@@ -233,15 +233,47 @@ test('about page distinguishes Pinega, Pinega Labs, and future offerings', async
   await expect(page.getByText('Pinega Labs is the working research', { exact: false })).toBeVisible();
 });
 
+test('representative routes expose one versioned build and route-feature contract', async ({ page, request }) => {
+  const manifestResponse = await request.get('/site-manifest.json');
+  const manifest = await manifestResponse.json() as {
+    build: { id: string; documentContractVersion: string; shellVersion: string };
+  };
+  const representatives = [
+    { route: '/', routeId: 'home', features: '', critical: '' },
+    { route: '/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
+    { route: '/component-lab/', routeId: 'component-lab', features: 'benchmark code-example', critical: 'benchmark' },
+    { route: '/ru/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
+  ];
+  for (const representative of representatives) {
+    await ready(page, representative.route);
+    await expect(page.locator('html')).toHaveAttribute('data-pinega-contract', manifest.build.documentContractVersion);
+    await expect(page.locator('html')).toHaveAttribute('data-pinega-shell', manifest.build.shellVersion);
+    await expect(page.locator('html')).toHaveAttribute('data-pinega-build', manifest.build.id);
+    await expect(page.locator('body')).toHaveAttribute('data-pinega-route', representative.routeId);
+    const main = page.locator('main#main-content');
+    await expect(main).toHaveAttribute('data-pinega-route', representative.routeId);
+    await expect(main).toHaveAttribute('data-pinega-features', representative.features);
+    await expect(main).toHaveAttribute('data-pinega-critical-features', representative.critical);
+  }
+});
+
 test('generated discovery files expose the complete documentation corpus', async ({ request }) => {
   const manifest = await request.get('/site-manifest.json');
   expect(manifest.ok()).toBeTruthy();
   const payload = await manifest.json() as {
     schemaVersion: number;
+    build: { id: string; identityAlgorithm: string; documentContractVersion: string; shellVersion: string };
+    navigation: { routeFeatureDefinitions: Array<{ id: string; implementation: string }>; routeOwnedMetadata: string[] };
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
-    routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; documentation?: unknown }>;
+    routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
   };
-  expect(payload.schemaVersion).toBe(3);
+  expect(payload.schemaVersion).toBe(4);
+  expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
+  expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
+  expect(payload.build.documentContractVersion).toBe('1');
+  expect(payload.build.shellVersion).toBe('4.0');
+  expect(payload.navigation.routeFeatureDefinitions.map(feature => feature.id)).toEqual(['benchmark', 'code-example', 'diagram-viewer', 'doc-topic-filter']);
+  expect(payload.navigation.routeOwnedMetadata).toContain('link[rel="canonical"]');
   expect(payload.site.tagline).toBe('Correctness under concurrency.');
   expect(payload.site.defaultLocale).toBe('en');
   expect(payload.site.locales.ru?.pathPrefix).toBe('/ru');
@@ -249,6 +281,8 @@ test('generated discovery files expose the complete documentation corpus', async
   expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route).toSorted()).toEqual([...publicRoutes, ...russianPublicRoutes].toSorted());
   expect(payload.routes.filter(entry => entry.documentation && !['/docs/', '/ru/docs/'].includes(entry.route))).toHaveLength(26);
   expect(payload.routes.filter(entry => entry.locale === 'ru')).toHaveLength(19);
+  expect(payload.routes.find(entry => entry.route === '/docs/')?.features).toEqual(['doc-topic-filter']);
+  expect(payload.routes.find(entry => entry.route === '/component-lab/')?.criticalFeatures).toEqual(['benchmark']);
 
   const registry = await request.get('/content/content-index.json');
   const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };

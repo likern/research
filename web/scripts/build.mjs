@@ -3,6 +3,17 @@ import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 
+import {
+  BUILD_ID_ALGORITHM,
+  BUILD_ID_PLACEHOLDER,
+  DOCUMENT_CONTRACT_VERSION,
+  ROUTE_FEATURE_DEFINITIONS,
+  ROUTE_OWNED_METADATA,
+  SHELL_VERSION,
+} from '../navigation/contract.mjs';
+import { finalizeBuildIdentity } from './lib/build-identity.mjs';
+import { applyDocumentContract, validateDocumentContract } from './lib/document-contract.mjs';
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
 const contentRoot = resolve(root, 'content');
@@ -15,6 +26,7 @@ const documentationSectionIds = ['start', 'tutorials', 'how-to', 'concepts', 're
 const contentIndex = validateContentIndex(JSON.parse(await readFile(resolve(contentRoot, 'content-index.json'), 'utf8')));
 const localeMessages = await loadLocaleMessages(contentIndex.site.locales);
 const pages = expandPages(contentIndex);
+const builtPages = [];
 
 await import('../../design/scripts/build-tokens.mjs');
 await rm(dist, { recursive: true, force: true });
@@ -50,9 +62,31 @@ for (const page of pages) {
   );
   html = replaceDocumentationPlaceholders(html, page, pages);
   html = replaceDiagramPlaceholders(html, diagrams.figures, page.locale, page.source);
+  const contracted = applyDocumentContract(html, page);
+  html = contracted.html;
+  validateDocumentContract(html, {
+    allowBuildPlaceholder: true,
+    siteOrigin,
+    routeId: page.id,
+    buildId: BUILD_ID_PLACEHOLDER,
+    language: page.lang,
+    locale: page.locale,
+    direction: page.direction,
+    title: page.canonical_title,
+    description: page.summary,
+    canonicalUrl: page.canonical ? `${siteOrigin}${page.route}` : null,
+    alternates: expectedRouteAlternates(page),
+    features: contracted.features,
+    criticalFeatures: contracted.criticalFeatures,
+  });
   const output = resolve(dist, page.output);
   await mkdir(dirname(output), { recursive: true });
   await writeFile(output, html, 'utf8');
+  builtPages.push({
+    ...page,
+    features: contracted.features,
+    criticalFeatures: contracted.criticalFeatures,
+  });
 }
 
 try {
@@ -74,13 +108,30 @@ try {
   if (error?.code !== 'ENOENT') throw error;
 }
 
-const publicRoutes = pages.filter(page => page.sitemap).map(page => page.route);
+const publicRoutes = builtPages.filter(page => page.sitemap).map(page => page.route);
 await writeFile(resolve(dist, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${siteOrigin}/sitemap.xml\n`, 'utf8');
 await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRoutes), 'utf8');
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 3,
+    schemaVersion: 4,
+    build: {
+      id: BUILD_ID_PLACEHOLDER,
+      identityAlgorithm: BUILD_ID_ALGORITHM,
+      documentContractVersion: DOCUMENT_CONTRACT_VERSION,
+      shellVersion: SHELL_VERSION,
+    },
+    navigation: {
+      routeFeatureDefinitions: ROUTE_FEATURE_DEFINITIONS,
+      routeOwnedMetadata: ROUTE_OWNED_METADATA,
+      urlNormalization: {
+        cacheKeyFields: ['buildId', 'origin', 'pathname', 'search'],
+        fragment: 'excluded-from-route-identity',
+        query: 'preserved',
+        trailingSlash: 'server-owned',
+        trackingParameters: 'preserved',
+      },
+    },
     origin: siteOrigin,
     site: {
       name: contentIndex.site.name,
@@ -97,7 +148,7 @@ await writeFile(
         primaryNavigation: resolvePrimaryNavigation(contentIndex, locale),
       }])),
     },
-    routes: pages.map(page => ({
+    routes: builtPages.map(page => ({
       id: page.id,
       locale: page.locale,
       route: page.route,
@@ -119,6 +170,8 @@ await writeFile(
       structuredDataType: page.structured_data_type,
       public: page.public,
       canonical: page.canonical,
+      features: page.features,
+      criticalFeatures: page.criticalFeatures,
       documentation: page.documentation ?? null,
       translations: Object.fromEntries(page.translations.map(translation => [translation.locale, translation.route])),
     })),
@@ -127,7 +180,12 @@ await writeFile(
   'utf8',
 );
 
-console.log(`Built Pinega website at ${dist} with ${pages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);
+const buildId = await finalizeBuildIdentity(dist, [
+  ...builtPages.map(page => page.output),
+  'site-manifest.json',
+]);
+
+console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);
 
 async function buildSemanticDiagrams() {
   const rendererPath = resolve(diagramBuildRoot, 'renderer.mjs');
@@ -503,6 +561,20 @@ function renderLocaleMetadata(page) {
     }
   }
   return lines.join('\n    ');
+}
+
+function expectedRouteAlternates(page) {
+  if (!page.canonical) return [];
+  const canonicalTranslations = page.translations.filter(translation => translation.canonical);
+  const alternates = canonicalTranslations.map(translation => ({
+    language: translation.lang,
+    href: `${siteOrigin}${translation.route}`,
+  }));
+  const defaultTranslation = canonicalTranslations.find(translation => translation.locale === page.defaultLocale);
+  if (defaultTranslation) {
+    alternates.push({ language: 'x-default', href: `${siteOrigin}${defaultTranslation.route}` });
+  }
+  return alternates;
 }
 
 function renderLanguageSwitcher(page) {
