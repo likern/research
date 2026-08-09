@@ -93,12 +93,14 @@ async function observeRenderCycle(
   await navigate();
   await mainGate.waitForRequest();
   await waitForAuthoredRender(page);
+  await expect(page.locator('html')).not.toHaveAttribute('data-pinega-ready', /.+/u);
   const authored = await capturePhase(page, `${cycle}-authored`);
   await attachPhase(testInfo, routeId, authored);
 
   await mainGate.release();
   await webAwesomeGate.waitForRequest();
   await waitForAuthoredRender(page);
+  await expect(page.locator('html')).not.toHaveAttribute('data-pinega-ready', /.+/u);
   const shell = await capturePhase(page, `${cycle}-shell`);
   await attachPhase(testInfo, routeId, shell);
 

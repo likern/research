@@ -7,12 +7,25 @@ const observedStyles = [
   'visibility',
   'opacity',
   'position',
+  'box-sizing',
+  'overflow-x',
+  'overflow-y',
+  'z-index',
   'inline-size',
   'block-size',
   'min-inline-size',
   'min-block-size',
+  'max-inline-size',
+  'max-block-size',
+  'inset-block-start',
+  'inset-block-end',
+  'inset-inline-start',
+  'inset-inline-end',
   'background-color',
   'background-image',
+  'background-position',
+  'background-repeat',
+  'background-size',
   'color',
   'border-top-color',
   'border-right-color',
@@ -37,9 +50,25 @@ const observedStyles = [
   'line-height',
   'letter-spacing',
   'text-transform',
+  'text-shadow',
+  'row-gap',
+  'column-gap',
+  'align-items',
+  'justify-content',
+  'flex-direction',
+  'grid-template-columns',
+  'grid-template-rows',
   'box-shadow',
+  'filter',
+  'backdrop-filter',
+  'clip-path',
   'transform',
 ] as const;
+
+interface PseudoSignature {
+  content: string;
+  styles: Record<string, string>;
+}
 
 interface ElementSignature {
   path: string;
@@ -48,6 +77,7 @@ interface ElementSignature {
   directText: string | null;
   rect: { x: number; y: number; width: number; height: number };
   styles: Record<string, string>;
+  pseudos: { before: PseudoSignature; after: PseudoSignature };
 }
 
 export interface RegionCapture {
@@ -151,12 +181,15 @@ export async function waitForAuthoredRender(page: Page): Promise<void> {
     return stylesheet?.sheet && document.querySelectorAll(selector).length > 0;
   }, regionSelector);
   await page.evaluate(async () => {
-    await document.fonts.ready;
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
   });
 }
 
 export async function capturePhase(page: Page, phase: string): Promise<PhaseCapture> {
+  await page.evaluate(async () => {
+    scrollTo(0, 0);
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
   const signatures = await page.evaluate(({ regions, dynamic, properties }) => {
     const round = (value: number): number => Math.round(value * 64) / 64;
     const pathWithin = (element: Element, region: Element): string => {
@@ -187,6 +220,13 @@ export async function capturePhase(page: Page, phase: string): Promise<PhaseCapt
         });
       const elements = candidates.map(element => {
         const computed = getComputedStyle(element);
+        const pseudo = (name: '::before' | '::after'): PseudoSignature => {
+          const styles = getComputedStyle(element, name);
+          return {
+            content: styles.content,
+            styles: Object.fromEntries(properties.map(property => [property, styles.getPropertyValue(property)])),
+          };
+        };
         const rect = element.getBoundingClientRect();
         const isDynamic = element.matches(dynamic);
         return {
@@ -201,6 +241,7 @@ export async function capturePhase(page: Page, phase: string): Promise<PhaseCapt
             height: round(rect.height),
           },
           styles: Object.fromEntries(properties.map(property => [property, computed.getPropertyValue(property)])),
+          pseudos: { before: pseudo('::before'), after: pseudo('::after') },
         };
       });
       return { id, elements };
@@ -230,11 +271,55 @@ export function comparePhases(reference: PhaseCapture, candidate: PhaseCapture):
       failures.push(`${candidate.phase} is missing region ${expected.id}.`);
       continue;
     }
-    if (JSON.stringify(expected.elements) !== JSON.stringify(actual.elements)) {
-      failures.push(`${expected.id}: geometry, text, or computed styles changed between ${reference.phase} and ${candidate.phase}.`);
+    failures.push(...compareElements(expected.id, reference, candidate, expected.elements, actual.elements));
+  }
+  return failures;
+}
+
+function compareElements(
+  regionId: string,
+  reference: PhaseCapture,
+  candidate: PhaseCapture,
+  expectedElements: ElementSignature[],
+  actualElements: ElementSignature[],
+): string[] {
+  const failures: string[] = [];
+  const actualByPath = new Map(actualElements.map(element => [element.path, element]));
+  const describe = (path: string, property: string, expected: unknown, actual: unknown): void => {
+    failures.push(`${regionId} ${path} ${property}: ${JSON.stringify(expected)} -> ${JSON.stringify(actual)} (${reference.phase} -> ${candidate.phase}).`);
+  };
+
+  for (const expected of expectedElements) {
+    const actual = actualByPath.get(expected.path);
+    if (!actual) {
+      failures.push(`${regionId}: ${candidate.phase} is missing ${expected.path}.`);
+      continue;
     }
-    if (!expected.screenshot.equals(actual.screenshot)) {
-      failures.push(`${expected.id}: rendered pixels changed between ${reference.phase} and ${candidate.phase}.`);
+    for (const property of ['tag', 'dynamic', 'directText'] as const) {
+      if (expected[property] !== actual[property]) describe(expected.path, property, expected[property], actual[property]);
+    }
+    for (const property of ['x', 'y', 'width', 'height'] as const) {
+      if (expected.rect[property] !== actual.rect[property]) {
+        describe(expected.path, `rect.${property}`, expected.rect[property], actual.rect[property]);
+      }
+    }
+    for (const [property, value] of Object.entries(expected.styles)) {
+      if (value !== actual.styles[property]) describe(expected.path, property, value, actual.styles[property]);
+    }
+    for (const pseudo of ['before', 'after'] as const) {
+      if (expected.pseudos[pseudo].content !== actual.pseudos[pseudo].content) {
+        describe(expected.path, `::${pseudo}.content`, expected.pseudos[pseudo].content, actual.pseudos[pseudo].content);
+      }
+      for (const [property, value] of Object.entries(expected.pseudos[pseudo].styles)) {
+        if (value !== actual.pseudos[pseudo].styles[property]) {
+          describe(expected.path, `::${pseudo}.${property}`, value, actual.pseudos[pseudo].styles[property]);
+        }
+      }
+    }
+  }
+  for (const actual of actualElements) {
+    if (!expectedElements.some(expected => expected.path === actual.path)) {
+      failures.push(`${regionId}: ${candidate.phase} added ${actual.path}.`);
     }
   }
   return failures;

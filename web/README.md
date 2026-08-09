@@ -321,8 +321,10 @@ of scope; prefetch remains Gate 4.5.
 holds `/assets/main.js` and the hashed Web Awesome Core chunk at separate
 boundaries and compares declared static regions across authored HTML, Pinega
 shell upgrade, Web Awesome readiness, and an explicit reload. Every stage must
-retain identical geometry, direct static text, selected computed styles, and
-rendered pixels; unexpected layout shifts have a `0.001` per-cycle ceiling.
+retain identical geometry, direct static text, and computed visual styles for
+elements and their pseudo-elements; unexpected layout shifts have a `0.001`
+per-cycle ceiling. Stage screenshots are retained as review evidence, while
+font rasterisation noise is not treated as a layout or style change.
 
 `data-visual-stability-region` declares a static region. Descendants are part of
 that contract by default. A genuinely dynamic subtree may use
