@@ -249,12 +249,16 @@ test in Gate 4.2.
 
 Raw output includes action-scoped request count and encoded bytes by resource
 type, Navigation Timing, LCP, CLS, event duration, long-task count/duration,
-selected Chrome performance counters as before/after/delta snapshots,
+selected Chrome performance counters as before/after snapshots and reset-aware
+monotonic deltas,
 JavaScript heap usage/delta, build ID, browser, viewport, runner CPU/memory
 profile, and source/tested commit identities. Warm-up pages are outside the
 measurement boundary; a zero-request Back/Forward result is retained when
 Chromium restores from BFCache. A standardized theme-toggle interaction on the
-final document supplies an event-timing probe. CI uploads
+final document supplies an event-timing probe. CDP counters are renderer-scoped:
+raw before/after values are always retained, while a monotonic delta is `null`
+and the metric is named in `counterResets` when a document navigation resets
+that counter. CI uploads
 `web/artifacts/baseline/gate-4-mpa-baseline.json` with diagnostics.
 
 No numeric performance budget is derived from this single run. Existing

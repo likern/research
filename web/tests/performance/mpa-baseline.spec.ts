@@ -30,7 +30,8 @@ interface ScenarioResult {
   runtime: {
     before: Record<string, number>;
     after: Record<string, number>;
-    delta: Record<string, number>;
+    monotonicDelta: Record<string, number | null>;
+    counterResets: string[];
   };
   heap: {
     beforeUsedBytes: number;
@@ -288,13 +289,18 @@ async function measureScenario(
   ]);
   const requestSummary = summarizeRequests([...requests.values()]);
   const afterRuntime = selectRuntimeMetrics(performanceMetrics.metrics);
+  const counterResets = [...monotonicRuntimeMetrics]
+    .filter(name => (afterRuntime[name] ?? 0) < (measuredBeforeRuntime[name] ?? 0));
   const runtime = {
     before: measuredBeforeRuntime,
     after: afterRuntime,
-    delta: Object.fromEntries(Object.keys(afterRuntime).map(name => [
+    monotonicDelta: Object.fromEntries([...monotonicRuntimeMetrics].map(name => [
       name,
-      (afterRuntime[name] ?? 0) - (measuredBeforeRuntime[name] ?? 0),
+      counterResets.includes(name)
+        ? null
+        : (afterRuntime[name] ?? 0) - (measuredBeforeRuntime[name] ?? 0),
     ])),
+    counterResets,
   };
   const result: ScenarioResult = {
     id: scenario.id,
@@ -393,6 +399,16 @@ function selectRuntimeMetrics(metrics: Array<{ name: string; value: number }>): 
     .filter(metric => selected.has(metric.name))
     .map(metric => [metric.name, metric.value]));
 }
+
+const monotonicRuntimeMetrics = new Set([
+  'LayoutCount',
+  'LayoutDuration',
+  'RecalcStyleCount',
+  'RecalcStyleDuration',
+  'ScriptDuration',
+  'TaskDuration',
+  'V8CompileDuration',
+]);
 
 async function timed(action: () => Promise<void>): Promise<number> {
   const started = performance.now();
