@@ -297,7 +297,9 @@ chunk/module graph, writes `/assets/feature-graph.json`, and projects a
 deterministic request manifest into every schema-v5 route entry. Concurrent
 feature requests share one application promise, while the browser module map
 reuses each successfully evaluated module by URL. No route data becomes an
-import specifier, and no manual preload hint is part of correctness.
+import specifier. Vite automatic dependency preloading is disabled and rejected
+in emitted code, so each phase uses the native module graph and a failed chunk
+can cross into the existing fresh-module-map fallback boundary.
 
 `pinega-diagram-viewer` is a viewport-loaded Lit light-DOM lifecycle island.
 The SSG SVG, caption, transcript, and model link remain canonical with or

@@ -22,6 +22,7 @@ export default defineConfig({
     emptyOutDir: false,
     copyPublicDir: false,
     target: 'es2022',
+    modulePreload: false,
     sourcemap: true,
     manifest: 'vite-manifest.json',
     cssCodeSplit: false,

@@ -766,6 +766,13 @@ the result rather than treating configuration as evidence. CI also performs
 two clean production builds and recursively compares their output before it
 tests, attests, and deploys the exact second artifact.
 
+Vite's automatic dynamic-import dependency preloading is disabled. Each phase
+starts a native import directly, and the browser follows that module's static
+dependency graph. The emitted-code verifier rejects Vite's preload wrapper;
+this preserves the fresh-module-map hard-fallback boundary in WebKit after an
+intentionally failed chunk instead of coupling retry correctness to a preload
+cache.
+
 Each route's schema-v5 request manifest partitions the actual transitive
 closure into shell, critical, deferred, and viewport requests. Assets already
 loaded through the shell are listed under `moduleMapReuse` instead of counted
@@ -814,5 +821,6 @@ Chromium desktop/mobile, Firefox, and WebKit against one immutable artifact.
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)
 - [Vite — backend integration and build manifest](https://vite.dev/guide/backend-integration)
 - [Vite — dependency deduplication](https://vite.dev/config/shared-options#resolve-dedupe)
+- [Vite — module preload build control](https://vite.dev/config/build-options#build-modulepreload)
 - [Lit — development-mode duplicate-version diagnostics](https://lit.dev/docs/tools/development/)
 - [Web Awesome — usage and Lit foundation](https://webawesome.com/docs/usage/)

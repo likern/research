@@ -174,6 +174,7 @@ assert.equal(featureGraph.schemaVersion, 1);
 assert.equal(featureGraph.kind, 'pinega-dynamic-feature-graph');
 assert.equal(featureGraph.bundler.name, 'vite');
 assert.equal(featureGraph.bundler.version, '8.2.1');
+assert.equal(featureGraph.bundler.modulePreload, false);
 assert.equal(featureGraph.entry.script, '/assets/main.js');
 assert.equal(featureGraph.entry.stylesheet, '/assets/main.css');
 assert.deepEqual(featureGraph.features.map(feature => ({

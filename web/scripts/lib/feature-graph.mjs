@@ -35,6 +35,9 @@ export function createVerifiedFeatureGraph({
   assertSameList(generatedFeatureSources, [...featureSources].toSorted(), 'Vite dynamic feature entries');
 
   const chunks = outputChunks(bundle);
+  if (chunks.some(chunk => chunk.code.includes('__vite__mapDeps'))) {
+    throw new TypeError('Vite automatic dynamic-import dependency preloading must remain disabled.');
+  }
   const moduleLocations = new Map();
   for (const chunk of chunks) {
     for (const moduleId of Object.keys(chunk.modules)) {
@@ -110,6 +113,7 @@ export function createVerifiedFeatureGraph({
       name: 'vite',
       version: viteVersion,
       manifest: '/assets/vite-manifest.json',
+      modulePreload: false,
     },
     entry: {
       source: mainSource,

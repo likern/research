@@ -59,7 +59,13 @@ function bundle(extraChunks = []) {
     output: [{
       type: 'chunk',
       fileName: 'chunks/lit-ABCDEFGH.js',
+      code: '',
       modules: Object.fromEntries(litModules.map(moduleId => [moduleId, {}])),
+    }, {
+      type: 'chunk',
+      fileName: 'main.js',
+      code: '',
+      modules: { '/workspace/web/src/main.ts': {} },
     }, ...extraChunks],
   };
 }
@@ -106,6 +112,7 @@ test('Vite verification fails if a Lit runtime module is duplicated or a feature
     bundle: bundle([{
       type: 'chunk',
       fileName: 'chunks/duplicate-ABCDEFGH.js',
+      code: '',
       modules: { [litModules[0]]: {} },
     }]),
     packageLock,
@@ -121,4 +128,19 @@ test('Vite verification fails if a Lit runtime module is duplicated or a feature
     packageLock,
     viteVersion: '8.2.1',
   }), /dynamic feature entries mismatch/u);
+});
+
+test('Vite verification rejects automatic dependency-preload wrappers', () => {
+  assert.throws(() => createVerifiedFeatureGraph({
+    definitions: [definition],
+    manifest,
+    bundle: bundle([{
+      type: 'chunk',
+      fileName: 'chunks/preload-ABCDEFGH.js',
+      code: 'const __vite__mapDeps = () => [];',
+      modules: {},
+    }]),
+    packageLock,
+    viteVersion: '8.2.1',
+  }), /dependency preloading must remain disabled/u);
 });
