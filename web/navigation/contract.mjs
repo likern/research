@@ -14,24 +14,28 @@ export const ROUTE_FEATURE_DEFINITIONS = Object.freeze([
     element: 'pinega-benchmark',
     loading: 'critical',
     implementation: 'native',
+    module: 'src/features/benchmark.ts',
   }),
   Object.freeze({
     id: 'code-example',
     element: 'pinega-code-example',
     loading: 'deferred',
     implementation: 'native',
+    module: 'src/features/code-example.ts',
   }),
   Object.freeze({
     id: 'diagram-viewer',
     element: 'pinega-diagram-viewer',
     loading: 'viewport',
     implementation: 'lit',
+    module: 'src/features/diagram-viewer.ts',
   }),
   Object.freeze({
     id: 'doc-topic-filter',
     element: 'pinega-doc-search',
     loading: 'deferred',
     implementation: 'native',
+    module: 'src/features/doc-topic-filter.ts',
   }),
 ]);
 

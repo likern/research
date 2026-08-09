@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { version as esbuildVersion } from 'esbuild';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,7 @@ import {
 } from '../navigation/contract.mjs';
 import { verifyBuildIdentity } from './lib/build-identity.mjs';
 import { validateDocumentContract } from './lib/document-contract.mjs';
+import { createRouteRequestManifest, createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
 
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const diagramIds = ['buffer-frame-lifecycle', 'linearizability-overlap', 'version-chain-snapshot'];
@@ -38,6 +40,8 @@ const required = [
   'favicon.svg',
   'assets/main.js',
   'assets/main.css',
+  'assets/feature-graph.json',
+  'assets/bundle-manifest.json',
   'content/README.md',
   'content/content-index.json',
   'content/content.schema.json',
@@ -58,6 +62,9 @@ const required = [
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
 
 const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
+const featureGraph = JSON.parse(await readFile(resolve(root, 'assets/feature-graph.json'), 'utf8'));
+const bundleManifest = JSON.parse(await readFile(resolve(root, 'assets/bundle-manifest.json'), 'utf8'));
+const packageLock = JSON.parse(await readFile(resolve(root, '../package-lock.json'), 'utf8'));
 const manifestRoutes = new Map(manifest.routes.map(entry => [`${entry.id}:${entry.locale}`, entry]));
 
 const files = await walk(root);
@@ -94,6 +101,18 @@ for (const entry of variants) {
   });
   assert.deepEqual(contract.features, manifestRoute.features, `${entry.route}: manifest route features`);
   assert.deepEqual(contract.criticalFeatures, manifestRoute.criticalFeatures, `${entry.route}: manifest critical route features`);
+  assert.deepEqual(
+    manifestRoute.requests,
+    createRouteRequestManifest(featureGraph, bundleManifest, ROUTE_FEATURE_DEFINITIONS, entry.locale, contract.features),
+    `${entry.route}: deterministic request manifest`,
+  );
+  for (const phase of ['shell', 'critical', 'deferred', 'viewport', 'moduleMapReuse']) {
+    assert.equal(new Set(manifestRoute.requests[phase]).size, manifestRoute.requests[phase].length, `${entry.route}: duplicate ${phase} request`);
+    for (const url of manifestRoute.requests[phase]) {
+      assert.match(url, /^\/assets\/[A-Za-z0-9._/-]+$/u, `${entry.route}: invalid ${phase} asset URL`);
+      assert.ok(await isFile(resolve(root, url.slice(1))), `${entry.route}: missing ${phase} asset ${url}`);
+    }
+  }
   assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:|PINEGA_DOC_[A-Z_]+|PINEGA_LANGUAGE_SWITCHER/u, `${entry.output_path} contains an unresolved build marker`);
   assert.match(html, /\/assets\/main\.css/u);
   assert.match(html, /\/assets\/main\.js/u);
@@ -131,12 +150,18 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 4);
+assert.equal(manifest.schemaVersion, 5);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
 assert.deepEqual(manifest.navigation.nativeRouteIds, NATIVE_NAVIGATION_ROUTE_IDS);
 assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFINITIONS);
+assert.deepEqual(manifest.navigation.featureGraph, {
+  schemaVersion: 1,
+  assetManifest: '/assets/feature-graph.json',
+  bundleManifest: '/assets/bundle-manifest.json',
+  lit: featureGraph.lit,
+});
 assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
 assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);
 await verifyBuildIdentity(root, manifest.build.id, [...variants.map(entry => entry.output_path), 'site-manifest.json']);
@@ -147,6 +172,55 @@ assert.deepEqual(manifest.routes.map(entry => entry.route), variants.map(entry =
 assert.deepEqual(manifest.routes.filter(entry => entry.sitemap).map(entry => entry.route), variants.filter(entry => entry.sitemap).map(entry => entry.route));
 assert.deepEqual(manifest.routes.filter(entry => entry.searchable).map(entry => entry.route), variants.filter(entry => entry.searchable).map(entry => entry.route));
 assert.deepEqual(manifest.diagrams.map(entry => entry.id).toSorted(), diagramIds.toSorted());
+assert.equal(featureGraph.schemaVersion, 1);
+assert.equal(featureGraph.kind, 'pinega-dynamic-feature-graph');
+assert.deepEqual(featureGraph.bundler, {
+  name: 'esbuild',
+  version: '0.28.1',
+  metafile: '/assets/bundle-manifest.json',
+  format: 'esm',
+  splitting: true,
+  minified: true,
+  dynamicImports: 'native',
+});
+assert.equal(featureGraph.entry.script, '/assets/main.js');
+assert.equal(featureGraph.entry.stylesheet, '/assets/main.css');
+assert.deepEqual(featureGraph.features.map(feature => ({
+  id: feature.id,
+  element: feature.element,
+  loading: feature.loading,
+  implementation: feature.implementation,
+  source: feature.source,
+})), ROUTE_FEATURE_DEFINITIONS.map(feature => ({
+  id: feature.id,
+  element: feature.element,
+  loading: feature.loading,
+  implementation: feature.implementation,
+  source: feature.module,
+})));
+assert.equal(featureGraph.lit.deduplicated, true);
+assert.deepEqual(featureGraph.lit.packages, {
+  '@lit/reactive-element': '2.1.2',
+  lit: '3.3.3',
+  'lit-element': '4.2.2',
+  'lit-html': '3.3.3',
+});
+assert.deepEqual(
+  createVerifiedFeatureGraph({
+    definitions: ROUTE_FEATURE_DEFINITIONS,
+    metafile: bundleManifest,
+    packageLock,
+    esbuildVersion,
+  }).graph,
+  featureGraph,
+  'Persisted feature graph must equal the independently verified esbuild metafile projection',
+);
+for (const [outputPath, output] of Object.entries(bundleManifest.outputs)) {
+  assert.match(outputPath, /^dist\/assets\/[A-Za-z0-9._/-]+$/u, `Invalid esbuild output path: ${outputPath}`);
+  const builtPath = resolve(root, outputPath.slice('dist/'.length));
+  assert.ok(await isFile(builtPath), `Missing esbuild output: ${outputPath}`);
+  assert.equal((await stat(builtPath)).size, output.bytes, `esbuild byte count mismatch: ${outputPath}`);
+}
 
 const englishDocsManifest = JSON.parse(await readFile(resolve(root, 'content/en/documentation-manifest.json'), 'utf8'));
 assert.equal(englishDocsManifest.schema_version, 2);

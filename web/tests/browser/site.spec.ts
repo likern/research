@@ -109,7 +109,7 @@ test('homepage states the Pinega master-brand and evidence boundary', async ({ p
 
 test('technology page separates active, research, and portfolio programmes', async ({ page }) => {
   await ready(page, '/technology/');
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('Research becomes technology');
+  await expect(page.locator('h1#technology-title')).toContainText('Research becomes technology');
   await expect(page.locator('#pinega-engine')).toBeAttached();
   await expect(page.locator('#optimisation')).toBeAttached();
   await expect(page.locator('#verification')).toBeAttached();
@@ -239,6 +239,7 @@ test('representative routes expose one versioned build and route-feature contrac
   };
   const representatives = [
     { route: '/', routeId: 'home', features: '', critical: '' },
+    { route: '/research/', routeId: 'research', features: 'diagram-viewer', critical: '' },
     { route: '/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
     { route: '/component-lab/', routeId: 'component-lab', features: 'benchmark code-example', critical: 'benchmark' },
     { route: '/ru/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
@@ -266,7 +267,7 @@ test('generated discovery files expose the complete documentation corpus', async
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
     routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
   };
-  expect(payload.schemaVersion).toBe(4);
+  expect(payload.schemaVersion).toBe(5);
   expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
   expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
   expect(payload.build.documentContractVersion).toBe('1');

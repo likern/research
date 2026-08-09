@@ -3,6 +3,7 @@ export interface RouteFeatureDefinition {
   readonly element: string;
   readonly loading: 'critical' | 'deferred' | 'viewport';
   readonly implementation: 'native' | 'lit';
+  readonly module: string;
 }
 
 export const DOCUMENT_CONTRACT_VERSION: string;

@@ -1,4 +1,4 @@
-import { build } from 'esbuild';
+import { build as esbuild, version as esbuildVersion } from 'esbuild';
 import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -14,6 +14,7 @@ import {
 } from '../navigation/contract.mjs';
 import { finalizeBuildIdentity } from './lib/build-identity.mjs';
 import { applyDocumentContract, validateDocumentContract } from './lib/document-contract.mjs';
+import { createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
@@ -36,8 +37,9 @@ await mkdir(resolve(dist, 'assets'), { recursive: true });
 await mkdir(diagramBuildRoot, { recursive: true });
 const diagrams = await buildSemanticDiagrams();
 
-await build({
-  entryPoints: [resolve(root, 'src/main.ts')],
+const browserBundle = await esbuild({
+  absWorkingDir: root,
+  entryPoints: ['src/main.ts'],
   outdir: resolve(dist, 'assets'),
   bundle: true,
   splitting: true,
@@ -47,10 +49,29 @@ await build({
   entryNames: '[name]',
   chunkNames: 'chunks/[name]-[hash]',
   assetNames: '[name]-[hash]',
+  minify: true,
   legalComments: 'eof',
   define: { __PINEGA_WEB_AWESOME_PROJECT_URL__: JSON.stringify(projectUrl) },
+  metafile: true,
   logLevel: 'info',
 });
+const packageLock = JSON.parse(await readFile(resolve(root, 'package-lock.json'), 'utf8'));
+const verifiedFeatures = createVerifiedFeatureGraph({
+  definitions: ROUTE_FEATURE_DEFINITIONS,
+  metafile: browserBundle.metafile,
+  packageLock,
+  esbuildVersion,
+});
+await writeFile(
+  resolve(dist, 'assets/bundle-manifest.json'),
+  `${JSON.stringify(browserBundle.metafile, null, 2)}\n`,
+  'utf8',
+);
+await writeFile(
+  resolve(dist, 'assets/feature-graph.json'),
+  `${JSON.stringify(verifiedFeatures.graph, null, 2)}\n`,
+  'utf8',
+);
 
 for (const page of pages) {
   const source = await readFile(resolve(root, page.source), 'utf8');
@@ -90,6 +111,7 @@ for (const page of pages) {
     ...page,
     features: contracted.features,
     criticalFeatures: contracted.criticalFeatures,
+    requestManifest: verifiedFeatures.routeRequests(page.locale, contracted.features),
   });
 }
 
@@ -118,7 +140,7 @@ await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRo
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 4,
+    schemaVersion: 5,
     build: {
       id: BUILD_ID_PLACEHOLDER,
       identityAlgorithm: BUILD_ID_ALGORITHM,
@@ -128,6 +150,12 @@ await writeFile(
     navigation: {
       nativeRouteIds: NATIVE_NAVIGATION_ROUTE_IDS,
       routeFeatureDefinitions: ROUTE_FEATURE_DEFINITIONS,
+      featureGraph: {
+        schemaVersion: verifiedFeatures.graph.schemaVersion,
+        assetManifest: '/assets/feature-graph.json',
+        bundleManifest: verifiedFeatures.graph.bundler.metafile,
+        lit: verifiedFeatures.graph.lit,
+      },
       routeOwnedMetadata: ROUTE_OWNED_METADATA,
       urlNormalization: {
         cacheKeyFields: ['buildId', 'origin', 'pathname', 'search'],
@@ -177,6 +205,7 @@ await writeFile(
       canonical: page.canonical,
       features: page.features,
       criticalFeatures: page.criticalFeatures,
+      requests: page.requestManifest,
       documentation: page.documentation ?? null,
       translations: Object.fromEntries(page.translations.map(translation => [translation.locale, translation.route])),
     })),
@@ -194,7 +223,7 @@ console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length
 
 async function buildSemanticDiagrams() {
   const rendererPath = resolve(diagramBuildRoot, 'renderer.mjs');
-  await build({
+  await esbuild({
     entryPoints: [resolve(root, 'src/diagrams/index.ts')],
     outfile: rendererPath,
     bundle: true,

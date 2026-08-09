@@ -283,6 +283,37 @@ and shell identity. The stress artifact records 100 route operations, forced
 idle/GC, maximum cache occupancy and heap growth. A single run remains
 diagnostic input, not a latency or Web Vitals budget.
 
+## Gate 4.4 Dynamic feature graph
+
+Route-owned JavaScript now loads through a closed registry whose four IDs map
+to literal dynamic imports. Validated routes classify those imports as
+`critical`, `deferred`, or `viewport`: critical modules settle before a visible
+commit, deferred modules start after commit, and viewport modules use a 256 px
+near-viewport `IntersectionObserver`. Late imports are guarded by route
+ownership, so they cannot mutate a route that has already been replaced.
+
+esbuild 0.28.1 remains the browser bundler. The build verifies the emitted
+production `metafile`, preserves it as `/assets/bundle-manifest.json`, writes
+`/assets/feature-graph.json`, and projects a deterministic request manifest
+into every schema-v5 route entry. Concurrent feature requests share one
+application promise, while the browser module map reuses each successfully
+evaluated module by URL. No route data becomes an import specifier. esbuild
+preserves the literal `import()` edges without injecting a dependency-preload
+wrapper, so each phase uses the native module graph and a failed chunk can
+cross into the existing fresh-module-map fallback boundary.
+
+`pinega-diagram-viewer` is a viewport-loaded Lit light-DOM lifecycle island.
+The SSG SVG, caption, transcript, and model link remain canonical with or
+without JavaScript. `lit` is a pinned direct dependency; the npm lock graph has
+one root installation for all four Lit packages, and metafile plus browser
+checks prove that Web Awesome and the Pinega island consume one runtime chunk
+and one set of runtime version markers.
+
+Critical chunk failure commits nothing and performs one guarded native
+navigation into a fresh module map. Deferred and viewport failure preserve the
+semantic fallback. Intent/idle prefetch and Service Worker behavior remain out
+of scope; prefetch remains Gate 4.5.
+
 ## Topic filter versus search
 
 `pinega-doc-search` is intentionally a progressive metadata/topic filter, not a
@@ -378,7 +409,8 @@ with-env { PINEGA_SITE_ORIGIN: 'https://www.example.com' } {
 ## Cloudflare commit previews
 
 Pull requests are prepared for preview-only Cloudflare Pages Direct Upload.
-GitHub Actions builds `web/dist` once, validates that exact directory, embeds
+GitHub Actions builds `web/dist` twice and rejects any byte-level difference,
+then validates the exact second directory, embeds
 `/.well-known/pinega-deployment.json`, archives it deterministically, records
 SHA-256, attests the archive, deploys it without a second checkout or build, and
 then tests the immutable HTTPS URL.
@@ -415,6 +447,8 @@ with-env {
 - `pinega-benchmark`: canonical table, native SVG fallback, optional Pro chart;
 - `pinega-doc-search`: progressive filtering over registry-generated real docs
   cards; it is not site-wide full-text search;
+- `pinega-diagram-viewer`: viewport-loaded Lit lifecycle island around
+  canonical semantic diagram light DOM;
 - build-time documentation navigation/breadcrumb/provenance projections;
 - build-time semantic diagrams: histories, version chains, and lifecycles with
   accessible SVG and textual projections.
@@ -446,8 +480,10 @@ malformed locale/feature contracts, and a persistently malformed destination.
 Gate 4.3 adds boot/fetched warm-hit proofs, zero-network/zero-parse
 instrumentation, `no-store`, in-flight reuse, fresh component/form/details
 state, LRU bounds/eviction, post-eviction cold replay, and the 100-route
-forced-GC study. Both local and deployed Playwright configurations use zero
-retries, so CI does not convert a first-attempt failure into a passing gate.
-
-Generated route-feature imports and their chunk failures remain Gate 4.4;
-prefetch remains Gate 4.5.
+forced-GC study. Gate 4.4 adds the closed literal registry, phase ordering,
+module-map reuse, esbuild metafile verification, deterministic per-route
+request manifests, Lit/Web Awesome deduplication, and critical chunk-failure
+fallback.
+Both local and deployed Playwright configurations use zero retries, so CI does
+not convert a first-attempt failure into a passing gate. Prefetch remains Gate
+4.5.

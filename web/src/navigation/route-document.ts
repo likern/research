@@ -18,6 +18,7 @@ import { estimateRouteWeight } from '../../navigation/route-cache.mjs';
 
 export type RoutePreparationFailure =
   | 'build-mismatch'
+  | 'feature-module'
   | 'locale-runtime'
   | 'malformed-contract'
   | 'route-policy';
