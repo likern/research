@@ -94,8 +94,10 @@ test('selecting the active route performs zero network and zero visible commits'
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await page.waitForTimeout(100);
 
-  expect(await page.evaluate(() => location.href)).toBe(activeUrl);
-  await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '0');
+  expect(await page.evaluate(() => ({
+    url: location.href,
+    commits: document.documentElement.dataset.testNavigationCommits,
+  }))).toEqual({ url: activeUrl, commits: '0' });
   expect(requestsFor(requests, '/technology/')).toHaveLength(0);
 });
 
