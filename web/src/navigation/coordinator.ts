@@ -210,7 +210,7 @@ export class NavigationCoordinator {
         };
         this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
         this.#clearPending(transaction);
-        event.scroll();
+        applyPostCommitScroll(event, target);
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
           url: target.href,
@@ -272,6 +272,31 @@ export class NavigationCoordinator {
     delete document.documentElement.dataset.pinegaNavigationPending;
     document.querySelector<HTMLElement>('main')?.removeAttribute('aria-busy');
   }
+}
+
+function applyPostCommitScroll(event: NavigateEvent, target: URL): void {
+  event.scroll();
+  if (event.navigationType === 'traverse' || !target.hash || hasFragmentScrollTarget(target.hash)) return;
+
+  // WebKit can retain the previous entry's scroll offset when the destination
+  // fragment does not exist. The HTML fallback for that case is the top of the
+  // document, so normalize it synchronously after the destination DOM exists.
+  window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+}
+
+function hasFragmentScrollTarget(hash: string): boolean {
+  const encodedFragment = hash.slice(1);
+  if (!encodedFragment) return true;
+  if (encodedFragment.includes(':~:text=')) return true;
+
+  let fragment: string;
+  try {
+    fragment = decodeURIComponent(encodedFragment);
+  } catch {
+    return false;
+  }
+  if (fragment.toLowerCase() === 'top') return true;
+  return document.getElementById(fragment) !== null || document.getElementsByName(fragment).length > 0;
 }
 
 function describeSource(source: Element | null): {

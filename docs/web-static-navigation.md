@@ -522,6 +522,9 @@ does not fabricate or silently substitute content.
 Intercepted transitions use `focusReset: "manual"` and `scroll: "manual"`.
 After the destination DOM has committed, the handler invokes
 `NavigateEvent.scroll()` before applying the final push/replace focus target.
+If a cross-route fragment has no target, it then normalizes the HTML fallback
+to the document start; this closes the observed WebKit difference where the
+previous entry's offset can otherwise survive.
 
 - Successful `push`/`replace` commits first apply the platform scroll decision,
   then focus the new `main#main-content` with `preventScroll`, placing keyboard
@@ -540,9 +543,10 @@ After the destination DOM has committed, the handler invokes
   does not move. Supersession transfers ownership; abort or successful commit
   clears it, and reduced-motion mode removes its animation.
 - For a new route without a fragment, the browser resets to the start after the
-  handler settles. For a new route with a fragment, it scrolls only after the
-  validated destination DOM exists. For `traverse`, it restores the entry's
-  saved scroll position.
+  handler settles. For a new route with a resolvable fragment, it scrolls only
+  after the validated destination DOM exists; a missing fragment is normalized
+  to the start synchronously. For `traverse`, it restores the entry's saved
+  scroll position.
 - Fragment-only navigation within the active route remains native and performs
   no HTML fetch or Pinega commit. Route targets have a shared sticky-header
   `scroll-margin` offset.
@@ -566,7 +570,11 @@ their graph and failure policy remain Gate 4.4.
 
 The production-artifact matrix covers Chromium desktop/mobile, Firefox, and
 WebKit with zero Playwright retries. A failed first attempt is therefore a
-blocking failure, not a hidden flaky pass.
+blocking failure, not a hidden flaky pass. Direct-document setup is judged by
+the route's HTTP probe plus the observable Pinega readiness contract rather
+than by a Playwright lifecycle waiter; this avoids treating a stuck Firefox
+`page.goto(..., { waitUntil: "commit" })` promise as an application failure
+after the trace already shows a complete response and ready DOM.
 
 | Gate 4.2 acceptance boundary | Deterministic proof in the exact build |
 |---|---|
@@ -575,7 +583,7 @@ blocking failure, not a hidden flaky pass.
 | Back during pending push | the traversal owns the final URL, DOM, metadata, announcement, and commit count |
 | Back/Forward after 10+ routes | eleven pushed routes are traversed fully backward and forward without increasing `history.length` or replacing the `Document` |
 | scroll restoration | cold traversal restores each entry after destination DOM preparation; this is also the pre-LRU eviction-miss oracle |
-| fragment present/missing | a present target resolves after commit, a missing target uses the platform top fallback, and same-route fragments remain native |
+| fragment present/missing | a present target resolves after commit, a missing target uses the coordinator-normalized top fallback, and same-route fragments remain native |
 | focus and accessibility tree | enhanced `<main>` equals the direct-load ARIA snapshot, push focus lands on `<main>`, and the polite status snapshot names the route |
 | busy state | `aria-busy`, visual progress, ownership transfer, settle cleanup, and zero header/main geometry shift are asserted |
 | locale pair and missing translation | one shared build/runtime validator closes locale options, canonical/hreflang, `x-default`, targets, and notice cardinality |
@@ -616,6 +624,7 @@ Transition, or Service Worker enters this milestone.
 - [Layout Instability](https://wicg.github.io/layout-instability/)
 - [Long Tasks](https://w3c.github.io/longtasks/)
 - [Playwright CDP session](https://playwright.dev/docs/api/class-cdpsession)
+- [Playwright Page API — navigation and readiness](https://playwright.dev/docs/api/class-page#page-goto)
 - [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
 - [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)

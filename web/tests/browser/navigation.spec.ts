@@ -2,15 +2,14 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { openReadyDocument } from './support/direct-document.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const malformedFixture = await readFile(resolve(root, 'fixtures/navigation/malformed.html'), 'utf8');
 const transactionEventsKey = 'pinega-test-navigation-transaction-events';
 
 async function ready(page: Page, route: string): Promise<void> {
-  const response = await page.goto(route, { waitUntil: 'commit' });
-  expect(response?.status(), `${route} should return a successful response`).toBeLessThan(400);
-  await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+  await openReadyDocument(page, route);
 }
 
 async function instrumentDocument(page: Page): Promise<number> {
@@ -509,7 +508,7 @@ test('new-route fragments scroll after commit while same-route fragments stay na
   await expect(page.locator('html')).toHaveAttribute('data-test-navigation-commits', '1');
 });
 
-test('a missing new-route fragment commits the route and applies the browser top fallback', async ({ page }) => {
+test('a missing new-route fragment commits the route and applies the normalized top fallback', async ({ page }) => {
   await ready(page, '/');
   await instrumentDocument(page);
   const initialScroll = await page.evaluate(() => {

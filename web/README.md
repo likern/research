@@ -202,9 +202,9 @@ abort-aware, non-reentrant transaction gate. A late response, a superseded
 push, or a pending navigation interrupted by Back cannot mutate the route that
 won. Successful push/replace commits focus the new `<main>` and update one
 persistent polite route-title announcer. After commit, explicit Navigation API
-scroll restoration handles top, cross-route fragments, and Back/Forward
-entries before push/replace focus is finalized; fragment-only active-route
-links remain native.
+scroll restoration handles top, cross-route fragments, missing-fragment top
+normalization, and Back/Forward entries before push/replace focus is finalized;
+fragment-only active-route links remain native.
 
 While the current transaction is pending, the existing `<main>` exposes
 `aria-busy="true"` and an absolute two-pixel progress surface overlays the lower
