@@ -115,7 +115,7 @@ test('records the Gate 4.2 cold transactional-navigation structural baseline', a
       numericBudgetsEnforced: false,
       cache: 'cold-route; no route cache exists in Gate 4.2',
       focus: 'push/replace focuses main; traversal leaves focus restoration to the history policy',
-      scroll: 'Navigation API after-transition semantics: push/replace top or fragment, traversal entry restoration',
+      scroll: 'Navigation API event.scroll() after commit: push/replace top or fragment, traversal entry restoration',
       note: 'Structural gate: each current transaction preserves the Document and site-header instance, issues one HTML fetch, and performs one visible route/locale commit.',
     },
     buildId,

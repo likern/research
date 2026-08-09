@@ -132,7 +132,7 @@ export class NavigationCoordinator {
     try {
       event.intercept({
         focusReset: 'manual',
-        scroll: 'after-transition',
+        scroll: 'manual',
         handler: () => this.#navigate(event, target, transaction),
       });
     } catch (error) {
@@ -194,6 +194,7 @@ export class NavigationCoordinator {
           navigationPolicy: 'enhanced',
         };
         this.#activeDocumentUrl = normalizeRouteUrl(target, location.origin);
+        event.scroll();
         if (event.navigationType !== 'traverse') nextMain.focus({ preventScroll: true });
         return {
           url: target.href,

@@ -508,12 +508,14 @@ does not fabricate or silently substitute content.
 
 ### Focus, announcement, scroll, and fragments
 
-Intercepted transitions use `focusReset: "manual"` and the platform's
-`scroll: "after-transition"` behavior.
+Intercepted transitions use `focusReset: "manual"` and `scroll: "manual"`.
+After the destination DOM has committed, the handler invokes
+`NavigateEvent.scroll()` before applying the final push/replace focus target.
 
-- Successful `push`/`replace` commits focus the new `main#main-content` with
-  `preventScroll`, placing keyboard and assistive-technology reading order at
-  the new content without stealing the subsequent scroll decision.
+- Successful `push`/`replace` commits first apply the platform scroll decision,
+  then focus the new `main#main-content` with `preventScroll`, placing keyboard
+  and assistive-technology reading order at the new content without moving the
+  resolved viewport.
 - Traversals do not force a new focus target; replacing focused route content
   naturally returns focus to the document while the history entry's viewport
   is restored.
