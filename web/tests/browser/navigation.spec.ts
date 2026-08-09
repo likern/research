@@ -401,28 +401,29 @@ test('template activations create fresh form, details, selection, and Custom Ele
   await instrumentTransactionEvents(page);
   await page.evaluate(() => {
     const state = { connected: 0, disconnected: 0, externalEvents: 0, observerRecords: 0 };
+    const controllers = new WeakMap<HTMLElement, AbortController>();
+    const observers = new WeakMap<HTMLElement, MutationObserver>();
     (window as unknown as { __PINEGA_CACHE_LIFECYCLE__?: typeof state }).__PINEGA_CACHE_LIFECYCLE__ = state;
     customElements.define('x-cache-lifecycle', class extends HTMLElement {
-      #controller: AbortController | undefined;
-      #observer: MutationObserver | undefined;
-
       connectedCallback(): void {
         state.connected += 1;
-        this.#controller = new AbortController();
-        this.#observer = new MutationObserver(records => { state.observerRecords += records.length; });
-        this.#observer.observe(this, { attributes: true });
+        const controller = new AbortController();
+        const observer = new MutationObserver(records => { state.observerRecords += records.length; });
+        controllers.set(this, controller);
+        observers.set(this, observer);
+        observer.observe(this, { attributes: true });
         window.addEventListener('pinega-test-cache-external', () => { state.externalEvents += 1; }, {
-          signal: this.#controller.signal,
+          signal: controller.signal,
         });
       }
 
       disconnectedCallback(): void {
         state.disconnected += 1;
         (window as unknown as { __PINEGA_REMOVED_CACHE_PROBE__?: HTMLElement }).__PINEGA_REMOVED_CACHE_PROBE__ = this;
-        this.#controller?.abort();
-        this.#controller = undefined;
-        this.#observer?.disconnect();
-        this.#observer = undefined;
+        controllers.get(this)?.abort();
+        controllers.delete(this);
+        observers.get(this)?.disconnect();
+        observers.delete(this);
       }
     });
   });
