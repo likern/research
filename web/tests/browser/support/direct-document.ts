@@ -4,23 +4,9 @@ const testOrigin = 'http://127.0.0.1:4173';
 
 export async function openReadyDocument(page: Page, route: string, expectedStatus = 200): Promise<void> {
   const target = new URL(route, testOrigin).href;
-  const probe = await page.request.head(target);
-  expect(probe.status(), `${route} should return HTTP ${expectedStatus}`).toBe(expectedStatus);
-  await probe.dispose();
-
-  await page.evaluate(targetUrl => {
-    const link = document.createElement('a');
-    link.href = targetUrl;
-    link.target = '_self';
-    link.dataset.pinegaDirectDocument = 'true';
-    link.setAttribute('aria-hidden', 'true');
-    link.tabIndex = -1;
-    link.style.cssText = 'position:fixed;left:8px;top:8px;z-index:2147483647;display:block;width:2px;height:2px;overflow:hidden;pointer-events:auto';
-    document.body.append(link);
-  }, target);
-  await page.locator('a[data-pinega-direct-document="true"]').click({
-    noWaitAfter: true,
-  });
+  const response = await page.goto(target, { waitUntil: 'commit' });
+  expect(response, `${route} should return a main-resource response`).not.toBeNull();
+  expect(response?.status(), `${route} should return HTTP ${expectedStatus}`).toBe(expectedStatus);
 
   await expect.poll(async () => {
     try {

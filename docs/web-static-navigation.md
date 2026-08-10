@@ -603,12 +603,12 @@ their graph and failure policy were delivered later by Gate 4.4.
 The production-artifact matrix covers Chromium desktop/mobile, Firefox, and
 WebKit with zero Playwright retries. A failed first attempt is therefore a
 blocking failure, not a hidden flaky pass. Direct-document setup is judged by
-the route's HTTP probe plus one native `_self` navigation and the observable
-Pinega URL/readiness contract rather than by a Playwright lifecycle waiter;
-the link is prepared in a completed evaluation and activated with Playwright's
-explicit `noWaitAfter` click boundary. This avoids both a dropped browser timer
-and treating a stuck Firefox lifecycle/evaluation promise as an application
-failure after the trace already shows a complete response and ready DOM.
+the actual main-resource response plus the observable Pinega URL/readiness
+contract rather than by a full lifecycle waiter. Playwright navigation stops at
+the explicit `commit` boundary, when the response has arrived and the document
+has started loading; Pinega's own readiness marker then proves application
+startup. This avoids both a dropped browser timer and a lingering
+action-triggered navigation waiter after the trace already shows a ready DOM.
 
 | Gate 4.2 acceptance boundary | Deterministic proof in the exact build |
 |---|---|
