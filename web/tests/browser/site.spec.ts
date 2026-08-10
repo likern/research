@@ -33,7 +33,7 @@ async function ready(page: Page, route: string) {
 for (const route of allCoreRoutes) {
   test(`${route} keeps semantic landmarks and fits the active viewport`, async ({ page }) => {
     await ready(page, route);
-    await expect(page.getByRole('main')).toBeVisible();
+    await expect(page.locator('main')).toBeVisible();
     await expect(page.locator('pinega-site-header')).toHaveCount(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
