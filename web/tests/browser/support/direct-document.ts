@@ -14,7 +14,7 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
     link.target = '_self';
     link.hidden = true;
     document.body.append(link);
-    setTimeout(() => link.click(), 0);
+    link.click();
   }, target);
 
   await expect.poll(async () => {
