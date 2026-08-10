@@ -5,6 +5,13 @@ async function ready(page: Page): Promise<void> {
   await openReadyDocument(page, '/research/');
 }
 
+async function semanticSvgMarkup(page: Page): Promise<string[]> {
+  return page.evaluate(() => Array.from(
+    document.querySelectorAll('svg.pinega-diagram-svg'),
+    element => element.outerHTML,
+  ));
+}
+
 test('research page exposes three accessible figures from shared semantic models', async ({ page }) => {
   await ready(page);
   const figures = page.locator('figure.pinega-semantic-diagram');
@@ -59,9 +66,10 @@ test('downloadable model endpoints preserve semantic JSON', async ({ request }) 
 
 test('diagram SVG adapts to dark mode without replacing semantic markup', async ({ page }) => {
   await ready(page);
-  const before = await page.locator('svg.pinega-diagram-svg').count();
+  const before = await semanticSvgMarkup(page);
+  expect(before).toHaveLength(3);
   await page.locator('[data-theme-toggle]').click();
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
-  await expect(page.locator('svg.pinega-diagram-svg')).toHaveCount(before);
+  await expect.poll(() => semanticSvgMarkup(page)).toEqual(before);
   await expect(page.locator('figure.pinega-semantic-diagram figcaption').first()).toBeVisible();
 });
