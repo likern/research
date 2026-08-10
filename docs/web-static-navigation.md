@@ -1021,6 +1021,16 @@ axe findings; no keyboard trap; no unexpected visual diff; and raw cold/warm
 desktop/mobile FCP, LCP, CLS, Speed Index, and TBT observations. Lighthouse is
 retained as lab diagnostics and never acts as the sole release oracle.
 
+Playwright test retries remain disabled. The direct-load helper contains one
+Firefox-only transport recovery for upstream issue #42183, in which
+`page.goto()` can remain pending after the driver has observed a fully loaded
+document. Recovery is allowed only after `page.evaluate()` proves the exact
+requested URL, `document.readyState === 'complete'`, and the Pinega readiness
+marker. It then supersedes the stuck navigation with the same URL and still
+requires the expected main-resource status. Any incomplete, wrong, or
+non-Firefox document fails normally, so the workaround cannot convert an
+application or HTTP failure into passing evidence.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
@@ -1047,6 +1057,7 @@ retained as lab diagnostics and never acts as the sole release oracle.
 - [Long Tasks](https://w3c.github.io/longtasks/)
 - [Playwright CDP session](https://playwright.dev/docs/api/class-cdpsession)
 - [Playwright Page API — navigation and readiness](https://playwright.dev/docs/api/class-page#page-goto)
+- [Playwright issue #42183 — Firefox navigation completion bookkeeping](https://github.com/microsoft/playwright/issues/42183)
 - [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
 - [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)

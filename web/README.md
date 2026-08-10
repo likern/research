@@ -382,6 +382,12 @@ Gate 4.7 review artifact combines the zero-retry Chromium desktop/mobile,
 Firefox, and WebKit matrix; axe and keyboard-trap evidence; visual baselines;
 and cold/warm desktop/mobile FCP, LCP, CLS, Speed Index, and TBT diagnostics.
 Lighthouse provides lab evidence only and is not the sole release oracle.
+The Playwright runner remains configured with zero test retries. Direct-load
+setup has one Firefox-only transport recovery for Playwright issue #42183: it
+may supersede a timed-out `page.goto()` only after the requested URL,
+`readyState=complete`, and Pinega readiness marker are already proven through
+`page.evaluate()`. The replacement navigation must still return the exact
+expected HTTP status; incomplete or wrong documents fail without recovery.
 
 ## Initial-render visual-stability contract
 
