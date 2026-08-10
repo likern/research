@@ -1027,9 +1027,12 @@ Firefox-only transport recovery for upstream issue #42183, in which
 document. Recovery is allowed only after `page.evaluate()` proves the exact
 requested URL, `document.readyState === 'complete'`, and the Pinega readiness
 marker. It then supersedes the stuck navigation with the same URL and still
-requires the expected main-resource status. Any incomplete, wrong, or
-non-Firefox document fails normally, so the workaround cannot convert an
-application or HTTP failure into passing evidence.
+requires the expected main-resource status. The sole alternative is a `304`
+when the route expected `200`, because the same-URL request is an ETag
+revalidation of the already-proven representation. A non-cacheable 404 still
+requires `404`. Any incomplete, wrong, or non-Firefox document fails normally,
+so the workaround cannot convert an application or HTTP failure into passing
+evidence.
 
 ## Normative and implementation references
 

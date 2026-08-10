@@ -386,8 +386,10 @@ The Playwright runner remains configured with zero test retries. Direct-load
 setup has one Firefox-only transport recovery for Playwright issue #42183: it
 may supersede a timed-out `page.goto()` only after the requested URL,
 `readyState=complete`, and Pinega readiness marker are already proven through
-`page.evaluate()`. The replacement navigation must still return the exact
-expected HTTP status; incomplete or wrong documents fail without recovery.
+`page.evaluate()`. The replacement navigation must still return the expected
+HTTP status, except that an expected `200` may revalidate as the Gate 4.7
+contract's `304`; incomplete, wrong, non-cacheable 404, or other documents fail
+without recovery.
 
 ## Initial-render visual-stability contract
 
