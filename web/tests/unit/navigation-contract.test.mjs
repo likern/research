@@ -244,17 +244,20 @@ test('response fixtures define hard-navigation boundaries without browser state'
   }
 });
 
-test('normalized artifact identity is deterministic and ignores delivery provenance only', async t => {
+test('normalized artifact identity is deterministic and ignores delivery controls and provenance only', async t => {
   const directory = await mkdtemp(resolve(tmpdir(), 'pinega-build-contract-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await mkdir(resolve(directory, 'route'), { recursive: true });
   await writeFile(resolve(directory, 'route/index.html'), '<html data-pinega-build="__PINEGA_BUILD_ID__"></html>', 'utf8');
   await writeFile(resolve(directory, 'site-manifest.json'), '{"build":"__PINEGA_BUILD_ID__"}\n', 'utf8');
+  await writeFile(resolve(directory, '_headers'), '/\n  ETag: "before-finalization"\n', 'utf8');
   const identityPaths = ['route/index.html', 'site-manifest.json'];
   const buildId = await finalizeBuildIdentity(directory, identityPaths);
   await verifyBuildIdentity(directory, buildId, identityPaths);
   await mkdir(resolve(directory, '.well-known'), { recursive: true });
   await writeFile(resolve(directory, '.well-known/pinega-deployment.json'), '{"run":1}\n', 'utf8');
+  await verifyBuildIdentity(directory, buildId, identityPaths);
+  await writeFile(resolve(directory, '_headers'), `/\n  ETag: "${buildId}"\n`, 'utf8');
   await verifyBuildIdentity(directory, buildId, identityPaths);
   await writeFile(resolve(directory, 'payload.txt'), 'changed\n', 'utf8');
   await assert.rejects(verifyBuildIdentity(directory, buildId, identityPaths), /identity mismatch/u);

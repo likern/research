@@ -367,11 +367,14 @@ diagram feature; it is never a shell or navigation dependency.
 
 The build fingerprints every `/assets/` URL and generates a non-overlapping
 Cloudflare `_headers` policy: fingerprinted assets are immutable for one year,
-while HTML and mutable manifests always revalidate. There is no Service Worker.
+while HTML and mutable manifests always revalidate. Successful HTML routes use
+the build ID as an explicit ETag; provider-served nearest 404s remain
+`no-store`. There is no Service Worker.
 `/.well-known/pinega-release.json` inventories every public file by URL,
 status, bytes, SHA-256, media type, and cache policy. Local checks reconstruct
 that inventory; the deployment suite verifies every served byte plus the real
-HTTPS headers and conditional ETag response.
+HTTPS headers, the build-scoped HTML ETag and conditional response, and the
+provider's `no-store` nearest-404 behavior.
 
 CI packages and attests the same directory that passed tests, verifies the
 attestation before Direct Upload, and never rebuilds it in the deploy job. The

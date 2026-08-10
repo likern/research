@@ -24,6 +24,7 @@ import { validateDocumentContract } from './lib/document-contract.mjs';
 import { createRouteRequestManifest, createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
 import {
   IMMUTABLE_CACHE_CONTROL,
+  NOT_FOUND_CACHE_CONTROL,
   RELEASE_MANIFEST_PATH,
   REVALIDATED_CACHE_CONTROL,
   isFingerprintedAssetPath,
@@ -230,6 +231,7 @@ assert.deepEqual(manifest.delivery, {
   cache: {
     immutableAssets: IMMUTABLE_CACHE_CONTROL,
     revalidatedDocuments: REVALIDATED_CACHE_CONTROL,
+    notFoundDocuments: NOT_FOUND_CACHE_CONTROL,
   },
   serviceWorker: false,
 });

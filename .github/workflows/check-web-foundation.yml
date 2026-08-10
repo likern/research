@@ -374,13 +374,21 @@ jobs:
         run: |
           set -euo pipefail
           curl_options=(--silent --show-error --location --retry 8 --retry-all-errors --retry-delay 2)
+          expected_build_id="$(jq -r '.buildId' deployed/dist/.well-known/pinega-release.json)"
           curl "${curl_options[@]}" --fail --dump-header root-headers.txt --output root.html "${DEPLOYMENT_URL}/"
           grep -Eiq '^x-robots-tag:.*noindex' root-headers.txt
           grep -Eiq '^cache-control: *public, *max-age=0, *must-revalidate' root-headers.txt
           root_etag="$(sed -n 's/^[Ee][Tt][Aa][Gg]:[[:space:]]*//p' root-headers.txt | tr -d '\r' | tail -n 1)"
-          test -n "$root_etag"
+          if [[ "${root_etag#W/}" != "\"${expected_build_id}\"" ]]; then
+            echo "HTML ETag '${root_etag}' does not identify build '${expected_build_id}'." >&2
+            cat root-headers.txt >&2
+            exit 1
+          fi
           conditional_status="$(curl "${curl_options[@]}" --header "If-None-Match: ${root_etag}" --output /dev/null --write-out '%{http_code}' "${DEPLOYMENT_URL}/")"
-          test "$conditional_status" = "304"
+          if [[ "$conditional_status" != "304" ]]; then
+            echo "Conditional HTML request returned ${conditional_status}, expected 304." >&2
+            exit 1
+          fi
           curl "${curl_options[@]}" --fail --output docs.html "${DEPLOYMENT_URL}/docs/"
           curl "${curl_options[@]}" --fail --output remote-manifest.json "${DEPLOYMENT_URL}/.well-known/pinega-deployment.json"
           cmp deployed/dist/.well-known/pinega-deployment.json remote-manifest.json
@@ -390,11 +398,12 @@ jobs:
           test -n "$immutable_url"
           curl "${curl_options[@]}" --fail --dump-header asset-headers.txt --output immutable-asset "${DEPLOYMENT_URL}${immutable_url}"
           grep -Eiq '^cache-control: *public, *max-age=31536000, *immutable' asset-headers.txt
-          missing_status="$(curl "${curl_options[@]}" --output missing.html --write-out '%{http_code}' "${DEPLOYMENT_URL}/missing-cloudflare-preview-route")"
+          missing_status="$(curl "${curl_options[@]}" --dump-header missing-headers.txt --output missing.html --write-out '%{http_code}' "${DEPLOYMENT_URL}/missing-cloudflare-preview-route")"
           if [[ "$missing_status" != "404" ]]; then
             echo "Expected a real HTTP 404, received ${missing_status}." >&2
             exit 1
           fi
+          grep -Eiq '^cache-control: *no-store' missing-headers.txt
 
       - name: Record provider deployment identity
         shell: bash

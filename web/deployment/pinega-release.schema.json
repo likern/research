@@ -22,10 +22,11 @@
     "cachePolicy": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["immutableAssets", "revalidatedDocuments", "serviceWorker"],
+      "required": ["immutableAssets", "revalidatedDocuments", "notFoundDocuments", "serviceWorker"],
       "properties": {
         "immutableAssets": { "const": "public, max-age=31536000, immutable" },
         "revalidatedDocuments": { "const": "public, max-age=0, must-revalidate" },
+        "notFoundDocuments": { "const": "no-store" },
         "serviceWorker": { "const": false }
       }
     },
@@ -74,11 +75,12 @@
             "properties": {
               "url": { "type": "string", "pattern": "^/" },
               "status": { "enum": [200, 404] },
-              "cache": { "enum": ["immutable", "revalidate"] },
+              "cache": { "enum": ["immutable", "revalidate", "no-store"] },
               "cacheControl": {
                 "enum": [
                   "public, max-age=31536000, immutable",
-                  "public, max-age=0, must-revalidate"
+                  "public, max-age=0, must-revalidate",
+                  "no-store"
                 ]
               },
               "mediaType": { "type": ["string", "null"] }

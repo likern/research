@@ -24,6 +24,7 @@ import { applyDocumentContract, validateDocumentContract } from './lib/document-
 import { createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
 import {
   IMMUTABLE_CACHE_CONTROL,
+  NOT_FOUND_CACHE_CONTROL,
   RELEASE_MANIFEST_PATH,
   REVALIDATED_CACHE_CONTROL,
   writeFingerprintedFile,
@@ -211,6 +212,7 @@ await writeFile(
       cache: {
         immutableAssets: IMMUTABLE_CACHE_CONTROL,
         revalidatedDocuments: REVALIDATED_CACHE_CONTROL,
+        notFoundDocuments: NOT_FOUND_CACHE_CONTROL,
       },
       serviceWorker: false,
     },
@@ -262,12 +264,11 @@ await writeFile(
   'utf8',
 );
 
-await writeReleaseHeaders(dist, builtPages.map(page => page.route));
-
 const buildId = await finalizeBuildIdentity(dist, [
   ...builtPages.map(page => page.output),
   'site-manifest.json',
 ]);
+await writeReleaseHeaders(dist, builtPages.map(page => page.route), buildId);
 await writeReleaseManifest(dist, buildId);
 
 console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);

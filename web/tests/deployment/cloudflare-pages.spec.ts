@@ -59,6 +59,9 @@ test('the HTTPS preview serves every inventoried byte with the declared HTTP con
       expect(response.status(), file.path).toBe(file.status);
       expect(response.headers()['cache-control'], file.path).toBe(file.cacheControl);
       if (file.status === 200) expect(response.headers().etag, file.path).toBeTruthy();
+      if (file.status === 200 && file.mediaType === 'text/html') {
+        expect(normalizeEtag(response.headers().etag), file.path).toBe(`"${expected.buildId}"`);
+      }
       if (file.mediaType) expect(response.headers()['content-type'], file.path).toContain(file.mediaType);
       const body = await response.body();
       expect(body.byteLength, file.path).toBe(file.bytes);
@@ -81,6 +84,7 @@ test('revalidated HTML honors its deployed ETag while fingerprinted assets stay 
   expect(conditional.status()).toBe(304);
 
   const expected = JSON.parse(await readFile(expectedReleaseManifestPath, 'utf8')) as ReleaseManifest;
+  expect(normalizeEtag(etag)).toBe(`"${expected.buildId}"`);
   const immutable = expected.files.find(file => file.url.startsWith('/assets/') && file.status === 200);
   expect(immutable).toBeTruthy();
   const asset = await request.get(immutable!.url);
@@ -96,11 +100,13 @@ test('Cloudflare Pages serves essential routes and a real nearest 404', async ({
 
   const missing = await request.get('/missing-cloudflare-preview-route');
   expect(missing.status()).toBe(404);
+  expect(missing.headers()['cache-control']).toBe('no-store');
   expect(await missing.text()).toContain('<h1>');
 
   if (hasRussianNotFound) {
     const russianMissing = await request.get('/ru/missing-cloudflare-preview-route');
     expect(russianMissing.status()).toBe(404);
+    expect(russianMissing.headers()['cache-control']).toBe('no-store');
     expect(await russianMissing.text()).toMatch(/<html\b[^>]*\blang="ru"/u);
   }
 });
@@ -166,4 +172,8 @@ async function ready(page: Page, route: string) {
   const response = await page.goto(route, { waitUntil: 'networkidle' });
   expect(response?.status(), route).toBeLessThan(400);
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
+}
+
+function normalizeEtag(value: string | undefined): string | undefined {
+  return value?.replace(/^W\//u, '');
 }

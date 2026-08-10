@@ -290,7 +290,7 @@ test('generated discovery files expose the complete documentation corpus', async
       schemaVersion: number;
       exactArtifact: boolean;
       releaseManifest: string;
-      cache: { immutableAssets: string; revalidatedDocuments: string };
+      cache: { immutableAssets: string; revalidatedDocuments: string; notFoundDocuments: string };
       serviceWorker: boolean;
     };
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
@@ -308,6 +308,7 @@ test('generated discovery files expose the complete documentation corpus', async
     cache: {
       immutableAssets: 'public, max-age=31536000, immutable',
       revalidatedDocuments: 'public, max-age=0, must-revalidate',
+      notFoundDocuments: 'no-store',
     },
     serviceWorker: false,
   });

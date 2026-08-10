@@ -6,6 +6,7 @@ import test from 'node:test';
 
 import {
   IMMUTABLE_CACHE_CONTROL,
+  NOT_FOUND_CACHE_CONTROL,
   RELEASE_MANIFEST_PATH,
   REVALIDATED_CACHE_CONTROL,
   createReleaseManifest,
@@ -30,7 +31,7 @@ test('release contract fingerprints every immutable asset and inventories exact 
   await mkdir(resolve(root, 'ru'));
   await writeFile(resolve(root, 'ru/404.html'), '<!doctype html><html lang="ru"><body>Нет</body></html>\n', 'utf8');
   await writeFile(resolve(root, 'site-manifest.json'), '{}\n', 'utf8');
-  await writeReleaseHeaders(root, ['/', '/404.html', '/ru/404.html']);
+  await writeReleaseHeaders(root, ['/', '/404.html', '/ru/404.html'], buildId);
 
   const manifest = await writeReleaseManifest(root, buildId);
   await verifyReleaseManifest(root, manifest);
@@ -39,6 +40,7 @@ test('release contract fingerprints every immutable asset and inventories exact 
   assert.equal(manifest.buildId, buildId);
   assert.equal(manifest.cachePolicy.immutableAssets, IMMUTABLE_CACHE_CONTROL);
   assert.equal(manifest.cachePolicy.revalidatedDocuments, REVALIDATED_CACHE_CONTROL);
+  assert.equal(manifest.cachePolicy.notFoundDocuments, NOT_FOUND_CACHE_CONTROL);
   assert.equal(manifest.cachePolicy.serviceWorker, false);
   assert.deepEqual(manifest.controls.map(entry => entry.path), ['_headers']);
   assert.equal(manifest.inventory.fileCount, manifest.files.length);
@@ -46,10 +48,10 @@ test('release contract fingerprints every immutable asset and inventories exact 
   assert.ok(manifest.files.some(entry => entry.path === `assets/${script.fileName}` && entry.cache === 'immutable'));
   assert.ok(manifest.files.some(entry => entry.path === `assets/${graph.fileName}` && entry.cache === 'immutable'));
   assert.deepEqual(
-    manifest.files.filter(entry => entry.status === 404).map(entry => [entry.path, entry.url]),
+    manifest.files.filter(entry => entry.status === 404).map(entry => [entry.path, entry.url, entry.cache, entry.cacheControl]),
     [
-      ['404.html', '/__pinega-release-verification-missing__'],
-      ['ru/404.html', '/ru/__pinega-release-verification-missing__'],
+      ['404.html', '/__pinega-release-verification-missing__', 'no-store', NOT_FOUND_CACHE_CONTROL],
+      ['ru/404.html', '/ru/__pinega-release-verification-missing__', 'no-store', NOT_FOUND_CACHE_CONTROL],
     ],
   );
   assert.equal(JSON.parse(await readFile(resolve(root, RELEASE_MANIFEST_PATH), 'utf8')).inventory.sha256, manifest.inventory.sha256);
@@ -58,7 +60,7 @@ test('release contract fingerprints every immutable asset and inventories exact 
 test('release manifest detects tampering and refuses stable URLs under the immutable asset namespace', async t => {
   const root = await fixture(t);
   await writeFile(resolve(root, 'index.html'), '<!doctype html><html><body>Pinega</body></html>\n', 'utf8');
-  await writeFile(resolve(root, '_headers'), renderReleaseHeaders(['/']), 'utf8');
+  await writeFile(resolve(root, '_headers'), renderReleaseHeaders(['/'], buildId), 'utf8');
   await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export {};\n', 'utf8');
   const manifest = await writeReleaseManifest(root, buildId);
   await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export const changed = true;\n', 'utf8');
@@ -69,11 +71,13 @@ test('release manifest detects tampering and refuses stable URLs under the immut
 });
 
 test('Cloudflare header policy keeps immutable and revalidated URL spaces disjoint', () => {
-  const headers = renderReleaseHeaders(['/', '/docs/', '/ru/docs/', '/404.html']);
+  const headers = renderReleaseHeaders(['/', '/docs/', '/ru/docs/', '/404.html'], buildId);
   assert.match(headers, new RegExp(`/assets/\\*\\n  Cache-Control: ${escapeRegex(IMMUTABLE_CACHE_CONTROL)}`, 'u'));
   for (const route of ['/', '/docs/', '/ru/docs/', '/404.html']) {
     assert.match(headers, new RegExp(`(?:^|\\n\\n)${escapeRegex(route)}\\n  Cache-Control: ${escapeRegex(REVALIDATED_CACHE_CONTROL)}`, 'u'));
+    assert.match(headers, new RegExp(`(?:^|\\n\\n)${escapeRegex(route)}\\n  Cache-Control: ${escapeRegex(REVALIDATED_CACHE_CONTROL)}\\n  ETag: "${escapeRegex(buildId)}"`, 'u'));
   }
+  assert.doesNotMatch(headers, /\/\.well-known\/\*\n(?:  .*\n)*  ETag:/u);
   assert.equal((headers.match(/^\/assets\/\*$/gmu) ?? []).length, 1);
   assert.equal((headers.match(new RegExp(escapeRegex(IMMUTABLE_CACHE_CONTROL), 'gu')) ?? []).length, 1);
   assert.equal(headers.includes(`/assets/*\n  Cache-Control: ${REVALIDATED_CACHE_CONTROL}`), false);

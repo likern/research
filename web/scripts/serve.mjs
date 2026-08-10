@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   IMMUTABLE_CACHE_CONTROL,
+  NOT_FOUND_CACHE_CONTROL,
   REVALIDATED_CACHE_CONTROL,
 } from './lib/release-contract.mjs';
 
@@ -153,19 +154,24 @@ async function isFile(path) {
 async function sendFile(path, method, request, response, status, liveReload, requestedPath) {
   const extension = extname(path);
   const body = await readFile(path);
-  const etag = `"sha256-${createHash('sha256').update(body).digest('hex')}"`;
+  const declaredBuildId = extension === '.html'
+    ? body.toString('utf8').match(/\bdata-pinega-build="(sha256-[a-f0-9]{64})"/u)?.[1]
+    : undefined;
+  const etag = `"${declaredBuildId ?? `sha256-${createHash('sha256').update(body).digest('hex')}`}"`;
   const headers = {
     'Content-Type': mimeTypes.get(extension) ?? 'application/octet-stream',
     'Cache-Control': liveReload
       ? 'no-store'
-      : requestedPath.startsWith('/assets/')
-        ? IMMUTABLE_CACHE_CONTROL
-        : REVALIDATED_CACHE_CONTROL,
+      : status === 404
+        ? NOT_FOUND_CACHE_CONTROL
+        : requestedPath.startsWith('/assets/')
+          ? IMMUTABLE_CACHE_CONTROL
+          : REVALIDATED_CACHE_CONTROL,
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Content-Type-Options': 'nosniff',
   };
-  if (!liveReload) {
+  if (!liveReload && status === 200) {
     headers.ETag = etag;
     headers['Content-Length'] = String(body.byteLength);
   }

@@ -82,9 +82,13 @@ test('not-found responses follow the requested locale prefix', async t => {
 
   const english = await fetch(`${server.url}/missing`);
   assert.equal(english.status, 404);
+  assert.equal(english.headers.get('cache-control'), 'no-store');
+  assert.equal(english.headers.get('etag'), null);
   assert.match(await english.text(), /lang="en"/u);
 
   const russian = await fetch(`${server.url}/ru/missing`);
   assert.equal(russian.status, 404);
+  assert.equal(russian.headers.get('cache-control'), 'no-store');
+  assert.equal(russian.headers.get('etag'), null);
   assert.match(await russian.text(), /lang="ru"/u);
 });

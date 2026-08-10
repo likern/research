@@ -992,17 +992,23 @@ data, discovery files, and the two well-known manifests use
 `public, max-age=0, must-revalidate`. The URL spaces are deliberately disjoint:
 Cloudflare Pages concatenates the value of the same header from overlapping
 `_headers` rules, so a broad revalidation rule must not overlap `/assets/*`.
-There is no Service Worker or second cache owner.
+Each successful HTML route also receives the strong build ID as its explicit
+ETag, so canonical extensionless Pages routes retain a validator and answer a
+matching `If-None-Match` request with `304`. Nearest-404 HTML follows the
+provider's distinct `no-store` policy. There is no Service Worker or second
+cache owner.
 
 The generated `/.well-known/pinega-release.json` inventories every public file
 with its URL, expected status, byte length, SHA-256, media type, and cache
 policy. It also records the generated `_headers` control checksum while
 excluding its own cyclic identity and the separately added deployment
-provenance. The build checker reconstructs the manifest from disk. After Direct
+provenance. The normalized navigation build ID excludes that delivery control
+to avoid an HTML-build-ID/ETag cycle; the release manifest still verifies its
+exact bytes. The build checker reconstructs the manifest from disk. After Direct
 Upload, the remote gate fetches every inventoried URL and compares actual
 status, bytes, SHA-256, `Cache-Control`, `Content-Type`, and ETag. A conditional
 HTML request must return `304`; the English and Russian nearest-404 bodies are
-verified through guaranteed-missing URLs.
+verified through guaranteed-missing URLs with `Cache-Control: no-store`.
 
 CI builds and tests one directory, packages it deterministically, attests that
 archive, verifies the attestation before deployment, and uploads the extracted
