@@ -98,6 +98,9 @@ jobs:
       - name: Run token and architecture tests
         run: npm run test:unit
 
+      - name: Validate accessibility-tree coverage registry
+        run: npm run check:aria-coverage
+
       - name: Build the multi-page website
         run: npm run build
 
