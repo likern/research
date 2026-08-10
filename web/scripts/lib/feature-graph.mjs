@@ -9,6 +9,7 @@ const litRuntimeModuleSuffixes = [
 ];
 const litPackagePaths = [
   'node_modules/@lit/reactive-element',
+  'node_modules/@lit/task',
   'node_modules/lit',
   'node_modules/lit-element',
   'node_modules/lit-html',
@@ -82,6 +83,18 @@ export function createVerifiedFeatureGraph({
   if (!coreClosure.has(litRuntimeFile) || !diagramClosure.has(litRuntimeFile)) {
     throw new TypeError('Web Awesome Core and the Lit diagram island must import one shared Lit runtime chunk.');
   }
+  const taskModuleLocations = [...moduleLocations.entries()]
+    .filter(([moduleId]) => /(?:^|\/)node_modules\/@lit\/task\//u.test(normalizePath(moduleId)));
+  if (taskModuleLocations.length === 0) {
+    throw new TypeError('The Lit diagram island must bundle @lit/task for component-local async work.');
+  }
+  const taskChunks = new Set(taskModuleLocations.flatMap(([, locations]) => locations));
+  const shellClosure = outputClosure(outputs, mainOutputPath);
+  for (const taskChunk of taskChunks) {
+    if (!diagramClosure.has(taskChunk) || shellClosure.has(taskChunk) || coreClosure.has(taskChunk)) {
+      throw new TypeError('@lit/task must remain reachable only through the component-local diagram island.');
+    }
+  }
 
   const lockPackages = packageLock?.packages;
   if (!lockPackages || typeof lockPackages !== 'object' || Array.isArray(lockPackages)) {
@@ -151,6 +164,12 @@ export function createVerifiedFeatureGraph({
         return [path.slice('node_modules/'.length), metadata.version];
       })),
       consumers: [webAwesomeCoreSource, diagramSource],
+      task: {
+        package: '@lit/task',
+        version: lockPackages['node_modules/@lit/task'].version,
+        scope: 'component-local',
+        consumers: [diagramSource],
+      },
     },
   };
 
@@ -321,7 +340,7 @@ function outputAssetPath(outputPath) {
 
 function isLitModule(moduleId) {
   const path = normalizePath(moduleId);
-  return /(?:^|\/)node_modules\/(?:@lit\/reactive-element|lit|lit-element|lit-html)(?:\/|$)/u.test(path);
+  return /(?:^|\/)node_modules\/(?:@lit\/(?:reactive-element|task)|lit|lit-element|lit-html)(?:\/|$)/u.test(path);
 }
 
 function normalizePath(value) {

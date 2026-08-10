@@ -39,6 +39,26 @@ export const ROUTE_FEATURE_DEFINITIONS = Object.freeze([
   }),
 ]);
 
+export const LIT_ISLAND_POLICY = Object.freeze({
+  schemaVersion: 1,
+  ownership: 'component-local',
+  routeLoading: false,
+  router: false,
+  globalRendering: false,
+  globalHydration: false,
+  taskPackage: '@lit/task',
+  islands: Object.freeze([
+    Object.freeze({
+      id: 'semantic-diagram-inspector',
+      element: 'pinega-diagram-viewer',
+      feature: 'diagram-viewer',
+      fallback: 'canonical-light-dom',
+      asyncScope: 'component-local-model',
+      reconnect: true,
+    }),
+  ]),
+});
+
 export const SHELL_CUSTOM_ELEMENTS = Object.freeze([
   'pinega-evidence',
   'pinega-hero',

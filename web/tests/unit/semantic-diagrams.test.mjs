@@ -73,6 +73,7 @@ test('web figures are deterministic, accessible, and retain textual fallbacks', 
     const first = renderer.renderDiagramFigure(value);
     const second = renderer.renderDiagramFigure(structuredClone(value));
     assert.equal(first, second);
+    assert.match(first, /<pinega-diagram-viewer data-diagram-id="[a-z0-9-]+" data-pinega-locale="en">/u);
     assert.match(first, /<figure class="pinega-semantic-diagram"/u);
     assert.match(first, /data-layout-profile="production-v0\.2"/u);
     assert.match(first, /<svg[^>]+role="img" aria-labelledby="[^"]+"[^>]*><title[^>]*>[^<]+<\/title><desc[^>]*>[^<]+<\/desc>/u);
@@ -80,6 +81,7 @@ test('web figures are deterministic, accessible, and retain textual fallbacks', 
     assert.match(first, /<details class="pinega-diagram-transcript">/u);
     assert.match(first, /<pre tabindex="0"><code>/u);
     assert.match(first, /href="\/diagrams\/models\/[a-z0-9-]+\.json" download/u);
+    assert.match(first, /<div data-pinega-island-root hidden><\/div><\/details>/u);
     assert.doesNotMatch(first, /undefined|\[object Object\]/u);
   }
 });

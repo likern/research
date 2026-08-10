@@ -265,6 +265,16 @@ test('generated discovery files expose the complete documentation corpus', async
     build: { id: string; identityAlgorithm: string; documentContractVersion: string; shellVersion: string };
     navigation: {
       routeFeatureDefinitions: Array<{ id: string; implementation: string }>;
+      litIslands: {
+        schemaVersion: number;
+        ownership: string;
+        routeLoading: boolean;
+        router: boolean;
+        globalRendering: boolean;
+        globalHydration: boolean;
+        taskPackage: string;
+        islands: Array<{ id: string; element: string; feature: string; fallback: string; asyncScope: string; reconnect: boolean }>;
+      };
       intentPrefetch: {
         schemaVersion: number;
         hoverDelayMs: number;
@@ -279,12 +289,29 @@ test('generated discovery files expose the complete documentation corpus', async
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
     routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
   };
-  expect(payload.schemaVersion).toBe(6);
+  expect(payload.schemaVersion).toBe(7);
   expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
   expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
   expect(payload.build.documentContractVersion).toBe('1');
   expect(payload.build.shellVersion).toBe('4.0');
   expect(payload.navigation.routeFeatureDefinitions.map(feature => feature.id)).toEqual(['benchmark', 'code-example', 'diagram-viewer', 'doc-topic-filter']);
+  expect(payload.navigation.litIslands).toEqual({
+    schemaVersion: 1,
+    ownership: 'component-local',
+    routeLoading: false,
+    router: false,
+    globalRendering: false,
+    globalHydration: false,
+    taskPackage: '@lit/task',
+    islands: [{
+      id: 'semantic-diagram-inspector',
+      element: 'pinega-diagram-viewer',
+      feature: 'diagram-viewer',
+      fallback: 'canonical-light-dom',
+      asyncScope: 'component-local-model',
+      reconnect: true,
+    }],
+  });
   expect(payload.navigation.intentPrefetch).toMatchObject({
     schemaVersion: 1,
     hoverDelayMs: 80,

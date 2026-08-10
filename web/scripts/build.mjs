@@ -7,6 +7,7 @@ import {
   BUILD_ID_ALGORITHM,
   BUILD_ID_PLACEHOLDER,
   DOCUMENT_CONTRACT_VERSION,
+  LIT_ISLAND_POLICY,
   NATIVE_NAVIGATION_ROUTE_IDS,
   ROUTE_FEATURE_DEFINITIONS,
   ROUTE_OWNED_METADATA,
@@ -148,7 +149,7 @@ await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRo
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 6,
+    schemaVersion: 7,
     build: {
       id: BUILD_ID_PLACEHOLDER,
       identityAlgorithm: BUILD_ID_ALGORITHM,
@@ -158,6 +159,7 @@ await writeFile(
     navigation: {
       nativeRouteIds: NATIVE_NAVIGATION_ROUTE_IDS,
       routeFeatureDefinitions: ROUTE_FEATURE_DEFINITIONS,
+      litIslands: LIT_ISLAND_POLICY,
       featureGraph: {
         schemaVersion: verifiedFeatures.graph.schemaVersion,
         assetManifest: '/assets/feature-graph.json',
@@ -287,6 +289,7 @@ async function buildSemanticDiagrams() {
         ? `/diagrams/models/${model.id}.json`
         : `/content/diagrams/${locale}/${model.id}.json`;
       figures.set(`${locale}:${model.id}`, renderer.renderDiagramFigure(localizedModel, {
+        locale,
         messages: messagesFor(locale).diagram,
         modelHref,
       }));

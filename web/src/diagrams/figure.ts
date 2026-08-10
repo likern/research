@@ -11,7 +11,7 @@ export function renderDiagramFigure(value: unknown, options: DiagramLayoutOption
   const transcript = renderDiagramTranscriptText(model, options.messages);
   const figureId = `pinega-figure-${model.id}`;
   return [
-    `<pinega-diagram-viewer data-diagram-id="${escapeAttribute(model.id)}">`,
+    `<pinega-diagram-viewer data-diagram-id="${escapeAttribute(model.id)}" data-pinega-locale="${escapeAttribute(options.locale ?? 'en')}">`,
     `<figure class="pinega-semantic-diagram" id="${escapeAttribute(figureId)}" data-diagram-id="${escapeAttribute(model.id)}" data-diagram-kind="${escapeAttribute(model.kind)}" data-layout-profile="${escapeAttribute(scene.layoutProfile)}">`,
     `<div class="pinega-diagram-viewport" tabindex="0" role="region" aria-label="${escapeAttribute(diagramMessage(options.messages, 'viewport', { title: model.title }))}">`,
     renderSceneSvg(scene),
@@ -21,6 +21,7 @@ export function renderDiagramFigure(value: unknown, options: DiagramLayoutOption
     `<summary>${escapeText(diagramMessage(options.messages, 'transcript_summary'))}</summary>`,
     `<pre tabindex="0"><code>${escapeText(transcript)}</code></pre>`,
     `<a href="${escapeAttribute(options.modelHref ?? `/diagrams/models/${model.id}.json`)}" download>${escapeText(diagramMessage(options.messages, 'download_model'))}</a>`,
+    '<div data-pinega-island-root hidden></div>',
     '</details>',
     '</figure>',
     '</pinega-diagram-viewer>',

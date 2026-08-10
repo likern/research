@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   BUILD_ID_ALGORITHM,
   DOCUMENT_CONTRACT_VERSION,
+  LIT_ISLAND_POLICY,
   NATIVE_NAVIGATION_ROUTE_IDS,
   ROUTE_FEATURE_DEFINITIONS,
   ROUTE_OWNED_METADATA,
@@ -107,6 +108,17 @@ for (const entry of variants) {
   });
   assert.deepEqual(contract.features, manifestRoute.features, `${entry.route}: manifest route features`);
   assert.deepEqual(contract.criticalFeatures, manifestRoute.criticalFeatures, `${entry.route}: manifest critical route features`);
+  if (contract.features.includes('diagram-viewer')) {
+    const viewers = html.match(/<pinega-diagram-viewer\b/gu) ?? [];
+    const roots = html.match(/<div data-pinega-island-root hidden><\/div>/gu) ?? [];
+    assert.ok(viewers.length > 0, `${entry.route}: diagram feature requires an island host`);
+    assert.equal(roots.length, viewers.length, `${entry.route}: every diagram island requires one empty local root`);
+    assert.equal(
+      (html.match(new RegExp(`<pinega-diagram-viewer\\b[^>]*data-pinega-locale="${escapeRegex(entry.locale)}"`, 'gu')) ?? []).length,
+      viewers.length,
+      `${entry.route}: every diagram island requires its immutable route locale`,
+    );
+  }
   assert.deepEqual(
     manifestRoute.requests,
     createRouteRequestManifest(featureGraph, bundleManifest, ROUTE_FEATURE_DEFINITIONS, entry.locale, contract.features),
@@ -156,12 +168,13 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 6);
+assert.equal(manifest.schemaVersion, 7);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
 assert.deepEqual(manifest.navigation.nativeRouteIds, NATIVE_NAVIGATION_ROUTE_IDS);
 assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFINITIONS);
+assert.deepEqual(manifest.navigation.litIslands, LIT_ISLAND_POLICY);
 assert.deepEqual(manifest.navigation.featureGraph, {
   schemaVersion: 1,
   assetManifest: '/assets/feature-graph.json',
@@ -231,9 +244,16 @@ assert.deepEqual(featureGraph.features.map(feature => ({
 assert.equal(featureGraph.lit.deduplicated, true);
 assert.deepEqual(featureGraph.lit.packages, {
   '@lit/reactive-element': '2.1.2',
+  '@lit/task': '1.0.3',
   lit: '3.3.3',
   'lit-element': '4.2.2',
   'lit-html': '3.3.3',
+});
+assert.deepEqual(featureGraph.lit.task, {
+  package: '@lit/task',
+  version: '1.0.3',
+  scope: 'component-local',
+  consumers: ['src/features/diagram-viewer.ts'],
 });
 assert.deepEqual(
   createVerifiedFeatureGraph({

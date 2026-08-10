@@ -24,13 +24,17 @@ The initial-render stability closure is **ACCEPTED BASELINE**, merged as PR
 #33. It proves static-region geometry and style stability across Pinega and Web
 Awesome upgrade boundaries.
 
-Gate 4.5 status: **IMPLEMENTATION UNDER REVIEW**. This change adds
+Gate 4.5 status: **ACCEPTED BASELINE**, merged as PR #34. It adds
 hover/focus/pointer intent, bounded speculative route preparation,
 save-data/slow-network policy, and explicit hit-rate and wasted-byte
-instrumentation. It becomes accepted baseline only after this pull request is
-merged.
+instrumentation.
 
-Gate 4.5 base repository state: `main@b8a8f3d` after PR #33.
+Gate 4.6 status: **IMPLEMENTATION UNDER REVIEW**. This change turns the diagram
+viewer into the first stateful production Lit island, establishes symmetric
+connect/disconnect cleanup, and confines `@lit/task` to component-local model
+loading. It becomes accepted baseline only after this pull request is merged.
+
+Gate 4.6 base repository state: `main@8392483` after PR #34.
 
 ## Decision
 
@@ -58,7 +62,7 @@ It deliberately adds no client router or navigation interception.
 | Locale model | English unprefixed routes and Russian `/ru/` routes; content registry schema v3 |
 | Build | Node 26 build script with esbuild 0.28.1 for both the browser graph and the temporary Node diagram renderer |
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
-| Lit | One root Lit 3.3.3 installation shared by Web Awesome and the Pinega diagram island |
+| Lit | One root Lit 3.3.3 installation shared by Web Awesome and the stateful Pinega diagram island; root `@lit/task` 1.0.3 is island-local |
 | Runtime loading | Shell-eager `main.js` plus allowlisted esbuild dynamic entries classified as critical, deferred, or viewport |
 | Navigation | Gate 4.5 transactional Navigation API coordinator with bounded intent prefetch and an in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
@@ -799,7 +803,7 @@ zero-retry browser matrix executes the real minified production artifact in
 Chromium, Firefox, and WebKit; any future cross-chunk ordering dependency must
 add a direct regression test or reopen the bundler decision.
 
-Each route's schema-v6 request manifest partitions the actual transitive
+Each route's schema-v7 site-manifest entry partitions the actual transitive
 closure into shell, critical, deferred, and viewport requests. Assets already
 loaded through the shell are listed under `moduleMapReuse` instead of counted
 again as feature requests. No manual `modulepreload` or import map is required
@@ -807,12 +811,13 @@ for correctness.
 
 ### Lit ownership and evidence
 
-`pinega-diagram-viewer` is the first Pinega-owned Lit island. It returns its
-host as the render root, so the SSG-produced SVG, caption, transcript, model
-download, and no-JavaScript representation remain canonical light DOM. Lit
-owns only the element lifecycle; route replacement invokes normal disconnect
-cleanup. Web Awesome remains the source of generic controls and never becomes
-the application router or global `<main>` renderer.
+At the Gate 4.4 boundary, `pinega-diagram-viewer` was the first Pinega-owned Lit
+lifecycle island and returned its host as the render root. The SSG-produced
+SVG, caption, transcript, model download, and no-JavaScript representation
+remained canonical light DOM. Gate 4.6 retains that canonical surface but gives
+Lit one dedicated initially empty subtree inside the transcript; it does not
+adopt or hydrate the SSG figure. Web Awesome remains the source of generic
+controls and never becomes the application router or global `<main>` renderer.
 
 Build checks prove static package/chunk deduplication. Browser tests additionally
 assert the exact Lit diagnostic version arrays, one shared Lit request before
@@ -920,6 +925,58 @@ Numeric product budgets remain deferred until repeated production evidence
 exists. Idle prefetch, module prefetch, persistence, and Service Worker
 behavior remain outside Gate 4.5.
 
+## Gate 4.6 stateful Lit island
+
+### Production behavior and ownership
+
+`pinega-diagram-viewer` now owns a real, user-facing state machine: after the
+native transcript is opened, a local control can fetch, validate, summarize,
+close, reopen, fail, and retry the semantic JSON model for that one diagram.
+The request is delayed until explicit component intent. A completed summary is
+retained only by that component instance; closing and reopening it does not
+repeat the request.
+
+The accessible SVG, caption, transcript, and download link remain generated
+SSG light DOM and work when JavaScript or the feature chunk is unavailable.
+Lit renders only into a build-authored empty `data-pinega-island-root` inside
+the transcript. It neither hydrates the figure nor renders any route-global
+surface. A fresh clone clears copied Lit markers before its first render and
+starts with independent state.
+
+The schema-v7 site manifest publishes the normative policy:
+
+- ownership is `component-local`;
+- route loading, a Lit router, global rendering, and global hydration are all
+  disabled;
+- `@lit/task` is permitted only for `component-local-model` async work;
+- the island must support reconnect while retaining its own completed state.
+
+### Async and lifecycle boundary
+
+The model task accepts only the exact uncredentialed same-origin endpoint for
+the host's diagram ID and active locale. It sends an abortable JSON request,
+requires `application/json`, stops streaming above a 64 KiB body limit,
+validates the canonical semantic model schema and cross-references, and checks
+the returned ID before rendering safe Lit expressions. No `unsafeHTML()` is
+used.
+
+`connectedCallback()` installs the external Escape listener and the native
+transcript listener under one connection-owned `AbortController`.
+`disconnectedCallback()` aborts that controller and any pending Task request,
+removes renderer ownership, and records whether an expanded pending task must
+restart after reconnect. Completed values have no live external resource and
+remain local to the retained instance. Timers, workers, observers, document
+subscriptions, and route promises are not created by the island.
+
+The production graph verifier requires one root installation of `@lit/task`
+and proves its emitted modules are reachable through the diagram feature but
+not the shell or Web Awesome Core closure. Unit tests cover URL, media type,
+size, identity, schema, abort, package deduplication, and forbidden global Lit
+owners. The zero-retry browser matrix adds 24 scenarios across Chromium
+desktop/mobile, Firefox, and WebKit for no-JavaScript fallback, on-demand and
+localized completion, deterministic failure/retry, disconnect/reconnect with
+pending cancellation, external-listener cleanup, and fresh-clone isolation.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
@@ -952,4 +1009,6 @@ behavior remain outside Gate 4.5.
 - [esbuild — code splitting](https://esbuild.github.io/api/#splitting)
 - [esbuild — build metadata](https://esbuild.github.io/api/#metafile)
 - [Lit — development-mode duplicate-version diagnostics](https://lit.dev/docs/tools/development/)
+- [Lit — component lifecycle](https://lit.dev/docs/components/lifecycle/)
+- [Lit — asynchronous tasks](https://lit.dev/docs/data/task/)
 - [Web Awesome — usage and Lit foundation](https://webawesome.com/docs/usage/)

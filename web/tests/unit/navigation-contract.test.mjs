@@ -65,6 +65,7 @@ test('valid fixtures cover ordinary, long, Lit, locale, missing-translation, and
   assert.ok(contracts.every(contract => contract.shellVersion === SHELL_VERSION));
   assert.deepEqual(contracts[2].features, ['diagram-viewer']);
   assert.equal(contracts[2].criticalFeatures.length, 0);
+  assert.match(await readFixture('lit-feature.html'), /data-pinega-island-root hidden/u);
   assert.equal(ROUTE_FEATURE_DEFINITIONS.find(feature => feature.id === 'diagram-viewer')?.implementation, 'lit');
   assert.deepEqual(contracts[3].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
   assert.deepEqual(contracts[4].alternates.map(alternate => alternate.language), ['en', 'ru', 'x-default']);
