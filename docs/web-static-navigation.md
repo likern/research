@@ -994,10 +994,13 @@ data, discovery files, and the two well-known manifests use
 `public, max-age=0, must-revalidate`. The URL spaces are deliberately disjoint:
 Cloudflare Pages concatenates the value of the same header from overlapping
 `_headers` rules, so a broad revalidation rule must not overlap `/assets/*`.
-Each successful HTML route retains the provider-owned content ETag documented
-by Cloudflare Pages, so canonical extensionless routes answer a matching
-`If-None-Match` request with `304`. Nearest-404 HTML follows the provider's
-distinct `no-store` policy. There is no Service Worker or second cache owner.
+Each successful HTML route must return that exact revalidation policy.
+Cloudflare's Pages documentation describes an ETag/`304` path, but immutable
+preview responses can omit the validator. The deployment gate therefore
+records `etag-304` when it is exposed and otherwise requires a forced full
+`200` to reproduce the exact HTML bytes. Nearest-404 HTML follows the
+provider's distinct `no-store` policy. There is no Service Worker or second
+cache owner.
 
 The generated `/.well-known/pinega-release.json` inventories every public file
 with its URL, expected status, byte length, SHA-256, media type, and cache
@@ -1007,11 +1010,12 @@ provenance. The normalized navigation build ID excludes that delivery control
 so delivery policy cannot alter application identity; the release manifest
 still verifies its exact bytes. The build checker reconstructs the manifest
 from disk. After Direct Upload, the remote gate fetches every inventoried URL
-and compares actual status, bytes, SHA-256, `Cache-Control`, `Content-Type`, and
-provider ETag. A conditional HTML request must return `304`; the English and
-Russian nearest-404 bodies are verified through guaranteed-missing URLs with
-`Cache-Control: no-store`. Exact artifact identity comes from the independent
-byte hashes, not from interpreting the provider's opaque HTTP validator.
+and compares actual status, bytes, SHA-256, `Cache-Control`, and `Content-Type`.
+When the provider exposes an ETag, a conditional HTML request must return
+`304`; otherwise a no-cache request must return the same exact `200` bytes. The
+English and Russian nearest-404 bodies are verified through guaranteed-missing
+URLs with `Cache-Control: no-store`. Exact artifact identity comes from the
+independent byte hashes, not from optional provider validator behavior.
 
 CI builds and tests one directory, packages it deterministically, attests that
 archive, verifies the attestation before deployment, and uploads the extracted
@@ -1029,11 +1033,11 @@ document. Recovery is allowed only after `page.evaluate()` proves the exact
 requested URL, `document.readyState === 'complete'`, and the Pinega readiness
 marker. It then supersedes the stuck navigation with the same URL and still
 requires the expected main-resource status. The sole alternative is a `304`
-when the route expected `200`, because the same-URL request is an ETag
-revalidation of the already-proven representation. A non-cacheable 404 still
-requires `404`. Any incomplete, wrong, or non-Firefox document fails normally,
-so the workaround cannot convert an application or HTTP failure into passing
-evidence.
+when the route expected `200`, because the exact-build test server can answer
+the same-URL request as an ETag revalidation of the already-proven
+representation. A non-cacheable 404 still requires `404`. Any incomplete,
+wrong, or non-Firefox document fails normally, so the workaround cannot convert
+an application or HTTP failure into passing evidence.
 
 ## Normative and implementation references
 

@@ -35,7 +35,6 @@ test('immutable preview exposes the exact build provenance and stays unindexed',
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('application/json');
   expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
-  expect(response.headers().etag).toBeTruthy();
   expect(await response.json()).toEqual(expectedManifest);
 
   const root = await request.get('/');
@@ -49,7 +48,6 @@ test('the HTTPS preview serves every inventoried byte with the declared HTTP con
   const releaseResponse = await request.get('/.well-known/pinega-release.json');
   expect(releaseResponse.status()).toBe(200);
   expect(releaseResponse.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
-  expect(releaseResponse.headers().etag).toBeTruthy();
   expect(await releaseResponse.json()).toEqual(expected);
 
   expect(expected.files).toHaveLength(expected.inventory.fileCount);
@@ -58,7 +56,6 @@ test('the HTTPS preview serves every inventoried byte with the declared HTTP con
       const response = await request.get(file.url, { failOnStatusCode: false });
       expect(response.status(), file.path).toBe(file.status);
       expect(response.headers()['cache-control'], file.path).toBe(file.cacheControl);
-      if (file.status === 200) expect(response.headers().etag, file.path).toBeTruthy();
       if (file.mediaType) expect(response.headers()['content-type'], file.path).toContain(file.mediaType);
       const body = await response.body();
       expect(body.byteLength, file.path).toBe(file.bytes);
@@ -67,18 +64,26 @@ test('the HTTPS preview serves every inventoried byte with the declared HTTP con
   }
 });
 
-test('revalidated HTML honors its deployed ETag while fingerprinted assets stay immutable', async ({ request }) => {
+test('revalidated HTML stays exact with either conditional or full validation while assets stay immutable', async ({ request }) => {
   const root = await request.get('/');
   expect(root.status()).toBe(200);
   expect(root.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+  const rootBody = await root.body();
   const etag = root.headers().etag;
-  expect(etag).toBeTruthy();
-  if (!etag) throw new TypeError('Deployed HTML response omitted ETag');
-  const conditional = await request.get('/', {
-    failOnStatusCode: false,
-    headers: { 'If-None-Match': etag },
-  });
-  expect(conditional.status()).toBe(304);
+  if (etag) {
+    const conditional = await request.get('/', {
+      failOnStatusCode: false,
+      headers: { 'If-None-Match': etag },
+    });
+    expect(conditional.status()).toBe(304);
+  } else {
+    const revalidated = await request.get('/', {
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
+    expect(revalidated.status()).toBe(200);
+    expect(revalidated.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+    expect(await revalidated.body()).toEqual(rootBody);
+  }
 
   const expected = JSON.parse(await readFile(expectedReleaseManifestPath, 'utf8')) as ReleaseManifest;
   const immutable = expected.files.find(file => file.url.startsWith('/assets/') && file.status === 200);

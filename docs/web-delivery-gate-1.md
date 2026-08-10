@@ -121,9 +121,9 @@ It:
 6. requires Cloudflare to report `environment=preview` and an immutable
    hash-based `pages.dev` URL;
 7. verifies root, docs, `noindex`, exact remote provenance and release
-   manifests, revalidated HTML plus the provider-owned ETag and conditional
-   `304`, one immutable asset, and a real `no-store` HTTP 404 directly over
-   HTTPS;
+   manifests, revalidated HTML through either provider ETag/`304` or an exact
+   forced full `200`, one immutable asset, and a real `no-store` HTTP 404
+   directly over HTTPS;
 8. publishes a provider deployment record containing Cloudflare deployment ID,
    immutable URL, alias, commits, archive SHA-256, and release-inventory
    SHA-256.
@@ -138,11 +138,12 @@ The GitHub job uses `environment.url`, so the immutable URL appears as
 This job has no deployment credential. It runs Chromium and axe-core against
 the immutable Cloudflare URL and compares the served provenance to the
 downloaded expected artifact. It fetches every release-manifest URL and
-compares status, bytes, SHA-256, cache policy, media type, and provider ETag; it
-also requires conditional HTML revalidation to produce `304`. The byte hashes,
-not the opaque HTTP validator, prove exact artifact identity. Navigation,
-console errors, `no-store` nearest-404 behavior, and blocking accessibility
-findings remain independent browser checks.
+compares status, bytes, SHA-256, cache policy, and media type. When the provider
+exposes an ETag, conditional HTML revalidation must produce `304`; otherwise a
+forced request must reproduce the exact `200` bytes. The byte hashes, not
+optional provider validator behavior, prove exact artifact identity.
+Navigation, console errors, `no-store` nearest-404 behavior, and blocking
+accessibility findings remain independent browser checks.
 
 If the artifact contains `ru/404.html`, the same test automatically requires a
 Russian nearest-404 response for an unknown `/ru/...` route. This lets Gate 3A

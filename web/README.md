@@ -367,15 +367,17 @@ diagram feature; it is never a shell or navigation dependency.
 
 The build fingerprints every `/assets/` URL and generates a non-overlapping
 Cloudflare `_headers` policy: fingerprinted assets are immutable for one year,
-while HTML and mutable manifests always revalidate. Successful HTML routes use
-the provider-owned content ETag documented by Cloudflare Pages;
-provider-served nearest 404s remain `no-store`. There is no Service Worker.
+while HTML and mutable manifests always revalidate. Successful HTML routes must
+return that exact cache policy; provider-served nearest 404s remain `no-store`.
+There is no Service Worker.
 `/.well-known/pinega-release.json` inventories every public file by URL,
 status, bytes, SHA-256, media type, and cache policy. Local checks reconstruct
 that inventory; the deployment suite verifies every served byte plus the real
-HTTPS headers, the provider HTML ETag and conditional `304`, and the provider's
-`no-store` nearest-404 behavior. Artifact identity remains the independent
-per-URL SHA-256 inventory rather than being overloaded onto an HTTP validator.
+HTTPS headers and the provider's `no-store` nearest-404 behavior. It records
+`etag-304` when Pages exposes a validator and otherwise requires a forced full
+`200` to reproduce the exact HTML bytes. Artifact identity remains the
+independent per-URL SHA-256 inventory rather than being overloaded onto an
+optional HTTP validator.
 
 CI packages and attests the same directory that passed tests, verifies the
 attestation before Direct Upload, and never rebuilds it in the deploy job. The
@@ -388,9 +390,9 @@ setup has one Firefox-only transport recovery for Playwright issue #42183: it
 may supersede a timed-out `page.goto()` only after the requested URL,
 `readyState=complete`, and Pinega readiness marker are already proven through
 `page.evaluate()`. The replacement navigation must still return the expected
-HTTP status, except that an expected `200` may revalidate as the Gate 4.7
-contract's `304`; incomplete, wrong, non-cacheable 404, or other documents fail
-without recovery.
+HTTP status, except that an expected `200` may revalidate as the exact-build
+test server's `304`; incomplete, wrong, non-cacheable 404, or other documents
+fail without recovery.
 
 ## Initial-render visual-stability contract
 

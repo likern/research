@@ -62,7 +62,7 @@ const review = {
   readiness: 'candidate-pending-remote-verification',
   gates: {
     exactArtifact: { status: 'pass', manifest: '/.well-known/pinega-release.json' },
-    http: { status: 'pending-remote', localContract: 'pass', verification: 'full deployed byte/header/ETag verification runs after Direct Upload' },
+    http: { status: 'pending-remote', localContract: 'pass', verification: 'full deployed byte/cache/revalidation verification runs after Direct Upload' },
     crossBrowser: { status: 'pass', projects: requiredProjects, retries: 0 },
     accessibility: { status: 'pass', blockingWcagAAIssues: 0, keyboardTraps: 0, evidenceTests: accessibility.filter(passed).length },
     visual: { status: 'pass', unexpectedDiffs: 0, evidenceTests: visualTests.filter(passed).length },
@@ -119,7 +119,7 @@ function renderMarkdown(review, performance) {
     const metrics = observation.metrics;
     return `| ${observation.profile} | ${observation.cycle} | ${round(metrics.firstContentfulPaintMs)} | ${round(metrics.largestContentfulPaintMs)} | ${metrics.cumulativeLayoutShift.toFixed(4)} | ${round(metrics.speedIndexMs)} | ${round(metrics.totalBlockingTimeMs)} |`;
   }).join('\n');
-  return `# Gate 4.7 release candidate review\n\n- Build: \`${review.buildId}\`\n- Inventory: \`${review.inventorySha256}\` (${review.inventoryFiles} public files)\n- Exact local artifact, cross-browser, accessibility, visual, and performance evidence: **pass**\n- Deployed byte/header/ETag verification: **pending Direct Upload**\n- Browser retries: **0**; blocking accessibility issues: **0**; keyboard traps: **0**; unexpected visual diffs: **0**\n- Lighthouse is diagnostic evidence, not the sole release oracle.\n\n| Profile | Cache | FCP (ms) | LCP (ms) | CLS | Speed Index (ms) | TBT (ms) |\n| --- | --- | ---: | ---: | ---: | ---: | ---: |\n${rows}\n`;
+  return `# Gate 4.7 release candidate review\n\n- Build: \`${review.buildId}\`\n- Inventory: \`${review.inventorySha256}\` (${review.inventoryFiles} public files)\n- Exact local artifact, cross-browser, accessibility, visual, and performance evidence: **pass**\n- Deployed byte/cache/revalidation verification: **pending Direct Upload**\n- Browser retries: **0**; blocking accessibility issues: **0**; keyboard traps: **0**; unexpected visual diffs: **0**\n- Lighthouse is diagnostic evidence, not the sole release oracle.\n\n| Profile | Cache | FCP (ms) | LCP (ms) | CLS | Speed Index (ms) | TBT (ms) |\n| --- | --- | ---: | ---: | ---: | ---: | ---: |\n${rows}\n`;
 }
 
 function round(value) {

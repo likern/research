@@ -368,6 +368,7 @@ jobs:
           fi
 
       - name: Verify the real HTTPS deployment without executing PR code
+        id: verify-deployment
         shell: bash
         env:
           DEPLOYMENT_URL: ${{ steps.deploy-pages.outputs.deployment-url }}
@@ -377,17 +378,21 @@ jobs:
           curl "${curl_options[@]}" --fail --dump-header root-headers.txt --output root.html "${DEPLOYMENT_URL}/"
           grep -Eiq '^x-robots-tag:.*noindex' root-headers.txt
           grep -Eiq '^cache-control: *public, *max-age=0, *must-revalidate' root-headers.txt
+          cmp deployed/dist/index.html root.html
           root_etag="$(sed -n 's/^[Ee][Tt][Aa][Gg]:[[:space:]]*//p' root-headers.txt | tr -d '\r' | tail -n 1)"
-          if [[ -z "$root_etag" ]]; then
-            echo "Cloudflare Pages omitted its documented ETag from successful HTML." >&2
-            cat root-headers.txt >&2
-            exit 1
+          if [[ -n "$root_etag" ]]; then
+            conditional_status="$(curl "${curl_options[@]}" --header "If-None-Match: ${root_etag}" --output /dev/null --write-out '%{http_code}' "${DEPLOYMENT_URL}/")"
+            if [[ "$conditional_status" != "304" ]]; then
+              echo "Conditional HTML request returned ${conditional_status}, expected 304." >&2
+              exit 1
+            fi
+            html_validator_mode="etag-304"
+          else
+            curl "${curl_options[@]}" --fail --header 'Cache-Control: no-cache' --header 'Pragma: no-cache' --output root-revalidated.html "${DEPLOYMENT_URL}/"
+            cmp deployed/dist/index.html root-revalidated.html
+            html_validator_mode="full-200"
           fi
-          conditional_status="$(curl "${curl_options[@]}" --header "If-None-Match: ${root_etag}" --output /dev/null --write-out '%{http_code}' "${DEPLOYMENT_URL}/")"
-          if [[ "$conditional_status" != "304" ]]; then
-            echo "Conditional HTML request returned ${conditional_status}, expected 304." >&2
-            exit 1
-          fi
+          echo "html-validator-mode=${html_validator_mode}" >> "$GITHUB_OUTPUT"
           curl "${curl_options[@]}" --fail --output docs.html "${DEPLOYMENT_URL}/docs/"
           curl "${curl_options[@]}" --fail --output remote-manifest.json "${DEPLOYMENT_URL}/.well-known/pinega-deployment.json"
           cmp deployed/dist/.well-known/pinega-deployment.json remote-manifest.json
@@ -416,6 +421,7 @@ jobs:
           TESTED_SHA: ${{ needs.validate.outputs.tested-sha }}
           PREVIEW_BRANCH: ${{ needs.validate.outputs.preview-branch }}
           PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          HTML_VALIDATOR_MODE: ${{ steps.verify-deployment.outputs.html-validator-mode }}
         run: |
           set -euo pipefail
           mkdir deployment-record
@@ -431,6 +437,7 @@ jobs:
             --arg base_sha "$BASE_SHA" \
             --arg tested_sha "$TESTED_SHA" \
             --arg preview_branch "$PREVIEW_BRANCH" \
+            --arg html_revalidation_mode "$HTML_VALIDATOR_MODE" \
             --arg inventory_sha256 "$(jq -r '.inventory.sha256' deployed/dist/.well-known/pinega-release.json)" \
             '{
               schema_version: 1,
@@ -445,7 +452,8 @@ jobs:
               source_sha: $source_sha,
               base_sha: $base_sha,
               tested_sha: $tested_sha,
-              preview_branch: $preview_branch
+              preview_branch: $preview_branch,
+              html_revalidation_mode: $html_revalidation_mode
             }' > deployment-record/cloudflare-deployment.json
           {
             echo "### Cloudflare Pages commit preview"
@@ -456,6 +464,7 @@ jobs:
             echo "- Tested merge: ${TESTED_SHA}"
             echo "- Artifact SHA-256: ${ARTIFACT_SHA256}"
             echo "- Release inventory SHA-256: $(jq -r '.inventory.sha256' deployed/dist/.well-known/pinega-release.json)"
+            echo "- HTML revalidation mode: ${HTML_VALIDATOR_MODE}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the provider deployment record
@@ -514,7 +523,7 @@ jobs:
         working-directory: web
         run: npx --no-install playwright install --with-deps chromium
 
-      - name: Verify the full deployed byte, header, ETag, navigation, and accessibility contract
+      - name: Verify the full deployed byte, cache, navigation, and accessibility contract
         working-directory: web
         env:
           PINEGA_PREVIEW_URL: ${{ needs.deploy.outputs.deployment-url }}
@@ -530,7 +539,7 @@ jobs:
             echo
             echo "- Immutable URL: ${DEPLOYMENT_URL}"
             echo "- Full inventoried bytes and SHA-256: pass"
-            echo "- Cache-Control and ETag revalidation: pass"
+            echo "- Cache-Control revalidation and exact HTML bytes: pass"
             echo "- Navigation, console, and WCAG A/AA blocking checks: pass"
           } >> "$GITHUB_STEP_SUMMARY"
 
