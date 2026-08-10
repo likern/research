@@ -12,10 +12,16 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
     const link = document.createElement('a');
     link.href = targetUrl;
     link.target = '_self';
-    link.hidden = true;
+    link.dataset.pinegaDirectDocument = 'true';
+    link.setAttribute('aria-hidden', 'true');
+    link.tabIndex = -1;
+    link.style.cssText = 'position:fixed;left:0;top:0;display:block;width:1px;height:1px;overflow:hidden';
     document.body.append(link);
-    link.click();
   }, target);
+  await page.locator('a[data-pinega-direct-document="true"]').click({
+    force: true,
+    noWaitAfter: true,
+  });
 
   await expect.poll(async () => {
     try {

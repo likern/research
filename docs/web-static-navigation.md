@@ -605,7 +605,9 @@ WebKit with zero Playwright retries. A failed first attempt is therefore a
 blocking failure, not a hidden flaky pass. Direct-document setup is judged by
 the route's HTTP probe plus one native `_self` navigation and the observable
 Pinega URL/readiness contract rather than by a Playwright lifecycle waiter;
-this avoids treating a stuck Firefox `page.goto()` promise as an application
+the link is prepared in a completed evaluation and activated with Playwright's
+explicit `noWaitAfter` click boundary. This avoids both a dropped browser timer
+and treating a stuck Firefox lifecycle/evaluation promise as an application
 failure after the trace already shows a complete response and ready DOM.
 
 | Gate 4.2 acceptance boundary | Deterministic proof in the exact build |
