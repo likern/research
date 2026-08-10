@@ -18,7 +18,7 @@ const immutableAssetPattern = /-(?:[A-Z0-9]{8}|[a-f0-9]{16})\.[A-Za-z0-9.]+$/u;
 const mediaTypes = new Map([
   ['.css', 'text/css'],
   ['.html', 'text/html'],
-  ['.js', 'text/javascript'],
+  ['.js', 'application/javascript'],
   ['.json', 'application/json'],
   ['.map', 'application/json'],
   ['.svg', 'image/svg+xml'],

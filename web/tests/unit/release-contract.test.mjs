@@ -45,7 +45,11 @@ test('release contract fingerprints every immutable asset and inventories exact 
   assert.deepEqual(manifest.controls.map(entry => entry.path), ['_headers']);
   assert.equal(manifest.inventory.fileCount, manifest.files.length);
   assert.equal(manifest.inventory.totalBytes, manifest.files.reduce((total, file) => total + file.bytes, 0));
-  assert.ok(manifest.files.some(entry => entry.path === `assets/${script.fileName}` && entry.cache === 'immutable'));
+  assert.ok(manifest.files.some(entry => (
+    entry.path === `assets/${script.fileName}`
+    && entry.cache === 'immutable'
+    && entry.mediaType === 'application/javascript'
+  )));
   assert.ok(manifest.files.some(entry => entry.path === `assets/${graph.fileName}` && entry.cache === 'immutable'));
   assert.deepEqual(
     manifest.files.filter(entry => entry.status === 404).map(entry => [entry.path, entry.url, entry.cache, entry.cacheControl]),

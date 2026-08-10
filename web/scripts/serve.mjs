@@ -18,7 +18,7 @@ const liveReloadScript = `<script data-pinega-live-reload>window.__PINEGA_INITIA
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.html', 'text/html; charset=utf-8'],
-  ['.js', 'text/javascript; charset=utf-8'],
+  ['.js', 'application/javascript; charset=utf-8'],
   ['.json', 'application/json'],
   ['.map', 'application/json'],
   ['.svg', 'image/svg+xml'],
