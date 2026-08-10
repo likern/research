@@ -5,11 +5,36 @@ async function ready(page: Page): Promise<void> {
   await openReadyDocument(page, '/research/');
 }
 
-async function semanticSvgMarkup(page: Page): Promise<string[]> {
-  return page.evaluate(() => Array.from(
-    document.querySelectorAll('svg.pinega-diagram-svg'),
-    element => element.outerHTML,
-  ));
+interface SemanticDiagramState {
+  dark: boolean;
+  firstCaptionVisible: boolean;
+  markup: string[];
+}
+
+async function semanticDiagramState(page: Page, toggleTheme = false): Promise<SemanticDiagramState> {
+  return page.evaluate(shouldToggleTheme => {
+    if (shouldToggleTheme) {
+      const toggle = document.querySelector<HTMLElement>('[data-theme-toggle]');
+      if (!toggle) throw new Error('Theme toggle is missing');
+      toggle.click();
+    }
+
+    const caption = document.querySelector<HTMLElement>('figure.pinega-semantic-diagram figcaption');
+    const captionStyle = caption ? getComputedStyle(caption) : undefined;
+    return {
+      dark: document.documentElement.classList.contains('pinega-dark'),
+      firstCaptionVisible: Boolean(
+        caption
+        && captionStyle?.display !== 'none'
+        && captionStyle?.visibility !== 'hidden'
+        && caption.getClientRects().length > 0
+      ),
+      markup: Array.from(
+        document.querySelectorAll('svg.pinega-diagram-svg'),
+        element => element.outerHTML,
+      ),
+    };
+  }, toggleTheme);
 }
 
 test('research page exposes three accessible figures from shared semantic models', async ({ page }) => {
@@ -66,10 +91,12 @@ test('downloadable model endpoints preserve semantic JSON', async ({ request }) 
 
 test('diagram SVG adapts to dark mode without replacing semantic markup', async ({ page }) => {
   await ready(page);
-  const before = await semanticSvgMarkup(page);
-  expect(before).toHaveLength(3);
-  await page.locator('[data-theme-toggle]').click();
-  await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
-  await expect.poll(() => semanticSvgMarkup(page)).toEqual(before);
-  await expect(page.locator('figure.pinega-semantic-diagram figcaption').first()).toBeVisible();
+  const before = await semanticDiagramState(page);
+  expect(before.markup).toHaveLength(3);
+
+  // Pointer actionability is covered by foundation.spec.ts; this assertion isolates the DOM/CSS contract.
+  const after = await semanticDiagramState(page, true);
+  expect(after.dark).toBe(true);
+  expect(after.markup).toEqual(before.markup);
+  expect(after.firstCaptionVisible).toBe(true);
 });
