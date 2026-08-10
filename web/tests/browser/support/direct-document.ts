@@ -9,7 +9,16 @@ interface ReadyDocumentState {
   readyState: DocumentReadyState;
 }
 
-export async function openReadyDocument(page: Page, route: string, expectedStatus = 200): Promise<void> {
+interface OpenReadyDocumentOptions {
+  expectPinegaReady?: boolean;
+}
+
+export async function openReadyDocument(
+  page: Page,
+  route: string,
+  expectedStatus = 200,
+  { expectPinegaReady = true }: OpenReadyDocumentOptions = {},
+): Promise<void> {
   const target = new URL(route, testOrigin).href;
   let response: Response | null;
   let recoveredFirefoxNavigation = false;
@@ -20,7 +29,7 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
       waitUntil: 'commit',
     });
   } catch (error) {
-    if (!await canRecoverFirefoxNavigation(page, target, error)) throw error;
+    if (!await canRecoverFirefoxNavigation(page, target, expectPinegaReady, error)) throw error;
     recoveredFirefoxNavigation = true;
 
     // Playwright #42183 can leave Firefox's driver-side navigation bookkeeping
@@ -42,19 +51,34 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
     `${route} should return HTTP ${acceptedStatuses.join(' or ')}`,
   ).toContain(response?.status());
 
-  await expect.poll(() => readReadyDocumentState(page)).toEqual({
-    href: target,
-    ready: 'true',
-    readyState: 'complete',
-  });
+  await expect.poll(async () => isExpectedDocumentReady(
+    await readReadyDocumentState(page),
+    target,
+    expectPinegaReady,
+  )).toBe(true);
 }
 
-async function canRecoverFirefoxNavigation(page: Page, target: string, error: unknown): Promise<boolean> {
+async function canRecoverFirefoxNavigation(
+  page: Page,
+  target: string,
+  expectPinegaReady: boolean,
+  error: unknown,
+): Promise<boolean> {
   if (!(error instanceof errors.TimeoutError)) return false;
   if (page.context().browser()?.browserType().name() !== 'firefox') return false;
 
   const state = await readReadyDocumentState(page);
-  return state?.href === target && state.ready === 'true' && state.readyState === 'complete';
+  return isExpectedDocumentReady(state, target, expectPinegaReady);
+}
+
+function isExpectedDocumentReady(
+  state: ReadyDocumentState | undefined,
+  target: string,
+  expectPinegaReady: boolean,
+): boolean {
+  return state?.href === target
+    && state.readyState === 'complete'
+    && (!expectPinegaReady || state.ready === 'true');
 }
 
 async function readReadyDocumentState(page: Page): Promise<ReadyDocumentState | undefined> {
