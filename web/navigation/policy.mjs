@@ -57,10 +57,52 @@ export function classifyNavigationIntent(intent) {
   return intercept(destination.href);
 }
 
+export function classifyPrefetchIntent(intent) {
+  if (!intent || typeof intent !== 'object') throw new TypeError('Prefetch intent must be an object.');
+
+  let current;
+  let activeDocumentIdentity;
+  let destination;
+  try {
+    current = new URL(intent.currentUrl);
+    destination = new URL(intent.destinationUrl, current);
+    activeDocumentIdentity = normalizeRouteUrl(intent.activeDocumentUrl, current.origin);
+  } catch {
+    return skipPrefetch('invalid-url');
+  }
+
+  if (!['http:', 'https:'].includes(destination.protocol)) return skipPrefetch('non-http');
+  if (destination.username || destination.password) return skipPrefetch('url-credentials');
+  if (destination.origin !== current.origin) return skipPrefetch('cross-origin');
+
+  const destinationIdentity = normalizeRouteUrl(destination, current.origin);
+  if (intent.fallbackTarget) {
+    try {
+      if (normalizeRouteUrl(intent.fallbackTarget, current.origin) === destinationIdentity) {
+        return skipPrefetch('fallback-guard');
+      }
+    } catch {
+      // A corrupt optional guard must not make an otherwise valid link unsafe.
+    }
+  }
+
+  if (!linkSources.has(intent.sourceKind)) return skipPrefetch('source');
+  if (intent.downloadRequested === true) return skipPrefetch('download');
+  if (intent.hasTarget === true) return skipPrefetch('target');
+  if (intent.disabled === true) return skipPrefetch('disabled');
+  if (destinationIdentity === activeDocumentIdentity) return skipPrefetch('active-route');
+
+  return { action: 'prefetch', reason: 'eligible', url: destination.href };
+}
+
 function native(reason) {
   return { action: 'native', reason };
 }
 
 function intercept(url) {
   return { action: 'intercept', reason: 'eligible', url };
+}
+
+function skipPrefetch(reason) {
+  return { action: 'skip', reason };
 }

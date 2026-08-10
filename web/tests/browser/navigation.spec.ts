@@ -1065,13 +1065,16 @@ test('semantic links remain complete MPA navigation with JavaScript disabled', a
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
   try {
-    const response = await page.goto('http://127.0.0.1:4173/', { waitUntil: 'load' });
+    const response = await page.goto('http://127.0.0.1:4173/', { waitUntil: 'domcontentloaded' });
     expect(response?.status()).toBe(200);
     await page.locator('pinega-site-header').evaluate((header: HTMLElement) => {
       header.dataset.testShellIdentity = 'no-js';
     });
 
-    await page.locator('[data-primary-navigation] a[href="/technology/"]').click();
+    await Promise.all([
+      page.waitForURL(/\/technology\/$/u, { waitUntil: 'domcontentloaded' }),
+      page.locator('[data-primary-navigation] a[href="/technology/"]').click({ noWaitAfter: true }),
+    ]);
 
     await expect(page).toHaveURL(/\/technology\/$/u);
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Research becomes technology');

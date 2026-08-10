@@ -32,6 +32,10 @@ test('diagram viewports and transcripts are keyboard reachable', async ({ page }
   await firstViewport.focus();
   await expect(firstViewport).toBeFocused();
 
+  const firstViewer = page.locator('pinega-diagram-viewer').first();
+  await expect(firstViewer).toHaveAttribute('data-pinega-feature-state', 'ready');
+  await expect(firstViewer).toHaveAttribute('data-renderer', 'lit');
+
   const details = page.locator('.pinega-diagram-transcript').first();
   await details.locator('summary').click();
   const transcript = details.locator('pre');

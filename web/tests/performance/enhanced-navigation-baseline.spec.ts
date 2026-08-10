@@ -47,6 +47,9 @@ const stressArtifactPath = resolve(webRoot, 'artifacts/baseline/gate-4.3-route-c
 const commitStorageKey = 'pinega-baseline-navigation-commits';
 
 test('records the Gate 4.3 cold and warm route-cache structural baseline', async ({ page, browserName }) => {
+  await page.addInitScript(() => {
+    window.__PINEGA_DISABLE_PREFETCH__ = true;
+  });
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
@@ -161,6 +164,9 @@ test('records the Gate 4.3 cold and warm route-cache structural baseline', async
 
 test('records a forced-GC 100-route bounded-cache stress study', async ({ page, browserName }) => {
   test.setTimeout(120_000);
+  await page.addInitScript(() => {
+    window.__PINEGA_DISABLE_PREFETCH__ = true;
+  });
   await page.goto('/', { waitUntil: 'load' });
   await expect(page.locator('html')).toHaveAttribute('data-pinega-ready', 'true');
   await expect(page.locator('html')).toHaveAttribute('data-pinega-route-cache', 'native-lru');

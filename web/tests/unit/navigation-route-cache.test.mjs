@@ -43,11 +43,37 @@ test('entry and estimated-weight bounds evict independently while pinning the ac
     maxWeightBytes: 250,
     activeKey: 'active',
     keys: ['active'],
+    speculativeKeys: [],
   });
 
   assert.deepEqual(byWeight.commitActive('next', 3, 150), { stored: true, evictedKeys: ['active'] });
   assert.equal(byWeight.peek('active'), undefined);
   assert.equal(byWeight.peek('next'), 3);
+});
+
+test('speculative entries yield to visited history and become ordinary LRU entries only after commit', () => {
+  const cache = new NativeRouteCache({ maxEntries: 3, maxWeightBytes: 1_000 });
+  cache.commitActive('active', 1, 100);
+  cache.insert('visited', 2, 100);
+  assert.deepEqual(cache.insertSpeculative('first-intent', 3, 100), { stored: true, evictedKeys: [] });
+  assert.deepEqual(cache.snapshot().speculativeKeys, ['first-intent']);
+
+  assert.deepEqual(cache.insertSpeculative('recent-intent', 4, 100), {
+    stored: true,
+    evictedKeys: ['first-intent'],
+  });
+  assert.equal(cache.peek('visited'), 2, 'speculation must not displace visited history while speculative space exists');
+  assert.deepEqual(cache.snapshot().keys, ['active', 'visited', 'recent-intent']);
+
+  assert.deepEqual(cache.activate('recent-intent'), { activated: true, evictedKeys: [] });
+  assert.deepEqual(cache.snapshot().speculativeKeys, []);
+  assert.deepEqual(cache.snapshot().keys, ['active', 'visited', 'recent-intent']);
+
+  assert.deepEqual(cache.insertSpeculative('no-room', 5, 100), {
+    stored: false,
+    evictedKeys: ['no-room'],
+  });
+  assert.deepEqual(cache.snapshot().keys, ['active', 'visited', 'recent-intent']);
 });
 
 test('oversized and no-store routes never become application-cache entries', () => {

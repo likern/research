@@ -21,3 +21,20 @@ export type NavigationIntentDecision =
   | { action: 'intercept'; reason: 'eligible'; url: string };
 
 export function classifyNavigationIntent(intent: NavigationIntent): NavigationIntentDecision;
+
+export interface PrefetchIntent {
+  currentUrl: string;
+  activeDocumentUrl: string;
+  destinationUrl: string;
+  sourceKind: Extract<NavigationSourceKind, 'anchor' | 'area' | 'other' | 'none'>;
+  fallbackTarget?: string;
+  downloadRequested: boolean;
+  hasTarget: boolean;
+  disabled: boolean;
+}
+
+export type PrefetchIntentDecision =
+  | { action: 'skip'; reason: string }
+  | { action: 'prefetch'; reason: 'eligible'; url: string };
+
+export function classifyPrefetchIntent(intent: PrefetchIntent): PrefetchIntentDecision;

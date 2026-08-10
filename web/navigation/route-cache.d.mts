@@ -22,6 +22,7 @@ export interface RouteCacheSnapshot {
   readonly maxWeightBytes: number;
   readonly activeKey: string | null;
   readonly keys: readonly string[];
+  readonly speculativeKeys: readonly string[];
 }
 
 export class NativeRouteCache<T> {
@@ -31,6 +32,7 @@ export class NativeRouteCache<T> {
   constructor(options?: { maxEntries?: number; maxWeightBytes?: number });
   peek(key: string): T | undefined;
   insert(key: string, value: T, weightBytes: number): RouteCacheMutation;
+  insertSpeculative(key: string, value: T, weightBytes: number): RouteCacheMutation;
   commitActive(key: string, value: T, weightBytes: number): RouteCacheMutation;
   activate(key: string): RouteCacheActivation;
   deactivate(): { evictedKeys: string[] };
@@ -51,6 +53,8 @@ export interface InFlightSnapshot {
 
 export class InFlightRoutePreparations<T> {
   acquire(key: string, factory: (signal: AbortSignal) => Promise<T> | T): InFlightAcquisition<T>;
+  has(key: string): boolean;
+  abort(key: string): boolean;
   abortExcept(retainedKey?: string): string[];
   clear(): string[];
   snapshot(): InFlightSnapshot;

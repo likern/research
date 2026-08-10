@@ -273,7 +273,7 @@ The raw, non-gating MPA measurement can be generated after a production build:
 ^npm run measure:baseline
 ```
 
-CI runs both measurements with the pinned Chromium profile and uploads
+CI runs the measurements with the pinned Chromium profile and uploads
 `artifacts/baseline/gate-4-mpa-baseline.json` plus
 `artifacts/baseline/gate-4.3-route-cache-baseline.json` and
 `artifacts/baseline/gate-4.3-route-cache-stress.json`. The mixed baseline
@@ -296,7 +296,7 @@ ownership, so they cannot mutate a route that has already been replaced.
 esbuild 0.28.1 remains the browser bundler. The build verifies the emitted
 production `metafile`, preserves it as `/assets/bundle-manifest.json`, writes
 `/assets/feature-graph.json`, and projects a deterministic request manifest
-into every schema-v5 route entry. Concurrent feature requests share one
+into every schema-v6 route entry. Concurrent feature requests share one
 application promise, while the browser module map reuses each successfully
 evaluated module by URL. No route data becomes an import specifier. esbuild
 preserves the literal `import()` edges without injecting a dependency-preload
@@ -312,8 +312,32 @@ and one set of runtime version markers.
 
 Critical chunk failure commits nothing and performs one guarded native
 navigation into a fresh module map. Deferred and viewport failure preserve the
-semantic fallback. Intent/idle prefetch and Service Worker behavior remain out
-of scope; prefetch remains Gate 4.5.
+semantic fallback.
+
+## Gate 4.5 Intent-aware prefetch
+
+Eligible same-origin route links now prepare through the coordinator's own
+validated HTML path. Mouse/pen hover requires an 80 ms dwell, focus prefetches
+immediately, and primary unmodified pointerdown publishes an in-flight route
+before click navigation. Active work is bounded to two requests with eight
+queued keys; pointer intent outranks focus and hover, duplicate keys coalesce,
+and foreground navigation cancels unrelated speculation while reusing the
+selected route's promise.
+
+Prefetch is blocked while hidden/offline, under `saveData`, and for reported
+`slow-2g`, `2g`, or `3g` effective connections. Requests use low Fetch
+priority. Speculative templates are evicted before visited routes, `no-store`
+responses are never retained, and route feature modules do not execute until
+foreground navigation reaches their existing phase boundary.
+
+Schema-v6 `site-manifest.json` publishes the policy. Runtime schema-v1 metrics
+are available through `pinega:prefetch-metrics` and
+`window.__PINEGA_PREFETCH_METRICS__`: completed prefetches, cache/in-flight
+hits, hit rate, source/transfer bytes, and retained versus finalized unused
+bytes. `wasted = prefetched - useful` at the observation point. CI additionally
+uploads `artifacts/baseline/gate-4.5-intent-prefetch-baseline.json`, whose
+controlled two-prefetch/one-hit scenario proves a 0.5 hit rate and balanced
+byte accounting without setting a product performance budget.
 
 ## Initial-render visual-stability contract
 
@@ -512,10 +536,12 @@ state, LRU bounds/eviction, post-eviction cold replay, and the 100-route
 forced-GC study. Gate 4.4 adds the closed literal registry, phase ordering,
 module-map reuse, esbuild metafile verification, deterministic per-route
 request manifests, Lit/Web Awesome deduplication, and critical chunk-failure
-fallback. The initial-render stability gate additionally widens both main-module
+fallback. Gate 4.5 adds dwell/focus/pointer intent, bounded scheduling,
+foreground in-flight reuse, Save-Data/slow-network policy, speculative-first
+eviction, feature-phase isolation, and hit/wasted-byte telemetry. The
+initial-render stability gate additionally widens both main-module
 and vendor-upgrade windows, compares pre-/mid-/post-upgrade frames, repeats the
 contract after reload, attributes unexpected shifts, and enforces the MPA CLS
 budget.
 Both local and deployed Playwright configurations use zero retries, so CI does
-not convert a first-attempt failure into a passing gate. Prefetch remains Gate
-4.5.
+not convert a first-attempt failure into a passing gate.
