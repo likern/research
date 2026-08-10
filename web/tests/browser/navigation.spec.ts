@@ -2,11 +2,47 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  nativeRouteExclusions,
+  registeredTransitionsFor,
+} from './support/accessibility-contract.js';
+import {
+  captureSemanticTree,
+  expectSemanticEquivalent,
+} from './support/accessibility-tree.js';
 import { openReadyDocument } from './support/direct-document.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const malformedFixture = await readFile(resolve(root, 'fixtures/navigation/malformed.html'), 'utf8');
+const pageClasses = JSON.parse(
+  await readFile(resolve(root, 'fixtures/navigation/page-classes.json'), 'utf8'),
+) as PageClassFixture;
 const transactionEventsKey = 'pinega-test-navigation-transaction-events';
+const navigationSemanticTransitions = registeredTransitionsFor('navigation');
+const nativeRouteIds = new Set(nativeRouteExclusions.map(exclusion => exclusion.id));
+const enhancedArchetypes = pageClasses.representatives.filter(representative => !nativeRouteIds.has(representative.id));
+const nativeArchetypes = pageClasses.representatives.filter(representative => nativeRouteIds.has(representative.id));
+
+interface PageClassFixture {
+  schemaVersion: number;
+  representatives: RouteArchetype[];
+}
+
+interface RouteArchetype {
+  contentType: string;
+  id: string;
+  locale: string;
+  route: string;
+}
+
+interface RouteSemanticContract {
+  canonical: string | null;
+  currentHref: string | null;
+  direction: string;
+  language: string;
+  routeId: string | undefined;
+  title: string;
+}
 
 interface NavigationCommitRecord {
   type: 'commit';
@@ -56,6 +92,41 @@ async function activateCoordinatorLink(page: Page, selector: string): Promise<vo
     if (!link) throw new TypeError(`Missing coordinator link ${linkSelector}`);
     link.click();
   }, selector);
+}
+
+async function activateRouteLink(page: Page, route: string): Promise<void> {
+  await page.evaluate(destination => {
+    const link = document.createElement('a');
+    link.href = destination;
+    link.textContent = 'ARIA route-equivalence probe';
+    document.body.append(link);
+    link.click();
+    link.remove();
+  }, route);
+}
+
+async function captureNavigationSemanticTree(page: Page): Promise<string> {
+  return captureSemanticTree(page.locator('body'), {
+    registeredTransitions: navigationSemanticTransitions,
+  });
+}
+
+async function readRouteSemanticContract(page: Page): Promise<RouteSemanticContract> {
+  return page.evaluate(() => {
+    const markers = document.querySelectorAll<HTMLAnchorElement>([
+      'pinega-site-header a.pinega-brand[aria-current="page"]',
+      'pinega-site-header [data-primary-navigation] a[aria-current="page"]',
+    ].join(','));
+    if (markers.length !== 1) throw new TypeError(`Expected one route marker, found ${markers.length}.`);
+    return {
+      canonical: document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? null,
+      currentHref: markers[0]?.getAttribute('href') ?? null,
+      direction: document.documentElement.dir,
+      language: document.documentElement.lang,
+      routeId: document.querySelector<HTMLElement>('main')?.dataset.pinegaRoute,
+      title: document.title,
+    };
+  });
 }
 
 async function instrumentTransactionEvents(page: Page): Promise<void> {
@@ -130,17 +201,45 @@ test('eligible navigation commits validated route state without replacing the Do
   expect(requestsFor(requests, '/technology/').map(request => request.resourceType())).toEqual(['fetch']);
 });
 
-test('direct and enhanced delivery expose the same route accessibility tree', async ({ page }) => {
-  await ready(page, '/technology/');
-  const direct = await page.locator('main').ariaSnapshot();
+test.describe('Route accessibility-tree equivalence', {
+  tag: ['@aria-tree', '@accessibility'],
+}, () => {
+  for (const archetype of enhancedArchetypes) {
+    test(`direct and enhanced delivery expose the same semantic projection for ${archetype.id}`, async ({ page }, testInfo) => {
+      await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
+      await ready(page, archetype.route);
+      const direct = await captureNavigationSemanticTree(page);
+      const directContract = await readRouteSemanticContract(page);
 
-  await ready(page, '/');
-  await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
-  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
+      const sourceRoute = archetype.route === '/' ? '/technology/' : '/';
+      await ready(page, sourceRoute);
+      await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'enhanced');
+      await activateRouteLink(page, archetype.route);
+      await expect(page.locator('main')).toHaveAttribute('data-pinega-route', archetype.id);
 
-  expect(await page.locator('main').ariaSnapshot()).toBe(direct);
-  await expect(page.locator('main')).toBeFocused();
-  await expect(page.locator('[data-pinega-navigation-announcer]')).toMatchAriaSnapshot('- status: Technology — Pinega');
+      const enhanced = await captureNavigationSemanticTree(page);
+      await expectSemanticEquivalent(direct, enhanced, {
+        attachmentStem: `route-${archetype.id}-enhanced-semantic`,
+        message: `${archetype.id}: enhanced delivery differs from its direct document outside registered transitions`,
+        testInfo,
+      });
+      expect(await readRouteSemanticContract(page)).toEqual(directContract);
+      await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+      await expect(page.locator('main')).toBeFocused();
+    });
+  }
+
+  for (const archetype of nativeArchetypes) {
+    test(`${archetype.id} remains an explicit native-only semantic delivery archetype`, async ({ page }) => {
+      await ready(page, archetype.route);
+      await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation', 'native-policy');
+      expect((await captureNavigationSemanticTree(page)).trim()).not.toBe('');
+      expect(await readRouteSemanticContract(page)).toMatchObject({
+        language: archetype.locale,
+        routeId: archetype.id,
+      });
+    });
+  }
 });
 
 test('Back and Forward traverse same-document entries through the coordinator', async ({ page }) => {
@@ -274,12 +373,15 @@ test('Back and Forward remain transactional after more than ten routes without a
   }
 });
 
-test('selecting the active route performs zero network and zero visible commits', async ({ page }) => {
+test('selecting the active route performs zero network and zero visible commits', {
+  tag: ['@aria-tree', '@accessibility'],
+}, async ({ page }, testInfo) => {
   await ready(page, '/technology/');
   await instrumentDocument(page);
   const activeUrl = await page.evaluate(() => location.href);
   const requests: Request[] = [];
   page.on('request', request => requests.push(request));
+  const before = await captureNavigationSemanticTree(page);
 
   await page.locator('[data-primary-navigation] a[href="/technology/"]').focus();
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
@@ -291,6 +393,11 @@ test('selecting the active route performs zero network and zero visible commits'
     announcement: document.querySelector('[data-pinega-navigation-announcer]')?.textContent,
   }))).toEqual({ url: activeUrl, commits: '0', announcement: '' });
   expect(requestsFor(requests, '/technology/')).toHaveLength(0);
+  await expectSemanticEquivalent(before, await captureNavigationSemanticTree(page), {
+    attachmentStem: 'navigation-cancel-active-route-semantic',
+    message: 'Cancelling an active-route navigation changed the committed semantic projection',
+    testInfo,
+  });
 });
 
 test('a repeated pending destination remains eligible until its document commits', async ({ page }) => {
@@ -481,9 +588,14 @@ test('template activations create fresh form, details, selection, and Custom Ele
   expect((await navigationCommits(page)).at(-1)?.detail.preparation.source).toBe('cache');
 });
 
-test('pending state is transaction-owned, accessible, and overlays the header without layout shift', async ({ page }) => {
+test('pending state is transaction-owned, accessible, and overlays the header without layout shift', {
+  tag: ['@aria-tree', '@accessibility'],
+}, async ({ page }, testInfo) => {
+  await ready(page, '/technology/');
+  const directTechnology = await captureNavigationSemanticTree(page);
   await ready(page, '/');
   await instrumentDocument(page);
+  const committedHome = await captureNavigationSemanticTree(page);
   const geometry = await page.evaluate(() => {
     const header = document.querySelector('pinega-site-header');
     const main = document.querySelector('main');
@@ -508,6 +620,11 @@ test('pending state is transaction-owned, accessible, and overlays the header wi
   await started;
   await expect(page.locator('html')).toHaveAttribute('data-pinega-navigation-pending', 'true');
   await expect(page.locator('main')).toHaveAttribute('aria-busy', 'true');
+  await expectSemanticEquivalent(committedHome, await captureNavigationSemanticTree(page), {
+    attachmentStem: 'navigation-pending-current-semantic',
+    message: 'Pending navigation changed the current route semantic projection before commit',
+    testInfo,
+  });
   const pending = await page.evaluate(() => {
     const header = document.querySelector('pinega-site-header');
     const main = document.querySelector('main');
@@ -526,11 +643,21 @@ test('pending state is transaction-owned, accessible, and overlays the header wi
   await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'technology');
   await expect(page.locator('html')).not.toHaveAttribute('data-pinega-navigation-pending', 'true');
   await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+  await expectSemanticEquivalent(directTechnology, await captureNavigationSemanticTree(page), {
+    attachmentStem: 'navigation-commit-technology-semantic',
+    message: 'Committed technology route differs from its direct semantic projection',
+    testInfo,
+  });
 });
 
-test('supersession while reading a response body cannot commit the late route', async ({ page }) => {
+test('supersession while reading a response body cannot commit the late route', {
+  tag: ['@aria-tree', '@accessibility'],
+}, async ({ page }, testInfo) => {
+  await ready(page, '/research/');
+  const directResearch = await captureNavigationSemanticTree(page);
   await ready(page, '/');
   await instrumentDocument(page);
+  const committedHome = await captureNavigationSemanticTree(page);
   await page.evaluate(async () => {
     const capturedTechnologyBody = await fetch('/technology/').then(response => response.text());
     const originalFetch = window.fetch.bind(window);
@@ -558,9 +685,20 @@ test('supersession while reading a response body cannot commit the late route', 
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/technology/"]');
   await expect(page.locator('html')).toHaveAttribute('data-test-body-read', 'pending');
   await expect(page.locator('main')).toHaveAttribute('aria-busy', 'true');
+  await expectSemanticEquivalent(committedHome, await captureNavigationSemanticTree(page), {
+    attachmentStem: 'navigation-supersession-pending-semantic',
+    message: 'A response-body read changed the current semantic projection before commit',
+    testInfo,
+  });
   await activateCoordinatorLink(page, '[data-primary-navigation] a[href="/research/"]');
   await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
   await expect(page.locator('main')).not.toHaveAttribute('aria-busy', 'true');
+  const winningResearch = await captureNavigationSemanticTree(page);
+  await expectSemanticEquivalent(directResearch, winningResearch, {
+    attachmentStem: 'navigation-supersession-winner-semantic',
+    message: 'The winning research route differs from its direct semantic projection',
+    testInfo,
+  });
   await page.evaluate(() => {
     (window as unknown as Window & { __PINEGA_RELEASE_TEST_BODY__?: () => void }).__PINEGA_RELEASE_TEST_BODY__?.();
   });
@@ -572,6 +710,11 @@ test('supersession while reading a response body cannot commit the late route', 
     title: document.title,
     commits: document.documentElement.dataset.testNavigationCommits,
   }))).toEqual({ path: '/research/', route: 'research', title: 'Research — Pinega', commits: '1' });
+  await expectSemanticEquivalent(winningResearch, await captureNavigationSemanticTree(page), {
+    attachmentStem: 'navigation-supersession-late-semantic',
+    message: 'Late superseded work mutated the winning route semantic projection',
+    testInfo,
+  });
 });
 
 test('supersession while loading a locale module preserves the newer route and pending owner', async ({ page }) => {

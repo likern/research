@@ -1,6 +1,7 @@
 # Accessibility-tree contract
 
-Status: **ACCEPTED BASELINE — PR 1 infrastructure and serializer conformance**.
+Status: **ACCEPTED BASELINE — PR 1 infrastructure and serializer conformance**;
+**PROPOSED NEXT MILESTONE — PR 2 temporal and navigation semantics under review**.
 
 This layer detects semantic regressions between DOM/behavioural assertions and
 pixel snapshots. It is not a replacement for axe, keyboard tests, visual
@@ -28,8 +29,37 @@ after the registry/schema explicitly introduces that oracle type; inline
 partial matching is not part of this baseline.
 
 The fixture reproduces the nested-name regression fixed in Playwright 1.62.1.
-This guards Pinega against serializer drift when Playwright is upgraded, while
-the real-page corpus remains a later PR.
+This guards Pinega against serializer drift when Playwright is upgraded.
+
+PR 2 adds exact YAML equivalence without creating route baselines:
+
+- six representative documents are captured at `authored`, `shell`, and
+  `ready` during both initial load and reload;
+- all 13 page classes are classified, with 11 public archetypes comparing a
+  direct document against an enhanced commit and two native-policy archetypes
+  recorded as explicit exclusions;
+- pending, commit, active-route cancellation, and supersession have named
+  semantic invariants;
+- a mismatch attaches both `*-actual.aria.yml` and
+  `*-reference.aria.yml` to the Playwright result before failing.
+
+## Registered transition roots
+
+Temporal and navigation comparisons cover the exact `body` accessibility tree
+outside a closed registry of component-owned transitions. During capture, each
+registered root is replaced by an accessible sentinel. Its presence, count,
+and document order therefore remain part of the strict YAML oracle; only its
+owned subtree is deferred to PR 3.
+
+The current registry contains five reviewed transitions: the evidence role
+upgrade, route-feature upgrades, Web Awesome Core upgrades, the runtime-source
+label, and the navigation announcer. A broad selector such as `body`, `main`,
+`pinega-site-header`, or `*` is rejected by the coverage validator. Adding a
+transition is an explicit coverage decision, not a way to update a baseline.
+
+The boundary is deliberate: PR 2 proves that the document surrounding an
+owned component does not change. PR 3 must prove the internal semantic states
+of each excluded component and can then narrow or remove these transitions.
 
 ## Snapshot and DOM ownership
 
@@ -64,7 +94,9 @@ npm run test:aria
 npm run test:aria:update
 ```
 
-`test:aria:update` generates baselines only from `chromium-desktop`. Review the
+`test:aria` runs the serializer, temporal, route-archetype, and transaction
+corpus selected by `@aria-tree`. `test:aria:update` generates only the
+serializer baseline from `chromium-desktop`. Review the
 `.aria.yml` diff as a semantic API change, then run `test:aria` across all four
 profiles. CI never updates snapshots.
 
