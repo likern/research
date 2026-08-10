@@ -10,6 +10,8 @@ import {
 
 const excludedArtifactPaths = new Set([
   '.well-known/pinega-deployment.json',
+  '.well-known/pinega-release.json',
+  '_headers',
 ]);
 
 export async function finalizeBuildIdentity(root, identityPaths) {

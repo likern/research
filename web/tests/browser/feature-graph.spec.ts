@@ -7,18 +7,39 @@ interface FeatureGraphManifest {
   lit: { runtimeChunk: string };
 }
 
+interface SiteManifest {
+  navigation: { featureGraph: { assetManifest: string } };
+}
+
 async function ready(page: Page, route: string): Promise<void> {
   await openReadyDocument(page, route);
 }
 
 async function featureGraph(page: Page): Promise<FeatureGraphManifest> {
-  const response = await page.request.get('/assets/feature-graph.json');
+  const siteResponse = await page.request.get('/site-manifest.json');
+  expect(siteResponse.ok()).toBeTruthy();
+  const site = await siteResponse.json() as SiteManifest;
+  await siteResponse.dispose();
+  const response = await page.request.get(site.navigation.featureGraph.assetManifest);
   expect(response.ok()).toBeTruthy();
-  return response.json() as Promise<FeatureGraphManifest>;
+  const graph = await response.json() as FeatureGraphManifest;
+  await response.dispose();
+  return graph;
 }
 
 function requestsForAsset(requests: Request[], asset: string): Request[] {
   return requests.filter(request => new URL(request.url()).pathname === asset);
+}
+
+function requestsForAssetInFinalDocument(requests: Request[], documentRoute: string, asset: string): Request[] {
+  let finalDocumentIndex = -1;
+  for (const [index, request] of requests.entries()) {
+    if (request.resourceType() === 'document' && new URL(request.url()).pathname === documentRoute) {
+      finalDocumentIndex = index;
+    }
+  }
+  expect(finalDocumentIndex, `${documentRoute} should have a main-document request`).toBeGreaterThanOrEqual(0);
+  return requestsForAsset(requests.slice(finalDocumentIndex), asset);
 }
 
 async function activate(page: Page, selector: string): Promise<void> {
@@ -39,8 +60,8 @@ test('boot route honors critical and deferred classes through the closed registr
   await expect(page.locator('html')).toHaveAttribute('data-pinega-feature-graph', 'dynamic');
   await expect(page.locator('pinega-benchmark')).toHaveAttribute('data-pinega-feature-state', 'ready');
   await expect(page.locator('pinega-code-example')).toHaveAttribute('data-pinega-feature-state', 'ready');
-  expect(requestsForAsset(requests, benchmarkChunk as string)).toHaveLength(1);
-  expect(requestsForAsset(requests, codeChunk as string)).toHaveLength(1);
+  expect(requestsForAssetInFinalDocument(requests, '/component-lab/', benchmarkChunk as string)).toHaveLength(1);
+  expect(requestsForAssetInFinalDocument(requests, '/component-lab/', codeChunk as string)).toHaveLength(1);
 });
 
 test('deferred features start after commit and reuse one module across locale routes', async ({ page }) => {

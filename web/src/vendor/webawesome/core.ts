@@ -1,5 +1,3 @@
-import { setBasePath } from '@awesome.me/webawesome/dist/webawesome.js';
-
 import '@awesome.me/webawesome/dist/components/badge/badge.js';
 import '@awesome.me/webawesome/dist/components/breadcrumb/breadcrumb.js';
 import '@awesome.me/webawesome/dist/components/breadcrumb-item/breadcrumb-item.js';
@@ -11,8 +9,6 @@ import '@awesome.me/webawesome/dist/components/copy-button/copy-button.js';
 import '@awesome.me/webawesome/dist/components/divider/divider.js';
 import '@awesome.me/webawesome/dist/components/input/input.js';
 import '@awesome.me/webawesome/dist/components/spinner/spinner.js';
-
-setBasePath('/assets/webawesome');
 
 export const coreComponentTags = [
   'wa-badge',

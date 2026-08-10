@@ -29,12 +29,17 @@ hover/focus/pointer intent, bounded speculative route preparation,
 save-data/slow-network policy, and explicit hit-rate and wasted-byte
 instrumentation.
 
-Gate 4.6 status: **IMPLEMENTATION UNDER REVIEW**. This change turns the diagram
+Gate 4.6 status: **ACCEPTED BASELINE**, merged as PR #35. It turns the diagram
 viewer into the first stateful production Lit island, establishes symmetric
 connect/disconnect cleanup, and confines `@lit/task` to component-local model
-loading. It becomes accepted baseline only after this pull request is merged.
+loading.
 
-Gate 4.6 base repository state: `main@8392483` after PR #34.
+Gate 4.7 status: **IMPLEMENTATION UNDER REVIEW**. It closes the HTTP,
+deployment, and release boundary over immutable fingerprinted assets,
+revalidated HTML, exact deployed bytes, and one cross-browser, accessibility,
+visual, and performance review record.
+
+Gate 4.7 base repository state: `main@c4c0716db` after PR #35.
 
 ## Decision
 
@@ -63,7 +68,7 @@ It deliberately adds no client router or navigation interception.
 | Build | Node 26 build script with esbuild 0.28.1 for both the browser graph and the temporary Node diagram renderer |
 | UI foundation | Native Custom Elements plus Web Awesome 3.11.0 |
 | Lit | One root Lit 3.3.3 installation shared by Web Awesome and the stateful Pinega diagram island; root `@lit/task` 1.0.3 is island-local |
-| Runtime loading | Shell-eager `main.js` plus allowlisted esbuild dynamic entries classified as critical, deferred, or viewport |
+| Runtime loading | Fingerprinted shell entry plus allowlisted esbuild dynamic entries classified as critical, deferred, or viewport |
 | Navigation | Gate 4.5 transactional Navigation API coordinator with bounded intent prefetch and an in-memory native-template LRU |
 | Validation | Unit, production-build, Chromium/Firefox/WebKit, accessibility, and visual checks against one exact build |
 | Deployment | One tested artifact receives separate delivery provenance and is uploaded to Cloudflare Pages |
@@ -193,13 +198,14 @@ the current boundary. An unknown `pinega-*` element under route `<main>` is a
 build error until it is explicitly classified. Web Awesome `wa-*` elements are
 vendor primitives and are not Pinega route feature IDs.
 
-The generated site-manifest schema is version 6. It projects `features`,
+The generated site-manifest schema is version 8. It projects `features`,
 `criticalFeatures`, and deterministic shell/critical/deferred/viewport request
 manifests for every localized route. It also publishes the versioned intent
 prefetch signals, scheduler/network bounds, request priority, and metrics
-contract. `/assets/feature-graph.json` records the verified source-to-chunk
-mapping and `/assets/bundle-manifest.json` preserves the underlying esbuild
-metafile.
+contract. Fingerprinted `feature-graph-<sha256>.json` and
+`bundle-manifest-<sha256>.json` assets record the verified source-to-chunk
+mapping and underlying esbuild metafile; their exact URLs are published by the
+site manifest.
 
 ## Route-owned metadata whitelist
 
@@ -343,7 +349,7 @@ that PR.
 
 ### Coordinator boot and ownership
 
-The coordinator starts synchronously from the existing eager `main.js` entry,
+The coordinator starts synchronously from the fingerprinted eager main entry,
 before the asynchronous Web Awesome initialization. It first validates the
 active document identity. It then has one of four observable states on the
 document root:
@@ -597,10 +603,12 @@ their graph and failure policy were delivered later by Gate 4.4.
 The production-artifact matrix covers Chromium desktop/mobile, Firefox, and
 WebKit with zero Playwright retries. A failed first attempt is therefore a
 blocking failure, not a hidden flaky pass. Direct-document setup is judged by
-the route's HTTP probe plus one native `_self` navigation and the observable
-Pinega URL/readiness contract rather than by a Playwright lifecycle waiter;
-this avoids treating a stuck Firefox `page.goto()` promise as an application
-failure after the trace already shows a complete response and ready DOM.
+the actual main-resource response plus the observable Pinega URL/readiness
+contract rather than by a full lifecycle waiter. Playwright navigation stops at
+the explicit `commit` boundary, when the response has arrived and the document
+has started loading; Pinega's own readiness marker then proves application
+startup. This avoids both a dropped browser timer and a lingering
+action-triggered navigation waiter after the trace already shows a ready DOM.
 
 | Gate 4.2 acceptance boundary | Deterministic proof in the exact build |
 |---|---|
@@ -765,8 +773,9 @@ route. Gate 4.4 itself did not prefetch route HTML or feature modules.
 
 ### esbuild metafile and request manifests
 
-esbuild emits stable `/assets/main.js` and `/assets/main.css` shell URLs plus
-hashed dynamic feature chunks. The build consumes `result.metafile`, including
+esbuild emits fingerprinted `/assets/main-<hash>.js` and
+`/assets/main-<hash>.css` shell URLs plus fingerprinted dynamic feature chunks.
+The build consumes `result.metafile`, including
 each output's `entryPoint`, `imports`, import `kind`, `inputs`, `cssBundle`, and
 byte count. It fails unless:
 
@@ -785,7 +794,7 @@ resolves the four Lit packages to one root installation, and the metafile proof
 verifies the emitted result rather than treating resolution configuration as
 evidence. The independent build checker reconstructs the feature graph from
 the persisted metafile, checks every output byte count, and compares it with
-`feature-graph.json`. CI also performs two clean production builds and
+the fingerprinted feature graph. CI also performs two clean production builds and
 recursively compares their output before it tests, attests, and deploys the
 exact second artifact.
 
@@ -803,7 +812,7 @@ zero-retry browser matrix executes the real minified production artifact in
 Chromium, Firefox, and WebKit; any future cross-chunk ordering dependency must
 add a direct regression test or reopen the bundler decision.
 
-Each route's schema-v7 site-manifest entry partitions the actual transitive
+Each route's schema-v8 site-manifest entry partitions the actual transitive
 closure into shell, critical, deferred, and viewport requests. Assets already
 loaded through the shell are listed under `moduleMapReuse` instead of counted
 again as feature requests. No manual `modulepreload` or import map is required
@@ -943,7 +952,7 @@ the transcript. It neither hydrates the figure nor renders any route-global
 surface. A fresh clone clears copied Lit markers before its first render and
 starts with independent state.
 
-The schema-v7 site manifest publishes the normative policy:
+The schema-v8 site manifest publishes the normative policy:
 
 - ownership is `component-local`;
 - route loading, a Lit router, global rendering, and global hydration are all
@@ -977,6 +986,59 @@ desktop/mobile, Firefox, and WebKit for no-JavaScript fallback, on-demand and
 localized completion, deterministic failure/retry, disconnect/reconnect with
 pending cancellation, external-listener cleanup, and fresh-clone isolation.
 
+## Gate 4.7 HTTP, deployment, and release gate
+
+Every public file under `/assets/` now has a content fingerprint in its URL and
+is served with `public, max-age=31536000, immutable`. HTML, content and diagram
+data, discovery files, and the two well-known manifests use
+`public, max-age=0, must-revalidate`. The URL spaces are deliberately disjoint:
+Cloudflare Pages concatenates the value of the same header from overlapping
+`_headers` rules, so a broad revalidation rule must not overlap `/assets/*`.
+Each successful HTML route must return that exact revalidation policy.
+Cloudflare's Pages documentation describes an ETag/`304` path, but immutable
+preview responses can omit the validator. The deployment gate therefore
+records `etag-304` when it is exposed and otherwise requires a forced full
+`200` to reproduce the exact HTML bytes. Nearest-404 HTML follows the
+provider's distinct `no-store` policy. There is no Service Worker or second
+cache owner.
+
+The generated `/.well-known/pinega-release.json` inventories every public file
+with its URL, expected status, byte length, SHA-256, media type, and cache
+policy. It also records the generated `_headers` control checksum while
+excluding its own cyclic identity and the separately added deployment
+provenance. The normalized navigation build ID excludes that delivery control
+so delivery policy cannot alter application identity; the release manifest
+still verifies its exact bytes. The build checker reconstructs the manifest
+from disk. After Direct Upload, the remote gate fetches every inventoried URL
+and compares actual status, bytes, SHA-256, `Cache-Control`, and `Content-Type`.
+When the provider exposes an ETag, a conditional HTML request must return
+`304`; otherwise a no-cache request must return the same exact `200` bytes. The
+English and Russian nearest-404 bodies are verified through guaranteed-missing
+URLs with `Cache-Control: no-store`. Exact artifact identity comes from the
+independent byte hashes, not from optional provider validator behavior.
+
+CI builds and tests one directory, packages it deterministically, attests that
+archive, verifies the attestation before deployment, and uploads the extracted
+directory without rebuilding. The immutable Cloudflare hash URL is the only
+authoritative review deployment. A passing release review requires Chromium
+desktop/mobile, Firefox, and WebKit with zero retries; no serious or critical
+axe findings; no keyboard trap; no unexpected visual diff; and raw cold/warm
+desktop/mobile FCP, LCP, CLS, Speed Index, and TBT observations. Lighthouse is
+retained as lab diagnostics and never acts as the sole release oracle.
+
+Playwright test retries remain disabled. The direct-load helper contains one
+Firefox-only transport recovery for upstream issue #42183, in which
+`page.goto()` can remain pending after the driver has observed a fully loaded
+document. Recovery is allowed only after `page.evaluate()` proves the exact
+requested URL, `document.readyState === 'complete'`, and the Pinega readiness
+marker. It then supersedes the stuck navigation with the same URL and still
+requires the expected main-resource status. The sole alternative is a `304`
+when the route expected `200`, because the exact-build test server can answer
+the same-URL request as an ETag revalidation of the already-proven
+representation. A non-cacheable 404 still requires `404`. Any incomplete,
+wrong, or non-Firefox document fails normally, so the workaround cannot convert
+an application or HTTP failure into passing evidence.
+
 ## Normative and implementation references
 
 - [HTML Standard — the `html` element and document language](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
@@ -1003,6 +1065,7 @@ pending cancellation, external-listener cleanup, and fresh-clone isolation.
 - [Long Tasks](https://w3c.github.io/longtasks/)
 - [Playwright CDP session](https://playwright.dev/docs/api/class-cdpsession)
 - [Playwright Page API — navigation and readiness](https://playwright.dev/docs/api/class-page#page-goto)
+- [Playwright issue #42183 — Firefox navigation completion bookkeeping](https://github.com/microsoft/playwright/issues/42183)
 - [Playwright — ARIA snapshots](https://playwright.dev/docs/aria-snapshots)
 - [Playwright — test retries and flaky classification](https://playwright.dev/docs/test-retries)
 - [parse5 — WHATWG-compatible Node HTML parser](https://github.com/inikulin/parse5)
@@ -1012,3 +1075,9 @@ pending cancellation, external-listener cleanup, and fresh-clone isolation.
 - [Lit — component lifecycle](https://lit.dev/docs/components/lifecycle/)
 - [Lit — asynchronous tasks](https://lit.dev/docs/data/task/)
 - [Web Awesome — usage and Lit foundation](https://webawesome.com/docs/usage/)
+- [Cloudflare Pages — custom headers](https://developers.cloudflare.com/pages/configuration/headers/)
+- [Cloudflare Pages — serving Pages and ETags](https://developers.cloudflare.com/pages/configuration/serving-pages/)
+- [RFC 8246 — HTTP Immutable Responses](https://www.rfc-editor.org/rfc/rfc8246.html)
+- [RFC 9111 — HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111.html)
+- [GitHub — artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
+- [web.dev — Web Vitals tooling](https://web.dev/articles/vitals-tools)

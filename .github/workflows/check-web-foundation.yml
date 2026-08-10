@@ -134,6 +134,8 @@ jobs:
         run: npx --no-install playwright install --with-deps chromium firefox webkit
 
       - name: Run browser and accessibility tests against the exact build
+        env:
+          PINEGA_PLAYWRIGHT_JSON_OUTPUT: artifacts/release-review/browser.json
         run: npm run test:browser
 
       - name: Record the Gate 4 navigation and prefetch baselines
@@ -141,10 +143,23 @@ jobs:
           PINEGA_BASELINE_PROFILE: github-ubuntu-24.04-node-26.7-playwright-1.62.1
           PINEGA_DEPLOYMENT_SOURCE_SHA: ${{ steps.preview-identity.outputs.source-sha }}
           PINEGA_DEPLOYMENT_TESTED_SHA: ${{ steps.preview-identity.outputs.tested-sha }}
+          PINEGA_PLAYWRIGHT_JSON_OUTPUT: artifacts/release-review/performance-tests.json
         run: npm run measure:baseline
 
       - name: Verify committed visual baselines against the exact build
+        env:
+          PINEGA_PLAYWRIGHT_JSON_OUTPUT: artifacts/release-review/visual.json
         run: npm run test:visual
+
+      - name: Record cold and warm desktop and mobile performance diagnostics
+        run: npm run review:lighthouse
+
+      - name: Close the Gate 4.7 release review
+        run: node scripts/create-release-review.mjs
+
+      - name: Publish the Gate 4.7 review in the workflow summary
+        shell: bash
+        run: cat artifacts/release-review/release-review.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Package the exact tested preview artifact
         if: github.event_name == 'pull_request'
@@ -187,7 +202,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/diagnostics
-          { find dist tests/visual -type f -print0 2>/dev/null || true; } \
+          { find dist tests/visual artifacts/release-review -type f -print0 2>/dev/null || true; } \
             | sort -z \
             | xargs -0 -r sha256sum \
             > artifacts/diagnostics/SHA256SUMS.txt
@@ -203,6 +218,7 @@ jobs:
             web/test-results
             web/playwright-report
             web/artifacts/baseline
+            web/artifacts/release-review
             web/artifacts/diagnostics/SHA256SUMS.txt
           if-no-files-found: warn
           retention-days: 30
@@ -245,6 +261,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     permissions:
+      attestations: read
       contents: read
       deployments: write
     environment:
@@ -262,7 +279,7 @@ jobs:
           name: ${{ needs.validate.outputs.artifact-name }}
           path: preview-artifact
 
-      - name: Verify and extract the exact artifact
+      - name: Verify the exact artifact checksum
         shell: bash
         run: |
           set -euo pipefail
@@ -275,9 +292,23 @@ jobs:
             echo "Artifact checksum does not match the validate job output." >&2
             exit 1
           fi
+
+      - name: Verify the artifact attestation before deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh attestation verify preview-artifact/pinega-web-dist.tar.gz
+          --repo "$GITHUB_REPOSITORY"
+          --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/check-web-foundation.yml"
+
+      - name: Extract the verified exact artifact
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir deployed
           tar -xzf preview-artifact/pinega-web-dist.tar.gz -C deployed
           test -f deployed/dist/.well-known/pinega-deployment.json
+          test -f deployed/dist/.well-known/pinega-release.json
 
       - name: Verify Cloudflare preview configuration
         shell: bash
@@ -337,6 +368,7 @@ jobs:
           fi
 
       - name: Verify the real HTTPS deployment without executing PR code
+        id: verify-deployment
         shell: bash
         env:
           DEPLOYMENT_URL: ${{ steps.deploy-pages.outputs.deployment-url }}
@@ -345,14 +377,37 @@ jobs:
           curl_options=(--silent --show-error --location --retry 8 --retry-all-errors --retry-delay 2)
           curl "${curl_options[@]}" --fail --dump-header root-headers.txt --output root.html "${DEPLOYMENT_URL}/"
           grep -Eiq '^x-robots-tag:.*noindex' root-headers.txt
+          grep -Eiq '^cache-control: *public, *max-age=0, *must-revalidate' root-headers.txt
+          cmp deployed/dist/index.html root.html
+          root_etag="$(sed -n 's/^[Ee][Tt][Aa][Gg]:[[:space:]]*//p' root-headers.txt | tr -d '\r' | tail -n 1)"
+          if [[ -n "$root_etag" ]]; then
+            conditional_status="$(curl "${curl_options[@]}" --header "If-None-Match: ${root_etag}" --output /dev/null --write-out '%{http_code}' "${DEPLOYMENT_URL}/")"
+            if [[ "$conditional_status" != "304" ]]; then
+              echo "Conditional HTML request returned ${conditional_status}, expected 304." >&2
+              exit 1
+            fi
+            html_validator_mode="etag-304"
+          else
+            curl "${curl_options[@]}" --fail --header 'Cache-Control: no-cache' --header 'Pragma: no-cache' --output root-revalidated.html "${DEPLOYMENT_URL}/"
+            cmp deployed/dist/index.html root-revalidated.html
+            html_validator_mode="full-200"
+          fi
+          echo "html-validator-mode=${html_validator_mode}" >> "$GITHUB_OUTPUT"
           curl "${curl_options[@]}" --fail --output docs.html "${DEPLOYMENT_URL}/docs/"
           curl "${curl_options[@]}" --fail --output remote-manifest.json "${DEPLOYMENT_URL}/.well-known/pinega-deployment.json"
           cmp deployed/dist/.well-known/pinega-deployment.json remote-manifest.json
-          missing_status="$(curl "${curl_options[@]}" --output missing.html --write-out '%{http_code}' "${DEPLOYMENT_URL}/missing-cloudflare-preview-route")"
+          curl "${curl_options[@]}" --fail --output remote-release.json "${DEPLOYMENT_URL}/.well-known/pinega-release.json"
+          cmp deployed/dist/.well-known/pinega-release.json remote-release.json
+          immutable_url="$(jq -r '.files[] | select(.cache == "immutable") | .url' remote-release.json | head -n 1)"
+          test -n "$immutable_url"
+          curl "${curl_options[@]}" --fail --dump-header asset-headers.txt --output immutable-asset "${DEPLOYMENT_URL}${immutable_url}"
+          grep -Eiq '^cache-control: *public, *max-age=31536000, *immutable' asset-headers.txt
+          missing_status="$(curl "${curl_options[@]}" --dump-header missing-headers.txt --output missing.html --write-out '%{http_code}' "${DEPLOYMENT_URL}/missing-cloudflare-preview-route")"
           if [[ "$missing_status" != "404" ]]; then
             echo "Expected a real HTTP 404, received ${missing_status}." >&2
             exit 1
           fi
+          grep -Eiq '^cache-control: *no-store' missing-headers.txt
 
       - name: Record provider deployment identity
         shell: bash
@@ -366,6 +421,7 @@ jobs:
           TESTED_SHA: ${{ needs.validate.outputs.tested-sha }}
           PREVIEW_BRANCH: ${{ needs.validate.outputs.preview-branch }}
           PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+          HTML_VALIDATOR_MODE: ${{ steps.verify-deployment.outputs.html-validator-mode }}
         run: |
           set -euo pipefail
           mkdir deployment-record
@@ -381,6 +437,8 @@ jobs:
             --arg base_sha "$BASE_SHA" \
             --arg tested_sha "$TESTED_SHA" \
             --arg preview_branch "$PREVIEW_BRANCH" \
+            --arg html_revalidation_mode "$HTML_VALIDATOR_MODE" \
+            --arg inventory_sha256 "$(jq -r '.inventory.sha256' deployed/dist/.well-known/pinega-release.json)" \
             '{
               schema_version: 1,
               provider: $provider,
@@ -390,10 +448,12 @@ jobs:
               immutable_url: $immutable_url,
               alias_url: $alias_url,
               artifact_sha256: $artifact_sha256,
+              inventory_sha256: $inventory_sha256,
               source_sha: $source_sha,
               base_sha: $base_sha,
               tested_sha: $tested_sha,
-              preview_branch: $preview_branch
+              preview_branch: $preview_branch,
+              html_revalidation_mode: $html_revalidation_mode
             }' > deployment-record/cloudflare-deployment.json
           {
             echo "### Cloudflare Pages commit preview"
@@ -403,6 +463,8 @@ jobs:
             echo "- Deployment ID: ${DEPLOYMENT_ID}"
             echo "- Tested merge: ${TESTED_SHA}"
             echo "- Artifact SHA-256: ${ARTIFACT_SHA256}"
+            echo "- Release inventory SHA-256: $(jq -r '.inventory.sha256' deployed/dist/.well-known/pinega-release.json)"
+            echo "- HTML revalidation mode: ${HTML_VALIDATOR_MODE}"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the provider deployment record
@@ -461,12 +523,25 @@ jobs:
         working-directory: web
         run: npx --no-install playwright install --with-deps chromium
 
-      - name: Run remote Chromium and accessibility smoke tests
+      - name: Verify the full deployed byte, cache, navigation, and accessibility contract
         working-directory: web
         env:
           PINEGA_PREVIEW_URL: ${{ needs.deploy.outputs.deployment-url }}
           PINEGA_EXPECTED_DIST: ${{ github.workspace }}/expected-deployment/dist
         run: npm run test:deployment
+
+      - name: Record the closed Gate 4.7 remote review
+        env:
+          DEPLOYMENT_URL: ${{ needs.deploy.outputs.deployment-url }}
+        run: |
+          {
+            echo "### Gate 4.7 deployed release review"
+            echo
+            echo "- Immutable URL: ${DEPLOYMENT_URL}"
+            echo "- Full inventoried bytes and SHA-256: pass"
+            echo "- Cache-Control revalidation and exact HTML bytes: pass"
+            echo "- Navigation, console, and WCAG A/AA blocking checks: pass"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload remote smoke diagnostics
         if: always()

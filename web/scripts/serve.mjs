@@ -1,8 +1,14 @@
-import { createReadStream } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import {
+  IMMUTABLE_CACHE_CONTROL,
+  NOT_FOUND_CACHE_CONTROL,
+  REVALIDATED_CACHE_CONTROL,
+} from './lib/release-contract.mjs';
 
 const defaultRoot = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const defaultHost = '127.0.0.1';
@@ -12,7 +18,7 @@ const liveReloadScript = `<script data-pinega-live-reload>window.__PINEGA_INITIA
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],
   ['.html', 'text/html; charset=utf-8'],
-  ['.js', 'text/javascript; charset=utf-8'],
+  ['.js', 'application/javascript; charset=utf-8'],
   ['.json', 'application/json'],
   ['.map', 'application/json'],
   ['.svg', 'image/svg+xml'],
@@ -110,14 +116,14 @@ async function handleRequest(request, response, { root, liveReload, clients }) {
       return;
     }
     if (await isFile(file)) {
-      await sendFile(file, method, response, 200, liveReload);
+      await sendFile(file, method, request, response, 200, liveReload, requested);
       return;
     }
   }
 
   const notFound = resolve(root, requested === '/ru' || requested.startsWith('/ru/') ? 'ru/404.html' : '404.html');
   if (await isFile(notFound)) {
-    await sendFile(notFound, method, response, 404, liveReload);
+    await sendFile(notFound, method, request, response, 404, liveReload, requested);
     return;
   }
 
@@ -145,26 +151,42 @@ async function isFile(path) {
   }
 }
 
-async function sendFile(path, method, response, status, liveReload) {
+async function sendFile(path, method, request, response, status, liveReload, requestedPath) {
   const extension = extname(path);
+  const body = await readFile(path);
+  const etag = `"sha256-${createHash('sha256').update(body).digest('hex')}"`;
   const headers = {
     'Content-Type': mimeTypes.get(extension) ?? 'application/octet-stream',
-    'Cache-Control': liveReload || extension !== '.html' ? 'no-store' : 'no-cache',
+    'Cache-Control': liveReload
+      ? 'no-store'
+      : status === 404
+        ? NOT_FOUND_CACHE_CONTROL
+        : requestedPath.startsWith('/assets/')
+          ? IMMUTABLE_CACHE_CONTROL
+          : REVALIDATED_CACHE_CONTROL,
     'Cross-Origin-Opener-Policy': 'same-origin',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-Content-Type-Options': 'nosniff',
   };
+  if (!liveReload && status === 200) {
+    headers.ETag = etag;
+    headers['Content-Length'] = String(body.byteLength);
+  }
+  if (!liveReload && status === 200 && request.headers['if-none-match'] === etag) {
+    response.writeHead(304, headers).end();
+    return;
+  }
   response.writeHead(status, headers);
   if (method === 'HEAD') {
     response.end();
     return;
   }
   if (liveReload && extension === '.html') {
-    const html = await readFile(path, 'utf8');
+    const html = body.toString('utf8');
     response.end(injectLiveReload(html));
     return;
   }
-  createReadStream(path).pipe(response);
+  response.end(body);
 }
 
 function injectLiveReload(html) {

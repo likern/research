@@ -148,8 +148,8 @@ test('initial-render shell controls and static programme labels are native stabi
   const build = await read('scripts/build.mjs');
   const stabilitySupport = await read('tests/browser/support/visual-stability.ts');
   assert.match(build, /data-pinega-initial-render/u);
-  assert.match(build, /injectInitialRenderBootstrap\(html, page\.source\)/u);
-  assert.ok(build.indexOf('injectInitialRenderBootstrap(html, page.source)') < build.indexOf('replaceLocalePlaceholders(html, page)'));
+  assert.match(build, /injectInitialRenderBootstrap\(html, page\.source, verifiedFeatures\.graph\.entry\.stylesheet\)/u);
+  assert.ok(build.indexOf('injectInitialRenderBootstrap(html, page.source, verifiedFeatures.graph.entry.stylesheet)') < build.indexOf('replaceLocalePlaceholders(html, page)'));
   assert.match(stabilitySupport, /\[data-visual-stability-dynamic\]/u, 'dynamic content must have an explicit exclusion boundary');
   assert.match(stabilitySupport, /getBoundingClientRect/u, 'dynamic hosts still retain a stable container geometry contract');
   assert.match(stabilitySupport, /computed\.getPropertyValue/u, 'static regions compare computed visual properties, not only DOM text');

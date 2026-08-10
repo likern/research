@@ -2,6 +2,9 @@ import { expect, test, type Page, type Request } from '@playwright/test';
 import { openReadyDocument } from './support/direct-document.js';
 
 interface PrefetchMetrics {
+  policy: {
+    hoverDelayMs: number;
+  };
   network: {
     allowed: boolean;
     reason: string;
@@ -115,6 +118,21 @@ async function dispatchPointer(
   });
 }
 
+async function dispatchCancelledHover(page: Page, selector: string): Promise<void> {
+  await page.locator(selector).evaluate(element => {
+    const eventInit: PointerEventInit = {
+      bubbles: true,
+      pointerId: 1,
+      pointerType: 'mouse',
+      isPrimary: true,
+      button: -1,
+      buttons: 0,
+    };
+    element.dispatchEvent(new PointerEvent('pointerover', eventInit));
+    element.dispatchEvent(new PointerEvent('pointerout', eventInit));
+  });
+}
+
 async function dispatchFocusIntent(page: Page, selector: string): Promise<void> {
   await page.locator(selector).dispatchEvent('focusin', { bubbles: true });
 }
@@ -126,10 +144,10 @@ test('hover requires dwell, then a completed route prefetch becomes a measured z
   page.on('request', request => requests.push(request));
   const selector = '[data-primary-navigation] a[href="/technology/"]';
 
-  await dispatchPointer(page, selector, 'pointerover');
-  await page.waitForTimeout(20);
-  await dispatchPointer(page, selector, 'pointerout');
-  await page.waitForTimeout(100);
+  const hoverDelayMs = (await metrics(page)).policy.hoverDelayMs;
+  expect(hoverDelayMs).toBeGreaterThan(0);
+  await dispatchCancelledHover(page, selector);
+  await page.waitForTimeout(hoverDelayMs + 20);
   expect(routeRequests(requests, '/technology/')).toHaveLength(0);
 
   await dispatchPointer(page, selector, 'pointerover');
@@ -198,7 +216,12 @@ test('primary pointerdown publishes shared in-flight ownership before the click 
 });
 
 test('focus prefetch validates route HTML without executing its critical feature chunk', async ({ page }) => {
-  const graphResponse = await page.request.get('/assets/feature-graph.json');
+  const siteResponse = await page.request.get('/site-manifest.json');
+  expect(siteResponse.ok()).toBeTruthy();
+  const site = await siteResponse.json() as { navigation: { featureGraph: { assetManifest: string } } };
+  await siteResponse.dispose();
+  const graphResponse = await page.request.get(site.navigation.featureGraph.assetManifest);
+  expect(graphResponse.ok()).toBeTruthy();
   const graph = await graphResponse.json() as FeatureGraphManifest;
   await graphResponse.dispose();
   const benchmarkChunk = graph.features.find(feature => feature.id === 'benchmark')?.chunk;

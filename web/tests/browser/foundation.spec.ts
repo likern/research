@@ -47,6 +47,38 @@ test('mobile navigation progressively enhances and closes with Escape', async ({
   await expect(navigation).toBeHidden();
 });
 
+test('keyboard navigation is trap-free from the shell into main content', async ({ page }) => {
+  await ready(page);
+  let reachedMain = false;
+  let previous = '';
+  for (let index = 0; index < 30; index += 1) {
+    await page.keyboard.press('Tab');
+    const focus = await page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null;
+      const candidates = [...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]')];
+      return {
+        identity: active ? `${active.localName}:${candidates.indexOf(active)}` : '',
+        insideMain: Boolean(active?.closest('main')),
+      };
+    });
+    expect(focus.identity, `focus stopped advancing after ${index + 1} Tab presses`).not.toBe(previous);
+    previous = focus.identity;
+    if (focus.insideMain) {
+      reachedMain = true;
+      break;
+    }
+  }
+  expect(reachedMain, 'keyboard focus never escaped the persistent shell').toBe(true);
+  const beforeReverse = previous;
+  await page.keyboard.press('Shift+Tab');
+  const afterReverse = await page.evaluate(() => {
+    const active = document.activeElement as HTMLElement | null;
+    const candidates = [...document.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, [tabindex]')];
+    return active ? `${active.localName}:${candidates.indexOf(active)}` : '';
+  });
+  expect(afterReverse, 'reverse keyboard traversal is trapped').not.toBe(beforeReverse);
+});
+
 test('theme switch changes Pinega and Web Awesome mode classes', async ({ page }) => {
   await ready(page);
   const toggle = page.locator('[data-theme-toggle]');
@@ -90,12 +122,15 @@ test('benchmark progressively upgrades when the licensed Pro element registers',
   await expect(benchmark.locator('table')).toBeAttached();
 });
 
-test('passes automated accessibility checks without serious or critical violations', async ({ page }) => {
+test('passes WCAG A and AA automated accessibility checks without serious or critical violations', async ({ page }) => {
   await ready(page);
   await page.addScriptTag({ path: axePath });
   const results = await page.evaluate(async () => {
     const axe = (window as unknown as Window & { axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> } }).axe;
-    return axe.run(document, { resultTypes: ['violations'] });
+    return axe.run(document, {
+      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
+      resultTypes: ['violations'],
+    });
   });
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
   expect(blocking, blocking.map(violation => violation.id).join(', ')).toEqual([]);

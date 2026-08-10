@@ -35,7 +35,7 @@ async function activateIsland(page: Page, route = '/research/'): Promise<Activat
 }
 
 test('canonical diagram remains complete when the Lit island cannot register', async ({ page }) => {
-  await page.route('**/assets/main.js', route => route.abort('failed'));
+  await page.route('**/assets/main-*.js', route => route.abort('failed'));
   await page.goto('/research/', { waitUntil: 'domcontentloaded' });
 
   const viewer = page.locator(viewerSelector);

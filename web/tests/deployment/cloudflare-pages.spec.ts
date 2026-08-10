@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -9,18 +10,86 @@ const axePath = require.resolve('axe-core/axe.min.js');
 const expectedDist = process.env.PINEGA_EXPECTED_DIST;
 if (!expectedDist) throw new TypeError('PINEGA_EXPECTED_DIST is required for deployment smoke tests');
 const expectedManifestPath = resolve(expectedDist, '.well-known/pinega-deployment.json');
+const expectedReleaseManifestPath = resolve(expectedDist, '.well-known/pinega-release.json');
 const hasRussianNotFound = existsSync(resolve(expectedDist, 'ru/404.html'));
+
+interface ReleaseFile {
+  path: string;
+  url: string;
+  status: number;
+  bytes: number;
+  sha256: string;
+  cacheControl: string;
+  mediaType: string | null;
+}
+
+interface ReleaseManifest {
+  buildId: string;
+  inventory: { fileCount: number; sha256: string };
+  files: ReleaseFile[];
+}
 
 test('immutable preview exposes the exact build provenance and stays unindexed', async ({ request }) => {
   const expectedManifest = JSON.parse(await readFile(expectedManifestPath, 'utf8'));
   const response = await request.get('/.well-known/pinega-deployment.json');
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type']).toContain('application/json');
+  expect(response.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
   expect(await response.json()).toEqual(expectedManifest);
 
   const root = await request.get('/');
   expect(root.status()).toBe(200);
   expect(root.headers()['x-robots-tag']?.toLowerCase()).toContain('noindex');
+});
+
+test('the HTTPS preview serves every inventoried byte with the declared HTTP contract', async ({ request }) => {
+  test.setTimeout(120_000);
+  const expected = JSON.parse(await readFile(expectedReleaseManifestPath, 'utf8')) as ReleaseManifest;
+  const releaseResponse = await request.get('/.well-known/pinega-release.json');
+  expect(releaseResponse.status()).toBe(200);
+  expect(releaseResponse.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+  expect(await releaseResponse.json()).toEqual(expected);
+
+  expect(expected.files).toHaveLength(expected.inventory.fileCount);
+  for (let offset = 0; offset < expected.files.length; offset += 8) {
+    await Promise.all(expected.files.slice(offset, offset + 8).map(async file => {
+      const response = await request.get(file.url, { failOnStatusCode: false });
+      expect(response.status(), file.path).toBe(file.status);
+      expect(response.headers()['cache-control'], file.path).toBe(file.cacheControl);
+      if (file.mediaType) expect(response.headers()['content-type'], file.path).toContain(file.mediaType);
+      const body = await response.body();
+      expect(body.byteLength, file.path).toBe(file.bytes);
+      expect(createHash('sha256').update(body).digest('hex'), file.path).toBe(file.sha256);
+    }));
+  }
+});
+
+test('revalidated HTML stays exact with either conditional or full validation while assets stay immutable', async ({ request }) => {
+  const root = await request.get('/');
+  expect(root.status()).toBe(200);
+  expect(root.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+  const rootBody = await root.body();
+  const etag = root.headers().etag;
+  if (etag) {
+    const conditional = await request.get('/', {
+      failOnStatusCode: false,
+      headers: { 'If-None-Match': etag },
+    });
+    expect(conditional.status()).toBe(304);
+  } else {
+    const revalidated = await request.get('/', {
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
+    expect(revalidated.status()).toBe(200);
+    expect(revalidated.headers()['cache-control']).toBe('public, max-age=0, must-revalidate');
+    expect(await revalidated.body()).toEqual(rootBody);
+  }
+
+  const expected = JSON.parse(await readFile(expectedReleaseManifestPath, 'utf8')) as ReleaseManifest;
+  const immutable = expected.files.find(file => file.url.startsWith('/assets/') && file.status === 200);
+  expect(immutable).toBeTruthy();
+  const asset = await request.get(immutable!.url);
+  expect(asset.headers()['cache-control']).toBe('public, max-age=31536000, immutable');
 });
 
 test('Cloudflare Pages serves essential routes and a real nearest 404', async ({ request }) => {
@@ -32,11 +101,13 @@ test('Cloudflare Pages serves essential routes and a real nearest 404', async ({
 
   const missing = await request.get('/missing-cloudflare-preview-route');
   expect(missing.status()).toBe(404);
+  expect(missing.headers()['cache-control']).toBe('no-store');
   expect(await missing.text()).toContain('<h1>');
 
   if (hasRussianNotFound) {
     const russianMissing = await request.get('/ru/missing-cloudflare-preview-route');
     expect(russianMissing.status()).toBe(404);
+    expect(russianMissing.headers()['cache-control']).toBe('no-store');
     expect(await russianMissing.text()).toMatch(/<html\b[^>]*\blang="ru"/u);
   }
 });
@@ -89,7 +160,10 @@ test('deployed homepage has no serious or critical accessibility violations', as
     const axe = (window as unknown as Window & {
       axe: { run: (context: Document, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> };
     }).axe;
-    return axe.run(document, { resultTypes: ['violations'] });
+    return axe.run(document, {
+      runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
+      resultTypes: ['violations'],
+    });
   });
   const blocking = results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical');
   expect(blocking, blocking.map(violation => violation.id).join(', ')).toEqual([]);

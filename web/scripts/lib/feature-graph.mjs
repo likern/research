@@ -20,6 +20,7 @@ export function createVerifiedFeatureGraph({
   metafile,
   packageLock,
   esbuildVersion,
+  bundleManifestUrl,
 }) {
   const outputs = metafileOutputs(metafile);
   validateOutputGraph(outputs);
@@ -27,11 +28,14 @@ export function createVerifiedFeatureGraph({
   const entryOutputs = indexEntryOutputs(outputs);
   const mainOutputPath = requiredEntryOutput(entryOutputs, mainSource);
   const mainOutput = requiredOutput(outputs, mainOutputPath);
-  if (outputAssetPath(mainOutputPath) !== 'main.js') {
-    throw new TypeError('esbuild main entry must remain the stable assets/main.js shell URL.');
+  if (!/^main-[A-Z0-9]{8}\.js$/u.test(outputAssetPath(mainOutputPath))) {
+    throw new TypeError('esbuild main entry must use a content-fingerprinted shell URL.');
   }
-  if (typeof mainOutput.cssBundle !== 'string' || outputAssetPath(mainOutput.cssBundle) !== 'main.css') {
-    throw new TypeError('esbuild main entry must expose the stable assets/main.css stylesheet URL.');
+  if (typeof mainOutput.cssBundle !== 'string' || !/^main-[A-Z0-9]{8}\.css$/u.test(outputAssetPath(mainOutput.cssBundle))) {
+    throw new TypeError('esbuild main entry must expose a content-fingerprinted stylesheet URL.');
+  }
+  if (typeof bundleManifestUrl !== 'string' || !/^\/assets\/bundle-manifest-[a-f0-9]{16}\.json$/u.test(bundleManifestUrl)) {
+    throw new TypeError('The persisted esbuild metafile must use a content-fingerprinted asset URL.');
   }
 
   const featureSources = definitions.map(definition => definition.module);
@@ -139,7 +143,7 @@ export function createVerifiedFeatureGraph({
     bundler: {
       name: 'esbuild',
       version: esbuildVersion,
-      metafile: '/assets/bundle-manifest.json',
+      metafile: bundleManifestUrl,
       format: 'esm',
       splitting: true,
       minified: true,

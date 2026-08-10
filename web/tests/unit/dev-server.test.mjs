@@ -41,6 +41,8 @@ test('live-reload mode is response-only and publishes successful rebuild notific
 test('ordinary serve mode does not alter built HTML', async t => {
   const root = await mkdtemp(resolve(tmpdir(), 'pinega-web-server-'));
   await writeFile(resolve(root, 'index.html'), html, 'utf8');
+  await mkdir(resolve(root, 'assets'));
+  await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export {}\n', 'utf8');
 
   const server = await startPinegaServer({ root, port: 0, liveReload: false, log: false });
   t.after(async () => {
@@ -50,8 +52,20 @@ test('ordinary serve mode does not alter built HTML', async t => {
 
   const page = await fetch(`${server.url}/`);
   assert.equal(page.status, 200);
-  assert.equal(page.headers.get('cache-control'), 'no-cache');
+  assert.equal(page.headers.get('cache-control'), 'public, max-age=0, must-revalidate');
+  assert.match(page.headers.get('etag') ?? '', /^"sha256-[a-f0-9]{64}"$/u);
   assert.equal(await page.text(), html);
+
+  const notModified = await fetch(`${server.url}/`, {
+    headers: { 'If-None-Match': page.headers.get('etag') },
+  });
+  assert.equal(notModified.status, 304);
+  assert.equal(await notModified.text(), '');
+
+  const asset = await fetch(`${server.url}/assets/main-ABCDEFGH.js`);
+  assert.equal(asset.status, 200);
+  assert.equal(asset.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+  assert.match(asset.headers.get('etag') ?? '', /^"sha256-[a-f0-9]{64}"$/u);
 });
 
 test('not-found responses follow the requested locale prefix', async t => {
@@ -68,9 +82,13 @@ test('not-found responses follow the requested locale prefix', async t => {
 
   const english = await fetch(`${server.url}/missing`);
   assert.equal(english.status, 404);
+  assert.equal(english.headers.get('cache-control'), 'no-store');
+  assert.equal(english.headers.get('etag'), null);
   assert.match(await english.text(), /lang="en"/u);
 
   const russian = await fetch(`${server.url}/ru/missing`);
   assert.equal(russian.status, 404);
+  assert.equal(russian.headers.get('cache-control'), 'no-store');
+  assert.equal(russian.headers.get('etag'), null);
   assert.match(await russian.text(), /lang="ru"/u);
 });
