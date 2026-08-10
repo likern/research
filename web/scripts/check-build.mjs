@@ -22,6 +22,13 @@ import {
 import { verifyBuildIdentity } from './lib/build-identity.mjs';
 import { validateDocumentContract } from './lib/document-contract.mjs';
 import { createRouteRequestManifest, createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
+import {
+  IMMUTABLE_CACHE_CONTROL,
+  RELEASE_MANIFEST_PATH,
+  REVALIDATED_CACHE_CONTROL,
+  isFingerprintedAssetPath,
+  verifyReleaseManifest,
+} from './lib/release-contract.mjs';
 
 const root = resolve(fileURLToPath(new URL('../dist', import.meta.url)));
 const diagramIds = ['buffer-frame-lifecycle', 'linearizability-overlap', 'version-chain-snapshot'];
@@ -39,16 +46,26 @@ const variants = contentIndex.entries.flatMap(entry => Object.entries(entry.loca
 })));
 const documentationEntries = variants.filter(entry => entry.locale === 'en' && entry.documentation && entry.documentation.section !== 'landing');
 const russianDocumentationEntries = variants.filter(entry => entry.locale === 'ru' && entry.documentation && entry.documentation.section !== 'landing');
+const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
+const featureGraphPath = artifactPathFromUrl(manifest.navigation?.featureGraph?.assetManifest);
+const bundleManifestPath = artifactPathFromUrl(manifest.navigation?.featureGraph?.bundleManifest);
+const featureGraph = JSON.parse(await readFile(resolve(root, featureGraphPath), 'utf8'));
+const bundleManifest = JSON.parse(await readFile(resolve(root, bundleManifestPath), 'utf8'));
+const releaseManifest = JSON.parse(await readFile(resolve(root, RELEASE_MANIFEST_PATH), 'utf8'));
+const faviconPath = releaseManifest.files.find(entry => /^assets\/static\/favicon-(?:[A-Z0-9]{8}|[a-f0-9]{16})\.svg$/u.test(entry.path))?.path;
+assert.ok(faviconPath, 'Release manifest must expose one fingerprinted favicon.');
 const required = [
   ...variants.map(entry => entry.output_path),
   'robots.txt',
   'sitemap.xml',
   'site-manifest.json',
-  'favicon.svg',
-  'assets/main.js',
-  'assets/main.css',
-  'assets/feature-graph.json',
-  'assets/bundle-manifest.json',
+  '_headers',
+  RELEASE_MANIFEST_PATH,
+  faviconPath,
+  featureGraphPath,
+  bundleManifestPath,
+  featureGraph.entry.script.slice(1),
+  featureGraph.entry.stylesheet.slice(1),
   'content/README.md',
   'content/content-index.json',
   'content/content.schema.json',
@@ -68,9 +85,6 @@ const required = [
 
 for (const path of required) assert.ok(await isFile(resolve(root, path)), `Missing build output: ${path}`);
 
-const manifest = JSON.parse(await readFile(resolve(root, 'site-manifest.json'), 'utf8'));
-const featureGraph = JSON.parse(await readFile(resolve(root, 'assets/feature-graph.json'), 'utf8'));
-const bundleManifest = JSON.parse(await readFile(resolve(root, 'assets/bundle-manifest.json'), 'utf8'));
 const packageLock = JSON.parse(await readFile(resolve(root, '../package-lock.json'), 'utf8'));
 const manifestRoutes = new Map(manifest.routes.map(entry => [`${entry.id}:${entry.locale}`, entry]));
 
@@ -132,8 +146,10 @@ for (const entry of variants) {
     }
   }
   assert.doesNotMatch(html, /\{\{SITE_ORIGIN\}\}|PINEGA_PROJECT_META|PINEGA_DIAGRAM:|PINEGA_DOC_[A-Z_]+|PINEGA_LANGUAGE_SWITCHER/u, `${entry.output_path} contains an unresolved build marker`);
-  assert.match(html, /\/assets\/main\.css/u);
-  assert.match(html, /\/assets\/main\.js/u);
+  assert.match(html, new RegExp(escapeRegex(featureGraph.entry.stylesheet), 'u'));
+  assert.match(html, new RegExp(escapeRegex(featureGraph.entry.script), 'u'));
+  assert.match(html, new RegExp(escapeRegex(`/${faviconPath}`), 'u'));
+  assert.doesNotMatch(html, /\/assets\/main\.(?:css|js)|\/favicon\.svg/u);
   assert.match(html, /<main\b/u);
   assert.match(html, new RegExp(`<html\\b[^>]*\\blang="${escapeRegex(entry.locale)}"`, 'u'));
   assert.match(html, new RegExp(`<html\\b[^>]*\\bdata-locale="${escapeRegex(entry.locale)}"`, 'u'));
@@ -168,7 +184,7 @@ for (const entry of variants) {
 assert.equal(contentIndex.schema_version, 3);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 7);
+assert.equal(manifest.schemaVersion, 8);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
@@ -177,8 +193,8 @@ assert.deepEqual(manifest.navigation.routeFeatureDefinitions, ROUTE_FEATURE_DEFI
 assert.deepEqual(manifest.navigation.litIslands, LIT_ISLAND_POLICY);
 assert.deepEqual(manifest.navigation.featureGraph, {
   schemaVersion: 1,
-  assetManifest: '/assets/feature-graph.json',
-  bundleManifest: '/assets/bundle-manifest.json',
+  assetManifest: `/${featureGraphPath}`,
+  bundleManifest: `/${bundleManifestPath}`,
   lit: featureGraph.lit,
 });
 assert.deepEqual(manifest.navigation.intentPrefetch, {
@@ -207,7 +223,18 @@ assert.deepEqual(manifest.navigation.intentPrefetch, {
 });
 assert.deepEqual(manifest.navigation.routeOwnedMetadata, ROUTE_OWNED_METADATA);
 assert.deepEqual(manifest.navigation.urlNormalization.cacheKeyFields, ['buildId', 'origin', 'pathname', 'search']);
+assert.deepEqual(manifest.delivery, {
+  schemaVersion: 1,
+  exactArtifact: true,
+  releaseManifest: `/${RELEASE_MANIFEST_PATH}`,
+  cache: {
+    immutableAssets: IMMUTABLE_CACHE_CONTROL,
+    revalidatedDocuments: REVALIDATED_CACHE_CONTROL,
+  },
+  serviceWorker: false,
+});
 await verifyBuildIdentity(root, manifest.build.id, [...variants.map(entry => entry.output_path), 'site-manifest.json']);
+await verifyReleaseManifest(root, releaseManifest);
 assert.equal(manifest.site.tagline, 'Correctness under concurrency.');
 assert.equal(manifest.site.defaultLocale, 'en');
 assert.deepEqual(manifest.routes.map(entry => `${entry.id}:${entry.locale}`), variants.map(entry => `${entry.id}:${entry.locale}`));
@@ -220,14 +247,14 @@ assert.equal(featureGraph.kind, 'pinega-dynamic-feature-graph');
 assert.deepEqual(featureGraph.bundler, {
   name: 'esbuild',
   version: '0.28.1',
-  metafile: '/assets/bundle-manifest.json',
+  metafile: `/${bundleManifestPath}`,
   format: 'esm',
   splitting: true,
   minified: true,
   dynamicImports: 'native',
 });
-assert.equal(featureGraph.entry.script, '/assets/main.js');
-assert.equal(featureGraph.entry.stylesheet, '/assets/main.css');
+assert.match(featureGraph.entry.script, /^\/assets\/main-[A-Z0-9]{8}\.js$/u);
+assert.match(featureGraph.entry.stylesheet, /^\/assets\/main-[A-Z0-9]{8}\.css$/u);
 assert.deepEqual(featureGraph.features.map(feature => ({
   id: feature.id,
   element: feature.element,
@@ -261,6 +288,7 @@ assert.deepEqual(
     metafile: bundleManifest,
     packageLock,
     esbuildVersion,
+    bundleManifestUrl: `/${bundleManifestPath}`,
   }).graph,
   featureGraph,
   'Persisted feature graph must equal the independently verified esbuild metafile projection',
@@ -271,6 +299,16 @@ for (const [outputPath, output] of Object.entries(bundleManifest.outputs)) {
   assert.ok(await isFile(builtPath), `Missing esbuild output: ${outputPath}`);
   assert.equal((await stat(builtPath)).size, output.bytes, `esbuild byte count mismatch: ${outputPath}`);
 }
+for (const file of files.filter(path => path.includes('/assets/'))) {
+  const artifactPath = file.slice(`${root}/`.length);
+  assert.equal(isFingerprintedAssetPath(artifactPath), true, `Unfingerprinted immutable asset: ${artifactPath}`);
+}
+assert.equal(releaseManifest.cachePolicy.serviceWorker, false);
+assert.doesNotMatch(
+  (await Promise.all(files.filter(path => /\.(?:html|js)$/u.test(path)).map(path => readFile(path, 'utf8')))).join('\n'),
+  /navigator\.serviceWorker|serviceWorker\.register/u,
+  'Gate 4.7 forbids Service Worker registration',
+);
 
 const englishDocsManifest = JSON.parse(await readFile(resolve(root, 'content/en/documentation-manifest.json'), 'utf8'));
 assert.equal(englishDocsManifest.schema_version, 2);
@@ -402,4 +440,11 @@ function expectedRouteAlternates(entry, origin) {
 
 function escapeRegex(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+}
+
+function artifactPathFromUrl(value) {
+  if (typeof value !== 'string' || !/^\/assets\/[A-Za-z0-9._/-]+$/u.test(value)) {
+    throw new TypeError(`Invalid generated asset URL: ${JSON.stringify(value)}`);
+  }
+  return value.slice(1);
 }

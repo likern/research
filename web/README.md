@@ -294,9 +294,10 @@ near-viewport `IntersectionObserver`. Late imports are guarded by route
 ownership, so they cannot mutate a route that has already been replaced.
 
 esbuild 0.28.1 remains the browser bundler. The build verifies the emitted
-production `metafile`, preserves it as `/assets/bundle-manifest.json`, writes
-`/assets/feature-graph.json`, and projects a deterministic request manifest
-into every schema-v7 route entry. Concurrent feature requests share one
+production `metafile`, preserves it in a fingerprinted bundle-manifest asset,
+writes a fingerprinted feature-graph asset, and projects their exact URLs plus
+a deterministic request manifest into every schema-v8 route entry. Concurrent
+feature requests share one
 application promise, while the browser module map reuses each successfully
 evaluated module by URL. No route data becomes an import specifier. esbuild
 preserves the literal `import()` edges without injecting a dependency-preload
@@ -331,7 +332,7 @@ priority. Speculative templates are evicted before visited routes, `no-store`
 responses are never retained, and route feature modules do not execute until
 foreground navigation reaches their existing phase boundary.
 
-Schema-v7 `site-manifest.json` publishes the policy. Runtime schema-v1 metrics
+Schema-v8 `site-manifest.json` publishes the policy. Runtime schema-v1 metrics
 are available through `pinega:prefetch-metrics` and
 `window.__PINEGA_PREFETCH_METRICS__`: completed prefetches, cache/in-flight
 hits, hit rate, source/transfer bytes, and retained versus finalized unused
@@ -362,10 +363,27 @@ Lit route loading, routing, global rendering, and global hydration. The emitted
 graph additionally proves that `@lit/task@1.0.3` is reachable only through the
 diagram feature; it is never a shell or navigation dependency.
 
+## Gate 4.7 HTTP and release review
+
+The build fingerprints every `/assets/` URL and generates a non-overlapping
+Cloudflare `_headers` policy: fingerprinted assets are immutable for one year,
+while HTML and mutable manifests always revalidate. There is no Service Worker.
+`/.well-known/pinega-release.json` inventories every public file by URL,
+status, bytes, SHA-256, media type, and cache policy. Local checks reconstruct
+that inventory; the deployment suite verifies every served byte plus the real
+HTTPS headers and conditional ETag response.
+
+CI packages and attests the same directory that passed tests, verifies the
+attestation before Direct Upload, and never rebuilds it in the deploy job. The
+Gate 4.7 review artifact combines the zero-retry Chromium desktop/mobile,
+Firefox, and WebKit matrix; axe and keyboard-trap evidence; visual baselines;
+and cold/warm desktop/mobile FCP, LCP, CLS, Speed Index, and TBT diagnostics.
+Lighthouse provides lab evidence only and is not the sole release oracle.
+
 ## Initial-render visual-stability contract
 
 `tests/browser/visual-stability.spec.ts` tests time, not only the final DOM. It
-holds `/assets/main.js` and the hashed Web Awesome Core chunk at separate
+holds the fingerprinted main module and Web Awesome Core chunk at separate
 boundaries and compares declared static regions across authored HTML, Pinega
 shell upgrade, Web Awesome readiness, and an explicit reload. Every stage must
 retain identical geometry, direct static text, and computed visual styles for
@@ -539,6 +557,7 @@ with-env {
 ^npm run test:browser
 ^npm run test:stability
 ^npm run test:visual
+^npm run review:lighthouse
 ```
 
 Tests cover registered routes and fragments, content-registry v3 contracts,

@@ -198,7 +198,12 @@ test('primary pointerdown publishes shared in-flight ownership before the click 
 });
 
 test('focus prefetch validates route HTML without executing its critical feature chunk', async ({ page }) => {
-  const graphResponse = await page.request.get('/assets/feature-graph.json');
+  const siteResponse = await page.request.get('/site-manifest.json');
+  expect(siteResponse.ok()).toBeTruthy();
+  const site = await siteResponse.json() as { navigation: { featureGraph: { assetManifest: string } } };
+  await siteResponse.dispose();
+  const graphResponse = await page.request.get(site.navigation.featureGraph.assetManifest);
+  expect(graphResponse.ok()).toBeTruthy();
   const graph = await graphResponse.json() as FeatureGraphManifest;
   await graphResponse.dispose();
   const benchmarkChunk = graph.features.find(feature => feature.id === 'benchmark')?.chunk;

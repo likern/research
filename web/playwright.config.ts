@@ -1,12 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import { releaseReporters } from './playwright.reporters.js';
+
 export default defineConfig({
   testDir: '.',
   fullyParallel: true,
   ...(process.env.CI ? { workers: 1, timeout: 45_000 } : { timeout: 30_000 }),
   forbidOnly: Boolean(process.env.CI),
   retries: 0,
-  reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: releaseReporters(),
   outputDir: 'test-results',
   expect: {
     timeout: 5_000,

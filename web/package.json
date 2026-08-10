@@ -13,6 +13,7 @@
     "build": "node scripts/build.mjs",
     "check:build": "node scripts/check-build.mjs",
     "deployment:manifest": "node scripts/write-deployment-manifest.mjs",
+    "review:lighthouse": "node scripts/run-lighthouse-review.mjs",
     "dev": "node scripts/dev.mjs",
     "serve": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
@@ -33,7 +34,9 @@
     "@playwright/test": "1.62.1",
     "@types/node": "26.1.2",
     "axe-core": "4.13.0",
+    "chrome-launcher": "1.2.1",
     "esbuild": "0.28.1",
+    "lighthouse": "13.4.1",
     "parse5": "8.0.1",
     "typescript": "7.0.2"
   }

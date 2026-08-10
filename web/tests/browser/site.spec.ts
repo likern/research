@@ -286,14 +286,31 @@ test('generated discovery files expose the complete documentation corpus', async
       };
       routeOwnedMetadata: string[];
     };
+    delivery: {
+      schemaVersion: number;
+      exactArtifact: boolean;
+      releaseManifest: string;
+      cache: { immutableAssets: string; revalidatedDocuments: string };
+      serviceWorker: boolean;
+    };
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
     routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
   };
-  expect(payload.schemaVersion).toBe(7);
+  expect(payload.schemaVersion).toBe(8);
   expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
   expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
   expect(payload.build.documentContractVersion).toBe('1');
   expect(payload.build.shellVersion).toBe('4.0');
+  expect(payload.delivery).toEqual({
+    schemaVersion: 1,
+    exactArtifact: true,
+    releaseManifest: '/.well-known/pinega-release.json',
+    cache: {
+      immutableAssets: 'public, max-age=31536000, immutable',
+      revalidatedDocuments: 'public, max-age=0, must-revalidate',
+    },
+    serviceWorker: false,
+  });
   expect(payload.navigation.routeFeatureDefinitions.map(feature => feature.id)).toEqual(['benchmark', 'code-example', 'diagram-viewer', 'doc-topic-filter']);
   expect(payload.navigation.litIslands).toEqual({
     schemaVersion: 1,

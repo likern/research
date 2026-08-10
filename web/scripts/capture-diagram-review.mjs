@@ -52,6 +52,9 @@ try {
     throw new Error('Pinega page did not reach the ready state');
   }
 
+  const stylesheetHref = await page.locator('link[rel="stylesheet"]').getAttribute('href');
+  if (!stylesheetHref) throw new Error('Pinega page did not expose its fingerprinted stylesheet');
+
   const figures = [];
 
   for (const id of ids) {
@@ -79,6 +82,7 @@ try {
     diagramVersion,
     figures,
     ids,
+    stylesheetHref,
   });
 
   await writeFile(resolve(outputRoot, 'review.html'), reviewHtml, 'utf8');
@@ -213,7 +217,7 @@ async function exportAuthoringVariants(renderer) {
   return variants;
 }
 
-function createReviewHtml({ baseUrl, diagramVersion, figures, ids }) {
+function createReviewHtml({ baseUrl, diagramVersion, figures, ids, stylesheetHref }) {
   const version = escapeHtml(diagramVersion);
   const sections = figures
     .map(
@@ -228,7 +232,7 @@ function createReviewHtml({ baseUrl, diagramVersion, figures, ids }) {
     <meta charset="utf-8">
     <base href="${escapeHtml(baseUrl)}/">
     <title>Scientific Diagram Language ${version} — Web review</title>
-    <link rel="stylesheet" href="/assets/main.css">
+    <link rel="stylesheet" href="${escapeHtml(stylesheetHref)}">
     <style>
       @page { size: A4 landscape; margin: 12mm; }
       body { background: white; color: #1f2528; }

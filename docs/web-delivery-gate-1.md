@@ -56,6 +56,18 @@ contains source, base, tested merge, PR, refs, workflow run, build profile,
 provider, and expected environment. It intentionally does not contain its own
 artifact checksum, which would create a cyclic hash dependency.
 
+Gate 4.7 additionally exposes:
+
+```text
+/.well-known/pinega-release.json
+```
+
+Its schema is `web/deployment/pinega-release.schema.json`. It binds the build
+ID to every public URL's status, bytes, SHA-256, media type, and cache policy,
+plus the generated `_headers` control checksum. The release manifest excludes
+itself and the separately appended deployment provenance to avoid cyclic
+identity.
+
 ## Workflow boundaries
 
 `.github/workflows/check-web-foundation.yml` contains four jobs.
@@ -70,7 +82,8 @@ It:
 1. checks out the tested merge snapshot;
 2. installs exact locked dependencies with lifecycle scripts disabled;
 3. validates tokens, types, unit contracts, build budgets, browser behaviour,
-   accessibility, and committed visual baselines;
+   accessibility, committed visual baselines, and cold/warm desktop/mobile
+   performance diagnostics;
 4. adds the deployment provenance manifest;
 5. creates a deterministic GNU tar + timestamp-free gzip archive;
 6. records and verifies SHA-256;
@@ -98,17 +111,21 @@ Cloudflare credential only after validation and attestation succeed.
 It:
 
 1. downloads and verifies the same deterministic archive;
-2. rejects missing configuration and any preview branch equal to the configured
+2. verifies the GitHub artifact attestation against this repository and
+   workflow before extraction can reach the provider;
+3. rejects missing configuration and any preview branch equal to the configured
    Cloudflare production branch;
-3. runs pinned `cloudflare/wrangler-action` and exact Wrangler `4.120.0`;
-4. supplies explicit branch, full tested SHA, commit message, and clean-state
+4. runs pinned `cloudflare/wrangler-action` and exact Wrangler `4.120.0`;
+5. supplies explicit branch, full tested SHA, commit message, and clean-state
    metadata to `wrangler pages deploy`;
-5. requires Cloudflare to report `environment=preview` and an immutable
+6. requires Cloudflare to report `environment=preview` and an immutable
    hash-based `pages.dev` URL;
-6. verifies root, docs, `noindex`, exact remote provenance, and a real HTTP 404
-   directly over HTTPS;
-7. publishes a provider deployment record containing Cloudflare deployment ID,
-   immutable URL, alias, commits, and artifact SHA-256.
+7. verifies root, docs, `noindex`, exact remote provenance and release
+   manifests, revalidated HTML plus conditional ETag `304`, one immutable
+   asset, and a real HTTP 404 directly over HTTPS;
+8. publishes a provider deployment record containing Cloudflare deployment ID,
+   immutable URL, alias, commits, archive SHA-256, and release-inventory
+   SHA-256.
 
 The GitHub job uses `environment.url`, so the immutable URL appears as
 `View deployment` in the pull request:
@@ -119,9 +136,11 @@ The GitHub job uses `environment.url`, so the immutable URL appears as
 
 This job has no deployment credential. It runs Chromium and axe-core against
 the immutable Cloudflare URL and compares the served provenance to the
-downloaded expected artifact. It verifies essential routes, nearest-404
-behaviour, static assets, internal navigation, console errors, and blocking
-accessibility findings.
+downloaded expected artifact. It fetches every release-manifest URL and
+compares status, bytes, SHA-256, cache policy, media type, and ETag; it also
+requires conditional HTML revalidation to produce `304`. Navigation, console
+errors, nearest-404 behavior, and blocking accessibility findings remain
+independent browser checks.
 
 If the artifact contains `ru/404.html`, the same test automatically requires a
 Russian nearest-404 response for an unknown `/ru/...` route. This lets Gate 3A

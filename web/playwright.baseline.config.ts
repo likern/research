@@ -1,12 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import { releaseReporters } from './playwright.reporters.js';
+
 export default defineConfig({
   testDir: 'tests/performance',
   fullyParallel: false,
   workers: 1,
   retries: 0,
   timeout: 120_000,
-  reporter: 'list',
+  reporter: releaseReporters({ includeHtml: false }),
   outputDir: 'test-results/baseline',
   use: {
     baseURL: 'http://127.0.0.1:4173',

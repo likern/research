@@ -29,7 +29,7 @@ for (const representative of representativeRoutes) {
   test(`${representative.id} keeps declared static regions stable through first load and reload`, async ({ page, browserName }, testInfo) => {
     await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' });
     await installUnexpectedShiftProbe(page);
-    const mainGate = await AssetGate.install(page, '**/assets/main.js');
+    const mainGate = await AssetGate.install(page, '**/assets/main-*.js');
     const webAwesomeGate = await AssetGate.install(page, /\/assets\/chunks\/core-[A-Z0-9]+\.js$/u);
 
     const initial = await observeRenderCycle(
@@ -64,7 +64,7 @@ for (const representative of representativeRoutes) {
 
 test('stored dark theme is selected before CSS and the main module execute', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('pinega-color-scheme', 'dark'));
-  const mainGate = await AssetGate.install(page, '**/assets/main.js');
+  const mainGate = await AssetGate.install(page, '**/assets/main-*.js');
   const webAwesomeGate = await AssetGate.install(page, /\/assets\/chunks\/core-[A-Z0-9]+\.js$/u);
 
   await page.goto('/', { waitUntil: 'commit' });

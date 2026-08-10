@@ -11,13 +11,14 @@ const definition = Object.freeze({
   module: 'src/features/diagram-viewer.ts',
 });
 const paths = Object.freeze({
-  main: 'dist/assets/main.js',
-  css: 'dist/assets/main.css',
+  main: 'dist/assets/main-ABCDEFGH.js',
+  css: 'dist/assets/main-ABCDEFGH.css',
   core: 'dist/assets/chunks/core-ABCDEFGH.js',
   russian: 'dist/assets/chunks/ru-ABCDEFGH.js',
   diagram: 'dist/assets/chunks/diagram-viewer-ABCDEFGH.js',
   lit: 'dist/assets/chunks/lit-ABCDEFGH.js',
 });
+const bundleManifestUrl = '/assets/bundle-manifest-0123456789abcdef.json';
 const litModules = [
   'node_modules/@lit/reactive-element/reactive-element.js',
   'node_modules/lit-element/lit-element.js',
@@ -85,11 +86,12 @@ test('verified esbuild graph derives viewport requests and explicit shell module
     metafile: metafile(),
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   });
   assert.deepEqual(verified.graph.bundler, {
     name: 'esbuild',
     version: '0.28.1',
-    metafile: '/assets/bundle-manifest.json',
+    metafile: bundleManifestUrl,
     format: 'esm',
     splitting: true,
     minified: true,
@@ -119,8 +121,8 @@ test('verified esbuild graph derives viewport requests and explicit shell module
     shell: [
       '/assets/chunks/core-ABCDEFGH.js',
       '/assets/chunks/lit-ABCDEFGH.js',
-      '/assets/main.css',
-      '/assets/main.js',
+      '/assets/main-ABCDEFGH.css',
+      '/assets/main-ABCDEFGH.js',
     ],
     critical: [],
     deferred: [],
@@ -140,6 +142,7 @@ test('esbuild verification fails if a Lit runtime module is duplicated or a feat
     }),
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /multiple chunks/u);
 
   const missing = metafile();
@@ -150,6 +153,7 @@ test('esbuild verification fails if a Lit runtime module is duplicated or a feat
     metafile: missing,
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /not reachable/u);
 });
 
@@ -161,6 +165,7 @@ test('esbuild verification rejects static feature edges and external production 
     metafile: staticFeature,
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /native dynamic-import edges/u);
 
   const external = metafile();
@@ -174,6 +179,7 @@ test('esbuild verification rejects static feature edges and external production 
     metafile: external,
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /must be self-contained/u);
 });
 
@@ -185,6 +191,7 @@ test('@lit/task is required and cannot leak into the shell or Web Awesome closur
     metafile: missing,
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /component-local async/u);
 
   const leaked = metafile();
@@ -197,5 +204,6 @@ test('@lit/task is required and cannot leak into the shell or Web Awesome closur
     metafile: leaked,
     packageLock,
     esbuildVersion: '0.28.1',
+    bundleManifestUrl,
   }), /component-local diagram island/u);
 });

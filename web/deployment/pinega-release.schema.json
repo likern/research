@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pinega.example/schemas/pinega-release.schema.json",
+  "title": "Pinega Web exact-artifact release manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "buildId",
+    "digestAlgorithm",
+    "cachePolicy",
+    "inventory",
+    "controls",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "pinega-web-exact-artifact" },
+    "buildId": { "type": "string", "pattern": "^sha256-[a-f0-9]{64}$" },
+    "digestAlgorithm": { "const": "sha256" },
+    "cachePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["immutableAssets", "revalidatedDocuments", "serviceWorker"],
+      "properties": {
+        "immutableAssets": { "const": "public, max-age=31536000, immutable" },
+        "revalidatedDocuments": { "const": "public, max-age=0, must-revalidate" },
+        "serviceWorker": { "const": false }
+      }
+    },
+    "inventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sha256", "fileCount", "totalBytes", "excludedSelf", "excludedDeploymentProvenance"],
+      "properties": {
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "fileCount": { "type": "integer", "minimum": 1 },
+        "totalBytes": { "type": "integer", "minimum": 1 },
+        "excludedSelf": { "const": ".well-known/pinega-release.json" },
+        "excludedDeploymentProvenance": { "const": ".well-known/pinega-deployment.json" }
+      }
+    },
+    "controls": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "unevaluatedProperties": false,
+        "allOf": [
+          { "$ref": "#/$defs/digestEntry" },
+          {
+            "type": "object",
+            "required": ["kind"],
+            "properties": {
+              "path": { "const": "_headers" },
+              "kind": { "const": "deployment-control" }
+            }
+          }
+        ]
+      }
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "unevaluatedProperties": false,
+        "allOf": [
+          { "$ref": "#/$defs/digestEntry" },
+          {
+            "type": "object",
+            "required": ["url", "status", "cache", "cacheControl", "mediaType"],
+            "properties": {
+              "url": { "type": "string", "pattern": "^/" },
+              "status": { "enum": [200, 404] },
+              "cache": { "enum": ["immutable", "revalidate"] },
+              "cacheControl": {
+                "enum": [
+                  "public, max-age=31536000, immutable",
+                  "public, max-age=0, must-revalidate"
+                ]
+              },
+              "mediaType": { "type": ["string", "null"] }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "digestEntry": {
+      "type": "object",
+      "required": ["path", "bytes", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "bytes": { "type": "integer", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

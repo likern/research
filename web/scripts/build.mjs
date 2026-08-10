@@ -22,6 +22,15 @@ import {
 import { finalizeBuildIdentity } from './lib/build-identity.mjs';
 import { applyDocumentContract, validateDocumentContract } from './lib/document-contract.mjs';
 import { createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
+import {
+  IMMUTABLE_CACHE_CONTROL,
+  RELEASE_MANIFEST_PATH,
+  REVALIDATED_CACHE_CONTROL,
+  writeFingerprintedFile,
+  writeFingerprintedJson,
+  writeReleaseHeaders,
+  writeReleaseManifest,
+} from './lib/release-contract.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = resolve(root, 'dist');
@@ -44,6 +53,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(resolve(dist, 'assets'), { recursive: true });
 await mkdir(diagramBuildRoot, { recursive: true });
 const diagrams = await buildSemanticDiagrams();
+const staticAssets = await emitStaticAssets();
 
 const browserBundle = await esbuild({
   absWorkingDir: root,
@@ -54,7 +64,7 @@ const browserBundle = await esbuild({
   format: 'esm',
   target: ['es2022'],
   sourcemap: true,
-  entryNames: '[name]',
+  entryNames: '[name]-[hash]',
   chunkNames: 'chunks/[name]-[hash]',
   assetNames: '[name]-[hash]',
   minify: true,
@@ -63,30 +73,35 @@ const browserBundle = await esbuild({
   metafile: true,
   logLevel: 'info',
 });
+const bundleManifestAsset = await writeFingerprintedJson(
+  resolve(dist, 'assets'),
+  'bundle-manifest',
+  browserBundle.metafile,
+);
 const packageLock = JSON.parse(await readFile(resolve(root, 'package-lock.json'), 'utf8'));
 const verifiedFeatures = createVerifiedFeatureGraph({
   definitions: ROUTE_FEATURE_DEFINITIONS,
   metafile: browserBundle.metafile,
   packageLock,
   esbuildVersion,
+  bundleManifestUrl: bundleManifestAsset.url,
 });
-await writeFile(
-  resolve(dist, 'assets/bundle-manifest.json'),
-  `${JSON.stringify(browserBundle.metafile, null, 2)}\n`,
-  'utf8',
-);
-await writeFile(
-  resolve(dist, 'assets/feature-graph.json'),
-  `${JSON.stringify(verifiedFeatures.graph, null, 2)}\n`,
-  'utf8',
+const featureGraphAsset = await writeFingerprintedJson(
+  resolve(dist, 'assets'),
+  'feature-graph',
+  verifiedFeatures.graph,
 );
 
 for (const page of pages) {
   const source = await readFile(resolve(root, page.source), 'utf8');
   validatePageSource(source, page);
-  let html = source
+  let html = rewriteShellAssetReferences(source, page.source, {
+    script: verifiedFeatures.graph.entry.script,
+    stylesheet: verifiedFeatures.graph.entry.stylesheet,
+    staticAssets,
+  })
     .replaceAll('{{SITE_ORIGIN}}', escapeHtml(siteOrigin));
-  html = injectInitialRenderBootstrap(html, page.source);
+  html = injectInitialRenderBootstrap(html, page.source, verifiedFeatures.graph.entry.stylesheet);
   html = replaceLocalePlaceholders(html, page);
   html = html.replace(
     '<!-- PINEGA_PROJECT_META -->',
@@ -124,11 +139,6 @@ for (const page of pages) {
   });
 }
 
-try {
-  await cp(resolve(root, 'static'), dist, { recursive: true });
-} catch (error) {
-  if (error?.code !== 'ENOENT') throw error;
-}
 await cp(diagramRoot, resolve(dist, 'diagrams'), { recursive: true });
 await cp(contentRoot, resolve(dist, 'content'), { recursive: true });
 for (const locale of Object.keys(contentIndex.site.locales)) {
@@ -137,19 +147,13 @@ for (const locale of Object.keys(contentIndex.site.locales)) {
   await writeFile(output, `${JSON.stringify(renderDocumentationManifest(pages, locale), null, 2)}\n`, 'utf8');
 }
 await rm(diagramBuildRoot, { recursive: true, force: true });
-try {
-  await cp(resolve(root, 'node_modules/@awesome.me/webawesome/dist/assets'), resolve(dist, 'assets/webawesome'), { recursive: true });
-} catch (error) {
-  if (error?.code !== 'ENOENT') throw error;
-}
-
 const publicRoutes = builtPages.filter(page => page.sitemap).map(page => page.route);
 await writeFile(resolve(dist, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${siteOrigin}/sitemap.xml\n`, 'utf8');
 await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRoutes), 'utf8');
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 7,
+    schemaVersion: 8,
     build: {
       id: BUILD_ID_PLACEHOLDER,
       identityAlgorithm: BUILD_ID_ALGORITHM,
@@ -162,7 +166,7 @@ await writeFile(
       litIslands: LIT_ISLAND_POLICY,
       featureGraph: {
         schemaVersion: verifiedFeatures.graph.schemaVersion,
-        assetManifest: '/assets/feature-graph.json',
+        assetManifest: featureGraphAsset.url,
         bundleManifest: verifiedFeatures.graph.bundler.metafile,
         lit: verifiedFeatures.graph.lit,
       },
@@ -200,6 +204,16 @@ await writeFile(
       },
     },
     origin: siteOrigin,
+    delivery: {
+      schemaVersion: 1,
+      exactArtifact: true,
+      releaseManifest: `/${RELEASE_MANIFEST_PATH}`,
+      cache: {
+        immutableAssets: IMMUTABLE_CACHE_CONTROL,
+        revalidatedDocuments: REVALIDATED_CACHE_CONTROL,
+      },
+      serviceWorker: false,
+    },
     site: {
       name: contentIndex.site.name,
       organization: contentIndex.site.organization,
@@ -248,10 +262,13 @@ await writeFile(
   'utf8',
 );
 
+await writeReleaseHeaders(dist, builtPages.map(page => page.route));
+
 const buildId = await finalizeBuildIdentity(dist, [
   ...builtPages.map(page => page.output),
   'site-manifest.json',
 ]);
+await writeReleaseManifest(dist, buildId);
 
 console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);
 
@@ -629,15 +646,66 @@ function replaceLocalePlaceholders(html, page) {
   return output;
 }
 
-function injectInitialRenderBootstrap(html, source) {
-  const stylesheet = '<link rel="stylesheet" href="/assets/main.css">';
-  if ((html.match(/<link rel="stylesheet" href="\/assets\/main\.css">/gu) ?? []).length !== 1) {
+function injectInitialRenderBootstrap(html, source, stylesheetUrl) {
+  const stylesheet = `<link rel="stylesheet" href="${stylesheetUrl}">`;
+  if (html.split(stylesheet).length - 1 !== 1) {
     throw new TypeError(`${source}: expected exactly one main stylesheet for the initial-render bootstrap`);
   }
   if (html.includes('data-pinega-initial-render')) {
     throw new TypeError(`${source}: the initial-render bootstrap is build-owned`);
   }
   return html.replace(stylesheet, `${initialRenderBootstrap}\n    ${stylesheet}`);
+}
+
+function rewriteShellAssetReferences(html, source, { script, stylesheet, staticAssets }) {
+  const references = new Map([
+    ['/assets/main.css', stylesheet],
+    ['/assets/main.js', script],
+    ...staticAssets,
+  ]);
+  let output = html;
+  for (const [authored, emitted] of references) {
+    const occurrences = output.split(authored).length - 1;
+    if (authored === '/assets/main.css' || authored === '/assets/main.js') {
+      if (occurrences !== 1) throw new TypeError(`${source}: expected exactly one authored ${authored} reference, found ${occurrences}`);
+    } else if (occurrences > 1) {
+      throw new TypeError(`${source}: static asset ${authored} must not be referenced more than once`);
+    }
+    output = output.replaceAll(authored, emitted);
+  }
+  return output;
+}
+
+async function emitStaticAssets() {
+  const staticRoot = resolve(root, 'static');
+  let files;
+  try {
+    files = await walkFiles(staticRoot);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return new Map();
+    throw error;
+  }
+  const references = new Map();
+  for (const sourcePath of files) {
+    const sourceRelative = sourcePath.slice(staticRoot.length + 1).replaceAll('\\', '/');
+    const sourceDirectory = dirname(sourceRelative) === '.' ? '' : dirname(sourceRelative).replaceAll('\\', '/');
+    const outputDirectory = resolve(dist, 'assets/static', sourceDirectory);
+    const urlPrefix = `/assets/static${sourceDirectory ? `/${sourceDirectory}` : ''}`;
+    const emitted = await writeFingerprintedFile(sourcePath, outputDirectory, { urlPrefix });
+    references.set(`/${sourceRelative}`, emitted.url);
+  }
+  return references;
+}
+
+async function walkFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const paths = [];
+  for (const entry of entries.toSorted((left, right) => left.name.localeCompare(right.name))) {
+    const path = resolve(directory, entry.name);
+    if (entry.isDirectory()) paths.push(...await walkFiles(path));
+    else if (entry.isFile()) paths.push(path);
+  }
+  return paths;
 }
 
 function renderLocaleMetadata(page) {

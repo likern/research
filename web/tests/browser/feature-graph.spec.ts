@@ -7,14 +7,24 @@ interface FeatureGraphManifest {
   lit: { runtimeChunk: string };
 }
 
+interface SiteManifest {
+  navigation: { featureGraph: { assetManifest: string } };
+}
+
 async function ready(page: Page, route: string): Promise<void> {
   await openReadyDocument(page, route);
 }
 
 async function featureGraph(page: Page): Promise<FeatureGraphManifest> {
-  const response = await page.request.get('/assets/feature-graph.json');
+  const siteResponse = await page.request.get('/site-manifest.json');
+  expect(siteResponse.ok()).toBeTruthy();
+  const site = await siteResponse.json() as SiteManifest;
+  await siteResponse.dispose();
+  const response = await page.request.get(site.navigation.featureGraph.assetManifest);
   expect(response.ok()).toBeTruthy();
-  return response.json() as Promise<FeatureGraphManifest>;
+  const graph = await response.json() as FeatureGraphManifest;
+  await response.dispose();
+  return graph;
 }
 
 function requestsForAsset(requests: Request[], asset: string): Request[] {

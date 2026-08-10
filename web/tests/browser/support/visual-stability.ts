@@ -177,7 +177,7 @@ export async function installUnexpectedShiftProbe(page: Page): Promise<void> {
 
 export async function waitForAuthoredRender(page: Page): Promise<void> {
   await page.waitForFunction(selector => {
-    const stylesheet = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href="/assets/main.css"]');
+    const stylesheet = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href^="/assets/main-"][href$=".css"]');
     return stylesheet?.sheet && document.querySelectorAll(selector).length > 0;
   }, regionSelector);
   await page.evaluate(async () => {
