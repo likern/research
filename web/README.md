@@ -296,19 +296,20 @@ ownership, so they cannot mutate a route that has already been replaced.
 esbuild 0.28.1 remains the browser bundler. The build verifies the emitted
 production `metafile`, preserves it as `/assets/bundle-manifest.json`, writes
 `/assets/feature-graph.json`, and projects a deterministic request manifest
-into every schema-v6 route entry. Concurrent feature requests share one
+into every schema-v7 route entry. Concurrent feature requests share one
 application promise, while the browser module map reuses each successfully
 evaluated module by URL. No route data becomes an import specifier. esbuild
 preserves the literal `import()` edges without injecting a dependency-preload
 wrapper, so each phase uses the native module graph and a failed chunk can
 cross into the existing fresh-module-map fallback boundary.
 
-`pinega-diagram-viewer` is a viewport-loaded Lit light-DOM lifecycle island.
-The SSG SVG, caption, transcript, and model link remain canonical with or
-without JavaScript. `lit` is a pinned direct dependency; the npm lock graph has
-one root installation for all four Lit packages, and metafile plus browser
-checks prove that Web Awesome and the Pinega island consume one runtime chunk
-and one set of runtime version markers.
+`pinega-diagram-viewer` is a viewport-loaded Lit island around canonical light
+DOM. The SSG SVG, caption, transcript, and model link remain canonical with or
+without JavaScript. Lit receives only an initially empty component-local root
+inside the transcript. `lit` is a pinned direct dependency; the npm lock graph
+has one root installation for the shared runtime packages, and metafile plus
+browser checks prove that Web Awesome and the Pinega island consume one runtime
+chunk and one set of runtime version markers.
 
 Critical chunk failure commits nothing and performs one guarded native
 navigation into a fresh module map. Deferred and viewport failure preserve the
@@ -330,7 +331,7 @@ priority. Speculative templates are evicted before visited routes, `no-store`
 responses are never retained, and route feature modules do not execute until
 foreground navigation reaches their existing phase boundary.
 
-Schema-v6 `site-manifest.json` publishes the policy. Runtime schema-v1 metrics
+Schema-v7 `site-manifest.json` publishes the policy. Runtime schema-v1 metrics
 are available through `pinega:prefetch-metrics` and
 `window.__PINEGA_PREFETCH_METRICS__`: completed prefetches, cache/in-flight
 hits, hit rate, source/transfer bytes, and retained versus finalized unused
@@ -338,6 +339,28 @@ bytes. `wasted = prefetched - useful` at the observation point. CI additionally
 uploads `artifacts/baseline/gate-4.5-intent-prefetch-baseline.json`, whose
 controlled two-prefetch/one-hit scenario proves a 0.5 hit rate and balanced
 byte accounting without setting a product performance budget.
+
+## Gate 4.6 Stateful Lit island
+
+The diagram viewer is the first stateful Pinega-owned Lit production component.
+Opening its existing native transcript reveals a model inspector. Explicit user
+intent starts one component-local `@lit/task`: it fetches only the exact
+same-origin JSON endpoint for that diagram and locale, enforces JSON and a
+streaming 64 KiB bound, validates the semantic model, and renders a safe local
+summary with loading, complete, error, close, and retry states. A completed
+instance reopens without another request.
+
+All connection-owned listeners share an `AbortController`; disconnect aborts
+them and any pending model request, while reconnect restarts only unfinished
+expanded work. A fresh clone clears copied Lit markers and owns independent
+state. The SSG figure, transcript, and download remain the no-JavaScript
+fallback, and the default closed view does not change existing visual
+baselines.
+
+The site manifest explicitly records component-local ownership and disables
+Lit route loading, routing, global rendering, and global hydration. The emitted
+graph additionally proves that `@lit/task@1.0.3` is reachable only through the
+diagram feature; it is never a shell or navigation dependency.
 
 ## Initial-render visual-stability contract
 
@@ -499,8 +522,8 @@ with-env {
 - `pinega-benchmark`: canonical table, native SVG fallback, optional Pro chart;
 - `pinega-doc-search`: progressive filtering over registry-generated real docs
   cards; it is not site-wide full-text search;
-- `pinega-diagram-viewer`: viewport-loaded Lit lifecycle island around
-  canonical semantic diagram light DOM;
+- `pinega-diagram-viewer`: viewport-loaded stateful Lit island with a
+  component-local semantic-model Task around canonical light DOM;
 - build-time documentation navigation/breadcrumb/provenance projections;
 - build-time semantic diagrams: histories, version chains, and lifecycles with
   accessible SVG and textual projections.
@@ -538,7 +561,11 @@ module-map reuse, esbuild metafile verification, deterministic per-route
 request manifests, Lit/Web Awesome deduplication, and critical chunk-failure
 fallback. Gate 4.5 adds dwell/focus/pointer intent, bounded scheduling,
 foreground in-flight reuse, Save-Data/slow-network policy, speculative-first
-eviction, feature-phase isolation, and hit/wasted-byte telemetry. The
+eviction, feature-phase isolation, and hit/wasted-byte telemetry. Gate 4.6 adds
+the stateful diagram inspector, component-local `@lit/task`, symmetric
+connection cleanup, pending-request abort/restart, no-JavaScript fallback,
+localized error/retry, and fresh-clone isolation while statically forbidding
+Lit routing, global rendering, and hydration. The
 initial-render stability gate additionally widens both main-module
 and vendor-upgrade windows, compares pre-/mid-/post-upgrade frames, repeats the
 contract after reload, attributes unexpected shifts, and enforces the MPA CLS

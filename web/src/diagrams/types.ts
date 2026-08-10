@@ -134,6 +134,7 @@ export interface DiagramLayoutOptions {
   readonly profile?: string;
   readonly messages?: DiagramMessages;
   readonly modelHref?: string;
+  readonly locale?: string;
 }
 
 export type DiagramMessages = Readonly<Record<string, string>>;

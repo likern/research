@@ -23,9 +23,14 @@ const litModules = [
   'node_modules/lit-element/lit-element.js',
   'node_modules/lit-html/lit-html.js',
 ];
+const taskModules = [
+  'node_modules/@lit/task/index.js',
+  'node_modules/@lit/task/task.js',
+];
 const packageLock = {
   packages: {
     'node_modules/@lit/reactive-element': { version: '2.1.2' },
+    'node_modules/@lit/task': { version: '1.0.3' },
     'node_modules/lit': { version: '3.3.3' },
     'node_modules/lit-element': { version: '4.2.2' },
     'node_modules/lit-html': { version: '3.3.3' },
@@ -60,7 +65,10 @@ function metafile(extraOutputs = {}) {
       [paths.diagram]: {
         entryPoint: 'src/features/diagram-viewer.ts',
         imports: [{ path: paths.lit, kind: 'import-statement' }],
-        inputs: { 'src/features/diagram-viewer.ts': { bytesInOutput: 10 } },
+        inputs: {
+          'src/features/diagram-viewer.ts': { bytesInOutput: 10 },
+          ...Object.fromEntries(taskModules.map(moduleId => [moduleId, { bytesInOutput: 10 }])),
+        },
       },
       [paths.lit]: {
         imports: [],
@@ -93,11 +101,18 @@ test('verified esbuild graph derives viewport requests and explicit shell module
     runtimeChunk: '/assets/chunks/lit-ABCDEFGH.js',
     packages: {
       '@lit/reactive-element': '2.1.2',
+      '@lit/task': '1.0.3',
       lit: '3.3.3',
       'lit-element': '4.2.2',
       'lit-html': '3.3.3',
     },
     consumers: ['src/vendor/webawesome/core.ts', 'src/features/diagram-viewer.ts'],
+    task: {
+      package: '@lit/task',
+      version: '1.0.3',
+      scope: 'component-local',
+      consumers: ['src/features/diagram-viewer.ts'],
+    },
   });
   assert.deepEqual(verified.routeRequests('en', ['diagram-viewer']), {
     schemaVersion: 1,
@@ -160,4 +175,27 @@ test('esbuild verification rejects static feature edges and external production 
     packageLock,
     esbuildVersion: '0.28.1',
   }), /must be self-contained/u);
+});
+
+test('@lit/task is required and cannot leak into the shell or Web Awesome closure', () => {
+  const missing = metafile();
+  for (const moduleId of taskModules) delete missing.outputs[paths.diagram].inputs[moduleId];
+  assert.throws(() => createVerifiedFeatureGraph({
+    definitions: [definition],
+    metafile: missing,
+    packageLock,
+    esbuildVersion: '0.28.1',
+  }), /component-local async/u);
+
+  const leaked = metafile();
+  for (const moduleId of taskModules) {
+    delete leaked.outputs[paths.diagram].inputs[moduleId];
+    leaked.outputs[paths.core].inputs[moduleId] = { bytesInOutput: 10 };
+  }
+  assert.throws(() => createVerifiedFeatureGraph({
+    definitions: [definition],
+    metafile: leaked,
+    packageLock,
+    esbuildVersion: '0.28.1',
+  }), /component-local diagram island/u);
 });

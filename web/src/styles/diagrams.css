@@ -211,6 +211,98 @@
     font-size: 0.86rem;
   }
 
+  [data-pinega-island-root] {
+    margin-block-start: var(--pinega-ref-space-m);
+  }
+
+  .pinega-diagram-model-inspector {
+    display: grid;
+    justify-items: start;
+    gap: var(--pinega-ref-space-m);
+  }
+
+  .pinega-diagram-model-toggle,
+  .pinega-diagram-model-retry {
+    appearance: none;
+    min-block-size: 2.5rem;
+    border: 1px solid var(--pinega-sys-color-border-strong);
+    border-radius: var(--pinega-sys-radius-control);
+    background: var(--pinega-sys-color-surface-raised);
+    color: var(--pinega-sys-color-text-primary);
+    padding-inline: var(--pinega-ref-space-m);
+    font-weight: var(--pinega-sys-font-weight-action);
+    cursor: pointer;
+  }
+
+  .pinega-diagram-model-toggle:hover,
+  .pinega-diagram-model-retry:hover {
+    border-color: var(--pinega-sys-color-action-primary);
+    color: var(--pinega-sys-color-text-link);
+  }
+
+  .pinega-diagram-model-panel {
+    display: grid;
+    gap: var(--pinega-ref-space-m);
+    inline-size: min(100%, 46rem);
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-lowered);
+    padding: var(--pinega-ref-space-l);
+  }
+
+  .pinega-diagram-model-panel h4,
+  .pinega-diagram-model-panel p,
+  .pinega-diagram-model-panel dl {
+    margin: 0;
+  }
+
+  .pinega-diagram-model-panel h4 {
+    color: var(--pinega-sys-color-text-primary);
+    font-size: 1rem;
+  }
+
+  .pinega-diagram-model-name {
+    color: var(--pinega-sys-color-text-primary);
+    font-weight: var(--pinega-ref-font-weight-bold);
+  }
+
+  .pinega-diagram-model-panel dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-diagram-model-panel dl > div {
+    display: grid;
+    gap: var(--pinega-ref-space-2xs);
+    border-inline-start: 2px solid var(--pinega-sys-color-action-primary);
+    padding-inline-start: var(--pinega-ref-space-s);
+  }
+
+  .pinega-diagram-model-panel dt {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.75rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pinega-diagram-model-panel dd {
+    margin: 0;
+    color: var(--pinega-sys-color-text-primary);
+  }
+
+  .pinega-diagram-model-panel > p:last-child {
+    color: var(--pinega-sys-color-text-secondary);
+    font-family: var(--pinega-sys-font-family-reading);
+  }
+
+  @media (width <= 36rem) {
+    .pinega-diagram-model-panel dl {
+      grid-template-columns: 1fr;
+    }
+  }
+
   @media print {
     .pinega-diagram-viewport {
       overflow: visible;
@@ -223,6 +315,10 @@
 
     .pinega-diagram-transcript {
       display: none;
+    }
+
+    [data-pinega-island-root] {
+      display: none !important;
     }
   }
 }
