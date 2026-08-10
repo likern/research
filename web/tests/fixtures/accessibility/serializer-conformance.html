@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Accessibility-tree serializer conformance</title>
+  </head>
+  <body>
+    <main id="serializer-conformance" tabindex="-1" aria-labelledby="contract-title">
+      <h1 id="contract-title">Accessibility serializer contract</h1>
+
+      <section id="heading-region" aria-labelledby="heading-contract-title">
+        <h2 id="heading-contract-title">Heading hierarchy</h2>
+        <div role="heading" aria-level="3">Authored third-level heading</div>
+      </section>
+
+      <section aria-labelledby="control-contract-title">
+        <h2 id="control-contract-title">Control states</h2>
+        <button id="nested-button" type="button" aria-pressed="true">
+          <span>
+            <span>
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 16 16">
+                <title>Decorative plus must stay hidden</title>
+                <path d="M7 1h2v6h6v2H9v6H7V9H1V7h6z"></path>
+              </svg>
+            </span>
+            <span>Add evidence item</span>
+          </span>
+        </button>
+        <button id="details-toggle" type="button" aria-expanded="true" aria-controls="details-panel">Show details</button>
+        <div id="details-panel" role="region" aria-label="Expanded details"><p>Expanded detail content.</p></div>
+        <label for="invalid-email">Email</label>
+        <input id="invalid-email" type="text" value="not-an-email" aria-invalid="true" aria-describedby="email-error">
+        <p id="email-error">Enter a valid email address.</p>
+      </section>
+
+      <section aria-labelledby="message-contract-title">
+        <h2 id="message-contract-title">Messages</h2>
+        <p id="save-status" role="status" aria-live="polite">Evidence saved.</p>
+        <p role="alert">Evidence could not be saved.</p>
+      </section>
+
+      <section id="pending-region" aria-label="Pending route" aria-busy="true">
+        <p>The committed content remains available.</p>
+      </section>
+
+      <nav aria-label="Conformance location">
+        <a id="current-contract-link" href="#serializer-conformance" aria-current="page">Current contract</a>
+      </nav>
+    </main>
+  </body>
+</html>

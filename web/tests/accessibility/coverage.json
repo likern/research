@@ -1,0 +1,357 @@
+{
+  "$schema": "./coverage.schema.json",
+  "schema_version": 1,
+  "kind": "pinega-web-accessibility-tree-coverage",
+  "policy": {
+    "default_children": "deep-equal",
+    "snapshot_path_template": "tests/accessibility/snapshots/{testFilePath}/{arg}{ext}",
+    "canonical_update_project": "chromium-desktop",
+    "required_profiles": [
+      "chromium-desktop",
+      "chromium-mobile",
+      "firefox-desktop",
+      "webkit-desktop"
+    ],
+    "required_serializer_cases": [
+      "heading-levels",
+      "nested-button-name",
+      "hidden-svg",
+      "status",
+      "alert",
+      "expanded",
+      "pressed",
+      "invalid"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "chromium-desktop",
+      "engine": "chromium",
+      "form_factor": "desktop"
+    },
+    {
+      "id": "chromium-mobile",
+      "engine": "chromium",
+      "form_factor": "mobile"
+    },
+    {
+      "id": "firefox-desktop",
+      "engine": "firefox",
+      "form_factor": "desktop"
+    },
+    {
+      "id": "webkit-desktop",
+      "engine": "webkit",
+      "form_factor": "desktop"
+    }
+  ],
+  "dom_only_properties": [
+    {
+      "id": "DOM-ONLY-ARIA-CURRENT",
+      "property": "aria-current",
+      "selector": "#current-contract-link",
+      "assertion": "attribute",
+      "reason": "Playwright 1.62 does not serialize the current state, so the active-item contract needs a DOM assertion.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-BUSY",
+      "property": "aria-busy",
+      "selector": "#pending-region",
+      "assertion": "attribute",
+      "reason": "The default YAML projection does not expose busy state, although transaction ownership depends on it.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-LIVE",
+      "property": "aria-live",
+      "selector": "#save-status",
+      "assertion": "attribute",
+      "reason": "The status role is serialized but its explicit live-region politeness value is not.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-CONTROLS",
+      "property": "aria-controls",
+      "selector": "#details-toggle",
+      "assertion": "idref",
+      "reason": "Expanded state is serialized, while the control-to-panel IDREF relationship is not.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-LABELLEDBY",
+      "property": "aria-labelledby",
+      "selector": "#heading-region",
+      "assertion": "idref",
+      "reason": "The computed accessible name is serialized, but the authored labelling relationship remains a DOM contract.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-DESCRIBEDBY",
+      "property": "aria-describedby",
+      "selector": "#invalid-email",
+      "assertion": "idref",
+      "reason": "Invalid state is serialized, but the authored description IDREF and its target integrity are not.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-ARIA-HIDDEN",
+      "property": "aria-hidden",
+      "selector": "#nested-button svg",
+      "assertion": "attribute",
+      "reason": "The strict snapshot proves exclusion from the tree; a DOM assertion proves that the exclusion remains intentional.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-FOCUS",
+      "property": "focus and tabindex",
+      "selector": "#serializer-conformance",
+      "assertion": "focus",
+      "reason": "Keyboard focus and programmatic focusability are behavioural state, not default ARIA snapshot attributes.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    },
+    {
+      "id": "DOM-ONLY-DOCUMENT-LOCALE",
+      "property": "lang and dir",
+      "selector": "html",
+      "assertion": "document-locale",
+      "reason": "Document language and direction affect interpretation but are not emitted in the locator YAML projection.",
+      "test": "tests/browser/accessibility-tree.spec.ts",
+      "test_title": "serializes the accepted semantic projection identically in every profile"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "ARIA-SERIALIZER-HEADING-LEVELS",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "heading-levels",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "Native and authored heading levels remain explicit and ordered."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": []
+    },
+    {
+      "id": "ARIA-SERIALIZER-NESTED-BUTTON-NAME",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "nested-button-name",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "Nested text remains the computed accessible name of the button."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": []
+    },
+    {
+      "id": "ARIA-SERIALIZER-HIDDEN-SVG",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "hidden-svg",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The decorative SVG title is absent from the semantic projection."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": ["DOM-ONLY-ARIA-HIDDEN"]
+    },
+    {
+      "id": "ARIA-SERIALIZER-STATUS",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "status",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The polite completion message is exposed with the status role."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": ["DOM-ONLY-ARIA-LIVE"]
+    },
+    {
+      "id": "ARIA-SERIALIZER-ALERT",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "alert",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The failure message is exposed with the alert role."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": []
+    },
+    {
+      "id": "ARIA-SERIALIZER-EXPANDED",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "expanded",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The disclosure exposes expanded state and names its controlled panel."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": ["DOM-ONLY-ARIA-CONTROLS"]
+    },
+    {
+      "id": "ARIA-SERIALIZER-PRESSED",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "pressed",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The nested-name toggle exposes its pressed state."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": []
+    },
+    {
+      "id": "ARIA-SERIALIZER-INVALID",
+      "status": "required",
+      "surface": "serializer-conformance",
+      "case": "invalid",
+      "scenario": {
+        "initial_state": "fixture-loaded",
+        "action": "none",
+        "expected_state": "The invalid text value and its error state remain exposed."
+      },
+      "fixture": "tests/fixtures/accessibility/serializer-conformance.html",
+      "locale": "en",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "oracle": {
+        "type": "strict-baseline",
+        "children": "deep-equal",
+        "baseline_scope": "shared",
+        "test": "tests/browser/accessibility-tree.spec.ts",
+        "test_title": "serializes the accepted semantic projection identically in every profile",
+        "snapshot": "serializer-conformance.aria.yml"
+      },
+      "supplemental_dom_assertions": ["DOM-ONLY-ARIA-DESCRIBEDBY"]
+    }
+  ]
+}

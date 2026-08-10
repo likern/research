@@ -12,6 +12,10 @@ export default defineConfig({
   outputDir: 'test-results',
   expect: {
     timeout: 5_000,
+    toMatchAriaSnapshot: {
+      children: 'deep-equal',
+      pathTemplate: 'tests/accessibility/snapshots/{testFilePath}/{arg}{ext}',
+    },
     toHaveScreenshot: {
       animations: 'disabled',
       maxDiffPixelRatio: 0.015,

@@ -1,0 +1,23 @@
+- main "Accessibility serializer contract":
+  - heading "Accessibility serializer contract" [level=1]
+  - region "Heading hierarchy":
+    - heading "Heading hierarchy" [level=2]
+    - heading "Authored third-level heading" [level=3]
+  - region "Control states":
+    - heading "Control states" [level=2]
+    - button "Add evidence item" [pressed]
+    - button "Show details" [expanded]
+    - region "Expanded details":
+      - paragraph: Expanded detail content.
+    - text: Email
+    - textbox "Email" [invalid]: not-an-email
+    - paragraph: Enter a valid email address.
+  - region "Messages":
+    - heading "Messages" [level=2]
+    - status: Evidence saved.
+    - alert: Evidence could not be saved.
+  - region "Pending route":
+    - paragraph: The committed content remains available.
+  - navigation "Conformance location":
+    - link "Current contract":
+      - /url: "#serializer-conformance"
