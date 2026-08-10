@@ -56,6 +56,7 @@ export interface PreparedRoute {
 }
 
 interface MaterializedRoutePrototype {
+  routeRoot: HTMLElement;
   main: HTMLElement;
   siteHeader: HTMLElement;
   siteFooter: HTMLElement;
@@ -70,7 +71,8 @@ interface RouteCommitPlan {
   localeChanged: boolean;
   root: HTMLElement;
   body: HTMLElement;
-  activeMain: HTMLElement;
+  activeRouteRoot: HTMLElement;
+  nextRouteRoot: HTMLElement;
   nextMain: HTMLElement;
   activeHeader: HTMLElement;
   nextHeaderChildren: Node[];
@@ -202,10 +204,11 @@ function prepareDocumentPrototype(
   const head = parsed.head;
   const body = parsed.body;
   const main = exactlyOne([...body.querySelectorAll<HTMLElement>('main')], 'route main');
+  const routeRoot = routeContentRoot(main, 'route content root');
 
   if (head.querySelector('base')) throw malformed('Route documents must not define a base URL.');
-  if (main.querySelector('script, style, base, link[rel~="stylesheet"], pinega-site-header')) {
-    throw malformed('Route main contains executable resources or shell-owned elements.');
+  if (routeRoot.querySelector('script, style, base, link[rel~="stylesheet"], pinega-site-header, footer.pinega-site-footer')) {
+    throw malformed('Route content root contains executable resources or shell-owned elements.');
   }
 
   const contractVersion = requiredAttribute(root, 'data-pinega-contract', 'html');
@@ -307,7 +310,7 @@ function prepareDocumentPrototype(
 
   const routeMetadata = [...head.children].filter(isRouteMetadataElement);
   const routeTemplate = createRouteTemplate(parsed, {
-    main,
+    routeRoot,
     siteHeader,
     siteFooter,
     skipLink,
@@ -338,6 +341,7 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
   const root = document.documentElement;
   const body = document.body;
   const activeMain = exactlyOne([...body.querySelectorAll<HTMLElement>('main')], 'active route main');
+  const activeRouteRoot = routeContentRoot(activeMain, 'active route content root');
   const activeHeader = exactlyOne([...body.querySelectorAll<HTMLElement>('pinega-site-header')], 'active site header');
   const activeSiteFooter = exactlyOne(
     [...body.querySelectorAll<HTMLElement>('footer.pinega-site-footer')],
@@ -372,7 +376,8 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
     localeChanged,
     root,
     body,
-    activeMain,
+    activeRouteRoot,
+    nextRouteRoot: materialized.routeRoot,
     nextMain: materialized.main,
     activeHeader,
     nextHeaderChildren: [...materialized.siteHeader.childNodes],
@@ -395,7 +400,7 @@ export function createRouteCommitPlan(prepared: PreparedRoute, document: Documen
 function createRouteTemplate(
   owner: Document,
   prototype: {
-    main: HTMLElement;
+    routeRoot: HTMLElement;
     siteHeader: HTMLElement;
     siteFooter: HTMLElement;
     skipLink: HTMLAnchorElement;
@@ -404,7 +409,7 @@ function createRouteTemplate(
 ): HTMLTemplateElement {
   const template = owner.createElement('template');
   template.content.append(
-    prototype.main.cloneNode(true),
+    prototype.routeRoot.cloneNode(true),
     prototype.siteHeader.cloneNode(true),
     prototype.siteFooter.cloneNode(true),
     prototype.skipLink.cloneNode(true),
@@ -418,10 +423,16 @@ function materializeRoutePrototype(prepared: PreparedRoute): MaterializedRoutePr
   if (fragment.childNodes.length !== fragment.children.length) {
     throw malformed('Prepared route prototype contains unexpected top-level non-element nodes.');
   }
-  const [main, siteHeader, siteFooter, skipLink, ...routeMetadata] = [...fragment.children];
-  if (!(main instanceof HTMLElement) || main.localName !== 'main') {
-    throw malformed('Prepared route prototype has no main root.');
+  const [routeRoot, siteHeader, siteFooter, skipLink, ...routeMetadata] = [...fragment.children];
+  if (!(routeRoot instanceof HTMLElement)) {
+    throw malformed('Prepared route prototype has no route content root.');
   }
+  const main = exactlyOne(
+    routeRoot.localName === 'main'
+      ? [routeRoot]
+      : [...routeRoot.querySelectorAll<HTMLElement>('main')],
+    'prepared route main',
+  );
   if (!(siteHeader instanceof HTMLElement) || siteHeader.localName !== 'pinega-site-header') {
     throw malformed('Prepared route prototype has no site-header root.');
   }
@@ -440,6 +451,7 @@ function materializeRoutePrototype(prepared: PreparedRoute): MaterializedRoutePr
   );
   const translationNotices = [...siteHeader.querySelectorAll<HTMLElement>('[data-translation-notice]')];
   return {
+    routeRoot,
     main,
     siteHeader,
     siteFooter,
@@ -486,14 +498,33 @@ export function commitRoute(plan: RouteCommitPlan): HTMLElement {
     for (const notice of plan.activeTranslationNotices) notice.remove();
     plan.activeHeader.append(...plan.nextTranslationNotices);
   }
-  plan.activeMain.replaceWith(plan.nextMain);
+  plan.activeRouteRoot.replaceWith(plan.nextRouteRoot);
   // Nodes cloned from an inert template can originate in a DOMParser-owned
   // document. Upgrade only after the winning route has entered the live
   // document so constructors and lifecycle callbacks cannot leak from an
   // abandoned transaction.
-  customElements.upgrade(plan.nextMain);
+  customElements.upgrade(plan.nextRouteRoot);
   plan.activeAnnouncer.textContent = prepared.title;
   return plan.nextMain;
+}
+
+function routeContentRoot(main: HTMLElement, label: string): HTMLElement {
+  const page = main.closest<HTMLElement>('.pinega-page');
+  if (!page || page.parentElement !== page.ownerDocument.body) {
+    throw malformed(`${label} must be contained by the document's direct .pinega-page shell.`);
+  }
+
+  let root = main;
+  while (root.parentElement && root.parentElement !== page) root = root.parentElement;
+  if (root.parentElement !== page) throw malformed(`${label} is not a direct child of .pinega-page.`);
+
+  const mains = root.localName === 'main'
+    ? [root]
+    : [...root.querySelectorAll<HTMLElement>('main')];
+  if (mains.length !== 1 || mains[0] !== main) {
+    throw malformed(`${label} must own exactly the selected route main.`);
+  }
+  return root;
 }
 
 function deriveRouteFeatures(main: HTMLElement): { features: string[]; criticalFeatures: string[] } {

@@ -1,5 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { expect, type Locator, type TestInfo } from '@playwright/test';
+import {
+  expect,
+  type ElementHandle,
+  type Locator,
+  type Page,
+  type TestInfo,
+} from '@playwright/test';
 
 const snapshotName = /^[a-z0-9][a-z0-9._-]*\.aria\.yml$/u;
 const attachmentStem = /^[a-z0-9][a-z0-9._-]*$/u;
@@ -20,19 +26,24 @@ interface SemanticAssertionOptions {
 }
 
 export async function captureSemanticTree(
-  locator: Locator,
+  target: Locator | Page,
   { registeredTransitions = [] }: CaptureSemanticTreeOptions = {},
 ): Promise<string> {
   const token = `pinega-semantic-${randomUUID()}`;
-  if (registeredTransitions.length > 0) {
-    await installTransitionSentinels(locator, registeredTransitions, token);
-  }
+  const root = await semanticRoot(target);
 
   let snapshot: string;
   try {
-    snapshot = await locator.ariaSnapshot({ boxes: false });
+    if (registeredTransitions.length > 0) {
+      await installTransitionSentinels(root, registeredTransitions, token);
+    }
+    snapshot = await target.ariaSnapshot({ boxes: false });
   } finally {
-    if (registeredTransitions.length > 0) await removeTransitionSentinels(locator, token);
+    try {
+      if (registeredTransitions.length > 0) await removeTransitionSentinels(root, token);
+    } finally {
+      await root.dispose();
+    }
   }
   if (snapshot.includes('[box=')) {
     throw new TypeError('Accessibility-tree snapshots must not contain layout geometry.');
@@ -90,11 +101,11 @@ async function attachSemanticFailure(
 }
 
 async function installTransitionSentinels(
-  locator: Locator,
+  rootHandle: ElementHandle<Element>,
   transitions: readonly RegisteredSemanticTransition[],
   token: string,
 ): Promise<void> {
-  await locator.evaluate((root, input) => {
+  await rootHandle.evaluate((root, input) => {
     const registrations = new Map<Element, string>();
     for (const transition of input.transitions) {
       for (const element of root.querySelectorAll(transition.selector)) {
@@ -144,8 +155,8 @@ async function installTransitionSentinels(
   }, { token, transitions });
 }
 
-async function removeTransitionSentinels(locator: Locator, token: string): Promise<void> {
-  await locator.evaluate((root, maskToken) => {
+async function removeTransitionSentinels(rootHandle: ElementHandle<Element>, token: string): Promise<void> {
+  await rootHandle.evaluate((root, maskToken) => {
     for (const element of root.querySelectorAll(`[data-pinega-test-semantic-mask="${CSS.escape(maskToken)}"]`)) {
       const masked = element as Element & {
         __pinegaSemanticMask?: { token: string; ariaHidden: string | null };
@@ -161,4 +172,21 @@ async function removeTransitionSentinels(locator: Locator, token: string): Promi
       sentinel.remove();
     }
   }, token);
+}
+
+async function semanticRoot(target: Locator | Page): Promise<ElementHandle<Element>> {
+  if (isPage(target)) {
+    const handle = await target.evaluateHandle(() => document.body);
+    const root = handle.asElement();
+    if (root) return root;
+    await handle.dispose();
+    throw new TypeError('Semantic page capture requires a document body.');
+  }
+  const root = await target.elementHandle();
+  if (!root) throw new TypeError('Semantic locator capture requires one attached root element.');
+  return root;
+}
+
+function isPage(target: Locator | Page): target is Page {
+  return 'url' in target && typeof target.url === 'function';
 }

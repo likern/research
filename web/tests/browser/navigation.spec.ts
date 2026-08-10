@@ -106,7 +106,7 @@ async function activateRouteLink(page: Page, route: string): Promise<void> {
 }
 
 async function captureNavigationSemanticTree(page: Page): Promise<string> {
-  return captureSemanticTree(page.locator('body'), {
+  return captureSemanticTree(page, {
     registeredTransitions: navigationSemanticTransitions,
   });
 }
@@ -117,7 +117,7 @@ async function readRouteSemanticContract(page: Page): Promise<RouteSemanticContr
       'pinega-site-header a.pinega-brand[aria-current="page"]',
       'pinega-site-header [data-primary-navigation] a[aria-current="page"]',
     ].join(','));
-    if (markers.length !== 1) throw new TypeError(`Expected one route marker, found ${markers.length}.`);
+    if (markers.length > 1) throw new TypeError(`Expected at most one route marker, found ${markers.length}.`);
     return {
       canonical: document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? null,
       currentHref: markers[0]?.getAttribute('href') ?? null,

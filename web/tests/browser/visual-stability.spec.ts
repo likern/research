@@ -136,10 +136,10 @@ async function observeRenderCycle(
 }
 
 async function captureRenderPhase(page: Page, phase: string, captureScreenshots: boolean): Promise<RenderPhase> {
-  const visual = await capturePhase(page, phase, captureScreenshots);
-  const semantic = await captureSemanticTree(page.locator('body'), {
+  const semantic = await captureSemanticTree(page, {
     registeredTransitions: semanticTransitions,
   });
+  const visual = await capturePhase(page, phase, captureScreenshots);
   return { semantic, visual };
 }
 
