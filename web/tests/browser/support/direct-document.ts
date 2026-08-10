@@ -15,11 +15,10 @@ export async function openReadyDocument(page: Page, route: string, expectedStatu
     link.dataset.pinegaDirectDocument = 'true';
     link.setAttribute('aria-hidden', 'true');
     link.tabIndex = -1;
-    link.style.cssText = 'position:fixed;left:0;top:0;display:block;width:1px;height:1px;overflow:hidden';
+    link.style.cssText = 'position:fixed;left:8px;top:8px;z-index:2147483647;display:block;width:2px;height:2px;overflow:hidden;pointer-events:auto';
     document.body.append(link);
   }, target);
   await page.locator('a[data-pinega-direct-document="true"]').click({
-    force: true,
     noWaitAfter: true,
   });
 
