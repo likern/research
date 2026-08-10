@@ -31,7 +31,7 @@ test('release contract fingerprints every immutable asset and inventories exact 
   await mkdir(resolve(root, 'ru'));
   await writeFile(resolve(root, 'ru/404.html'), '<!doctype html><html lang="ru"><body>Нет</body></html>\n', 'utf8');
   await writeFile(resolve(root, 'site-manifest.json'), '{}\n', 'utf8');
-  await writeReleaseHeaders(root, ['/', '/404.html', '/ru/404.html'], buildId);
+  await writeReleaseHeaders(root, ['/', '/404.html', '/ru/404.html']);
 
   const manifest = await writeReleaseManifest(root, buildId);
   await verifyReleaseManifest(root, manifest);
@@ -60,7 +60,7 @@ test('release contract fingerprints every immutable asset and inventories exact 
 test('release manifest detects tampering and refuses stable URLs under the immutable asset namespace', async t => {
   const root = await fixture(t);
   await writeFile(resolve(root, 'index.html'), '<!doctype html><html><body>Pinega</body></html>\n', 'utf8');
-  await writeFile(resolve(root, '_headers'), renderReleaseHeaders(['/'], buildId), 'utf8');
+  await writeFile(resolve(root, '_headers'), renderReleaseHeaders(['/']), 'utf8');
   await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export {};\n', 'utf8');
   const manifest = await writeReleaseManifest(root, buildId);
   await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export const changed = true;\n', 'utf8');
@@ -71,13 +71,12 @@ test('release manifest detects tampering and refuses stable URLs under the immut
 });
 
 test('Cloudflare header policy keeps immutable and revalidated URL spaces disjoint', () => {
-  const headers = renderReleaseHeaders(['/', '/docs/', '/ru/docs/', '/404.html'], buildId);
+  const headers = renderReleaseHeaders(['/', '/docs/', '/ru/docs/', '/404.html']);
   assert.match(headers, new RegExp(`/assets/\\*\\n  Cache-Control: ${escapeRegex(IMMUTABLE_CACHE_CONTROL)}`, 'u'));
   for (const route of ['/', '/docs/', '/ru/docs/', '/404.html']) {
     assert.match(headers, new RegExp(`(?:^|\\n\\n)${escapeRegex(route)}\\n  Cache-Control: ${escapeRegex(REVALIDATED_CACHE_CONTROL)}`, 'u'));
-    assert.match(headers, new RegExp(`(?:^|\\n\\n)${escapeRegex(route)}\\n  Cache-Control: ${escapeRegex(REVALIDATED_CACHE_CONTROL)}\\n  ETag: "${escapeRegex(buildId)}"`, 'u'));
   }
-  assert.doesNotMatch(headers, /\/\.well-known\/\*\n(?:  .*\n)*  ETag:/u);
+  assert.doesNotMatch(headers, /^  ETag:/gmu);
   assert.equal((headers.match(/^\/assets\/\*$/gmu) ?? []).length, 1);
   assert.equal((headers.match(new RegExp(escapeRegex(IMMUTABLE_CACHE_CONTROL), 'gu')) ?? []).length, 1);
   assert.equal(headers.includes(`/assets/*\n  Cache-Control: ${REVALIDATED_CACHE_CONTROL}`), false);

@@ -154,10 +154,7 @@ async function isFile(path) {
 async function sendFile(path, method, request, response, status, liveReload, requestedPath) {
   const extension = extname(path);
   const body = await readFile(path);
-  const declaredBuildId = extension === '.html'
-    ? body.toString('utf8').match(/\bdata-pinega-build="(sha256-[a-f0-9]{64})"/u)?.[1]
-    : undefined;
-  const etag = `"${declaredBuildId ?? `sha256-${createHash('sha256').update(body).digest('hex')}`}"`;
+  const etag = `"sha256-${createHash('sha256').update(body).digest('hex')}"`;
   const headers = {
     'Content-Type': mimeTypes.get(extension) ?? 'application/octet-stream',
     'Cache-Control': liveReload

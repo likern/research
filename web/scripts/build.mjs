@@ -268,7 +268,7 @@ const buildId = await finalizeBuildIdentity(dist, [
   ...builtPages.map(page => page.output),
   'site-manifest.json',
 ]);
-await writeReleaseHeaders(dist, builtPages.map(page => page.route), buildId);
+await writeReleaseHeaders(dist, builtPages.map(page => page.route));
 await writeReleaseManifest(dist, buildId);
 
 console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);
