@@ -360,7 +360,26 @@ test('publication reader preserves block MathML composition across narrow reflow
         expect(metrics.some(metric => metric.wrapperScrollWidth > metric.wrapperClientWidth + 1)).toBeTruthy();
         expect(await page.locator('.pinega-publication-table-scroll').evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
       }
-      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+      const overflow = await page.evaluate(() => {
+        const clientWidth = document.documentElement.clientWidth;
+        const offenders = [...document.querySelectorAll<HTMLElement>('*')]
+          .map(element => {
+            const bounds = element.getBoundingClientRect();
+            return {
+              element: element.localName,
+              className: element.getAttribute('class') ?? '',
+              left: bounds.left,
+              right: bounds.right,
+            };
+          })
+          .filter(({ left, right }) => left < -1 || right > clientWidth + 1)
+          .slice(0, 8);
+        return {
+          amount: document.documentElement.scrollWidth - clientWidth,
+          offenders,
+        };
+      });
+      expect(overflow.amount, JSON.stringify(overflow.offenders, null, 2)).toBeLessThanOrEqual(1);
     }
   }
 });

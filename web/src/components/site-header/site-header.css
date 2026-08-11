@@ -243,12 +243,21 @@
 
   @media (width <= 34rem) {
     pinega-site-header > header {
+      grid-template-columns: minmax(0, 1fr);
       gap: var(--pinega-ref-space-s);
       inline-size: min(calc(100% - 2 * var(--pinega-ref-space-m)), var(--pinega-sys-measure-wide));
     }
 
     pinega-site-header .pinega-cluster {
+      grid-row: 2;
+      justify-content: flex-end;
+      inline-size: 100%;
+      min-inline-size: 0;
       gap: var(--pinega-ref-space-2xs);
+    }
+
+    pinega-site-header nav[data-primary-navigation] {
+      grid-row: 3;
     }
 
     .pinega-language-option {
