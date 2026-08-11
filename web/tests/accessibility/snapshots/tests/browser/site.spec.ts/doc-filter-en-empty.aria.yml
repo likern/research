@@ -1,1 +1,7 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- paragraph: Current corpus
+- heading "Filter documentation topics" [level=2]
+- paragraph: This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.
+- paragraph: 0 of 13 pages
+- text: Filter documentation topics
+- searchbox "Filter documentation topics": does-not-exist
+- paragraph: No documentation pages match this filter.

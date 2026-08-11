@@ -1,1 +1,21 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- paragraph: Текущий корпус
+- heading "Фильтр по темам документации" [level=2]
+- paragraph: Это основанный на метаданных фильтр по реальным страницам документации. Полнотекстовый поиск по всему сайту остаётся будущим этапом.
+- paragraph: 1 из 13 страниц
+- text: Фильтр по темам документации
+- searchbox "Фильтр по темам документации": архитектура pinega engine
+- region "Концепции":
+  - paragraph: Концепции
+  - heading "Концепции" [level=3]
+  - paragraph: Объяснения границ программы, архитектуры, доказательств и инженерных решений.
+  - article:
+    - text: Проектный контракт Объяснение
+    - heading "Архитектура Pinega Engine →" [level=4]:
+      - link "Архитектура Pinega Engine →":
+        - /url: /ru/docs/concepts/pinega-engine-architecture/
+    - paragraph: "Разберитесь в принятых границах Pinega Engine: интеграции с PostgreSQL, изменяемых версиях, общем буферном пуле и едином конвейере PostgreSQL WAL."
+    - term: Применимо к
+    - definition: Архитектура Pinega Engine для PostgreSQL 19
+    - term: Обновлено
+    - definition:
+      - time: 2026-08-08

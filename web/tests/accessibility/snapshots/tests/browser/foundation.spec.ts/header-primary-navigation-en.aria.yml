@@ -1,1 +1,17 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- navigation "Primary navigation":
+  - list:
+    - listitem:
+      - link "Technology":
+        - /url: /technology/
+    - listitem:
+      - link "Research":
+        - /url: /research/
+    - listitem:
+      - link "Documentation":
+        - /url: /docs/
+    - listitem:
+      - link "About":
+        - /url: /about/
+    - listitem:
+      - link "GitHub":
+        - /url: https://github.com/likern/research

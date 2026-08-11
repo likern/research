@@ -1,1 +1,11 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- button "Close model inspector" [expanded]
+- region "Validated semantic model":
+  - heading "Validated semantic model" [level=4]
+  - paragraph: Newest-to-oldest row-version chain
+  - term: Schema
+  - definition: v1
+  - term: Model kind
+  - definition: Version chain
+  - term: Versions
+  - definition: "3"
+  - paragraph: The row head points to version v42, then v41, then v40. Version v42 contains balance 120, was created by transaction T42, has no deleting transaction, generation 42, and is visible to snapshot S17. Version v41 contains balance 100, was created by T41 and superseded by T42. Version v40 contains balance 80, was created by T40, superseded by T41, and has been retired but not yet reused. Snapshot S17 selects v42 because T42 committed before the snapshot.

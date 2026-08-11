@@ -19,7 +19,7 @@ test('accessibility-tree coverage is schema-valid and complete through interacti
     transactionStates: 4,
     interactiveStates: 46,
     interactiveSurfaces: 8,
-    interactiveStrictBaselines: 30,
+    interactiveStrictBaselines: 25,
     interactiveAxeStates: 31,
   });
 });

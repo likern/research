@@ -293,21 +293,47 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   const copy = example.locator('wa-copy-button');
   await expect(example).toHaveAttribute('data-copy-renderer', 'webawesome');
   await copy.evaluate((element: HTMLElement & { feedbackDuration?: number }) => { element.feedbackDuration = 2_000; });
-  const button = copy.getByRole('button', { name: 'Copy code' });
+  await expect(copy).toHaveAttribute('from', /pinega-code-\d+/u);
+  await expect(copy).toHaveAttribute('copy-label', 'Copy code');
+  await expect(copy).toHaveAttribute('success-label', 'Code copied');
+  await expect(copy).toHaveAttribute('error-label', 'Copy failed');
+  await copy.evaluate(element => {
+    element.dataset.testWaCopyCount = '0';
+    element.dataset.testWaErrorCount = '0';
+    element.addEventListener('wa-copy', event => {
+      element.dataset.testWaCopyCount = String(Number(element.dataset.testWaCopyCount) + 1);
+      element.dataset.testWaCopyValue = (event as CustomEvent<{ value?: string }>).detail?.value ?? '';
+    });
+    element.addEventListener('wa-error', () => {
+      element.dataset.testWaErrorCount = String(Number(element.dataset.testWaErrorCount) + 1);
+    });
+  });
+  const button = copy.locator('button[part="button"]');
+  await expect(button).toHaveAttribute('aria-label', 'Copy code');
   const idle = await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-IDLE', testInfo);
   if (idle === undefined) throw new TypeError('Web Awesome idle state did not produce a semantic reference.');
 
   await button.click();
-  await expect(copy.getByRole('button', { name: 'Code copied' })).toBeVisible();
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status)).toBe('success');
+  await expect(button).toHaveAttribute('aria-label', 'Code copied');
+  await expect(copy).toHaveAttribute('data-test-wa-copy-count', '1');
+  await expect(copy).toHaveAttribute('data-test-wa-copy-value', /^fn pin_candidate/u);
+  await expect(page.locator('[role="log"][aria-live="polite"]')).toContainText('Code copied');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-SUCCESS', testInfo);
-  await expect(copy.getByRole('button', { name: 'Copy code' })).toBeVisible({ timeout: 3_000 });
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
+  await expect(button).toHaveAttribute('aria-label', 'Copy code');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo, { reference: idle });
 
   await page.evaluate(() => { (window as Window & { __pinegaClipboardShouldFail?: boolean }).__pinegaClipboardShouldFail = true; });
   await button.click();
-  await expect(copy.getByRole('button', { name: 'Copy failed' })).toBeVisible();
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status)).toBe('error');
+  await expect(button).toHaveAttribute('aria-label', 'Copy failed');
+  await expect(copy).toHaveAttribute('data-test-wa-error-count', '1');
+  await expect(page.locator('[role="log"][aria-live="polite"]')).toContainText('Copy failed');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-ERROR', testInfo);
-  await expect(copy.getByRole('button', { name: 'Copy code' })).toBeVisible({ timeout: 3_000 });
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
+  await expect(button).toHaveAttribute('aria-label', 'Copy code');
+  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo, { reference: idle });
 });
 
 test('passes WCAG A and AA automated accessibility checks without serious or critical violations', async ({ page }) => {

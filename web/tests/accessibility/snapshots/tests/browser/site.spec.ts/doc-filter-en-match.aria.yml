@@ -1,1 +1,21 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- paragraph: Current corpus
+- heading "Filter documentation topics" [level=2]
+- paragraph: This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.
+- paragraph: 1 of 13 pages
+- text: Filter documentation topics
+- searchbox "Filter documentation topics": engine architecture
+- region "Concepts":
+  - paragraph: Concepts
+  - heading "Concepts" [level=3]
+  - paragraph: Explanations of programme boundaries, architecture, evidence, and engineering rationale.
+  - article:
+    - text: Design contract Explanation
+    - heading "Pinega Engine architecture →" [level=4]:
+      - link "Pinega Engine architecture →":
+        - /url: /docs/concepts/pinega-engine-architecture/
+    - paragraph: Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.
+    - term: Applies to
+    - definition: Pinega Engine architecture for PostgreSQL 19
+    - term: Updated
+    - definition:
+      - time: 2026-08-07

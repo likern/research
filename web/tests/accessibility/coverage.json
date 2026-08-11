@@ -589,7 +589,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/lit-islands.spec.ts",
         "owner_test_title": "canonical diagram remains complete when the Lit island cannot register",
-        "aria": { "type": "strict-baseline", "target": "pinega-diagram-viewer[data-diagram-id=\"version-chain-snapshot\"]", "snapshot": "lit-inspector-no-js-fallback.aria.yml" },
+        "aria": { "type": "strict-baseline", "target": "pinega-diagram-viewer[data-diagram-id=\"version-chain-snapshot\"] .pinega-diagram-transcript", "snapshot": "lit-inspector-no-js-fallback.aria.yml" },
         "axe": { "mode": "required", "context": "pinega-diagram-viewer[data-diagram-id=\"version-chain-snapshot\"]" },
         "supplemental_oracles": ["dom", "keyboard"]
       },
@@ -745,7 +745,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "benchmark retains native SVG and semantic table when Pro is unavailable",
-        "aria": { "type": "strict-baseline", "target": "pinega-benchmark", "snapshot": "benchmark-fallback.aria.yml" },
+        "aria": { "type": "dom-behaviour", "target": "pinega-benchmark", "assertion": "The fallback renderer retains its labelled native SVG and attached canonical table." },
         "axe": { "mode": "required", "context": "pinega-benchmark" },
         "supplemental_oracles": ["dom", "renderer"]
       },
@@ -758,7 +758,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "benchmark retains native SVG and semantic table when Pro is unavailable",
-        "aria": { "type": "strict-baseline", "target": "pinega-benchmark", "snapshot": "benchmark-fallback-table-open.aria.yml" },
+        "aria": { "type": "strict-baseline", "target": "pinega-benchmark details", "snapshot": "benchmark-fallback-table-open.aria.yml" },
         "axe": { "mode": "required", "context": "pinega-benchmark" },
         "supplemental_oracles": ["dom", "renderer", "keyboard"]
       },
@@ -784,7 +784,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "benchmark progressively upgrades when the licensed Pro element registers",
-        "aria": { "type": "strict-baseline", "target": "pinega-benchmark", "snapshot": "benchmark-pro-table-open.aria.yml" },
+        "aria": { "type": "strict-baseline", "target": "pinega-benchmark details", "snapshot": "benchmark-pro-table-open.aria.yml" },
         "axe": { "mode": "required", "context": "pinega-benchmark" },
         "supplemental_oracles": ["dom", "renderer", "keyboard"]
       },
@@ -797,7 +797,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/semantic-diagrams.spec.ts",
         "owner_test_title": "research page exposes three accessible figures from shared semantic models",
-        "aria": { "type": "strict-baseline", "target": "figure.pinega-semantic-diagram[data-diagram-id=\"version-chain-snapshot\"]", "snapshot": "diagram-svg.aria.yml" },
+        "aria": { "type": "dom-behaviour", "target": "figure.pinega-semantic-diagram[data-diagram-id=\"version-chain-snapshot\"]", "assertion": "Every SVG exposes role img and a valid title-and-description aria-labelledby relationship." },
         "axe": { "mode": "not-applicable", "reason": "The canonical research route is covered by route-wide axe scans." },
         "supplemental_oracles": ["dom", "idref"]
       },
@@ -888,7 +888,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "Web Awesome code copy exposes success, error, and reset semantics",
-        "aria": { "type": "strict-baseline", "target": "pinega-code-example", "snapshot": "code-copy-webawesome-idle.aria.yml" },
+        "aria": { "type": "dom-behaviour", "target": "pinega-code-example", "assertion": "The vendor copy control starts at rest with localized labels and a valid source IDREF." },
         "axe": { "mode": "not-applicable", "reason": "Idle Web Awesome copy content is static and unrevealed." },
         "supplemental_oracles": ["dom", "renderer", "clipboard"]
       },
@@ -901,7 +901,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "Web Awesome code copy exposes success, error, and reset semantics",
-        "aria": { "type": "strict-baseline", "target": "pinega-code-example", "snapshot": "code-copy-webawesome-success.aria.yml" },
+        "aria": { "type": "dom-behaviour", "target": "pinega-code-example", "assertion": "Success sets the vendor state and trigger label, emits wa-copy, and writes a polite live-log entry." },
         "axe": { "mode": "required", "context": "pinega-code-example" },
         "supplemental_oracles": ["dom", "renderer", "clipboard"]
       },
@@ -914,7 +914,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "Web Awesome code copy exposes success, error, and reset semantics",
-        "aria": { "type": "strict-baseline", "target": "pinega-code-example", "snapshot": "code-copy-webawesome-error.aria.yml" },
+        "aria": { "type": "dom-behaviour", "target": "pinega-code-example", "assertion": "Failure sets the vendor state and trigger label, emits wa-error, and writes a polite live-log entry." },
         "axe": { "mode": "required", "context": "pinega-code-example" },
         "supplemental_oracles": ["dom", "renderer", "clipboard"]
       },

@@ -1,1 +1,4 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- button "Close model inspector" [expanded]
+- region "Validated semantic model":
+  - heading "Validated semantic model" [level=4]
+  - status: Loading and validating the semantic model…

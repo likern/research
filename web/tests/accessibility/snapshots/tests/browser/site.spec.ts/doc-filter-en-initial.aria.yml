@@ -1,1 +1,169 @@
-- note "PENDING CANONICAL ARIA BASELINE"
+- paragraph: Current corpus
+- heading "Filter documentation topics" [level=2]
+- paragraph: This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.
+- paragraph: 13 pages
+- text: Filter documentation topics
+- searchbox "Filter documentation topics"
+- region "Start":
+  - paragraph: Start
+  - heading "Start" [level=3]
+  - paragraph: Orientation and reproducible first paths through the Pinega programme and workspaces.
+  - article:
+    - text: Available Start
+    - heading "Getting started →" [level=4]:
+      - link "Getting started →":
+        - /url: /docs/getting-started/
+    - paragraph: Choose the Pinega documentation path that matches whether you need orientation, a reproducible first run, a task procedure, an explanation, or exact reference material.
+    - term: Applies to
+    - definition: Pinega research-stage documentation
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Available Start
+    - heading "Project overview →" [level=4]:
+      - link "Project overview →":
+        - /url: /docs/start/project-overview/
+    - paragraph: Understand what Pinega, Pinega Labs, and Pinega Engine mean, what repository artefacts exist today, and which product claims remain future work.
+    - term: Applies to
+    - definition: Pinega programme and repository
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Available Tutorial
+    - heading "Reproduce the research workspace →" [level=4]:
+      - link "Reproduce the research workspace →":
+        - /url: /docs/start/research-workspace/
+    - paragraph: Run the pinned Pinega research workspace from a clean checkout, inspect the registered documents, and build the current Typst and YDMP artefacts.
+    - term: Applies to
+    - definition: YDMP Research Workspace
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+- region "How-to":
+  - paragraph: How-to
+  - heading "How-to" [level=3]
+  - paragraph: Goal-oriented procedures for concrete repository and Web tasks.
+  - article:
+    - text: Available How-to
+    - heading "Build and inspect the website →" [level=4]:
+      - link "Build and inspect the website →":
+        - /url: /docs/how-to/build-the-site/
+    - paragraph: Build the Pinega static multi-page website from the committed lockfile, serve it locally, and inspect public and internal validation routes.
+    - term: Applies to
+    - definition: Pinega Web workspace
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Available How-to
+    - heading "Run the Web validation gate →" [level=4]:
+      - link "Run the Web validation gate →":
+        - /url: /docs/how-to/run-validation/
+    - paragraph: Run Pinega Web token, type, unit, build, browser, accessibility, and visual-regression checks using the repository's pinned commands and Playwright environment.
+    - term: Applies to
+    - definition: Pinega Web CI and local validation
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+- region "Concepts":
+  - paragraph: Concepts
+  - heading "Concepts" [level=3]
+  - paragraph: Explanations of programme boundaries, architecture, evidence, and engineering rationale.
+  - article:
+    - text: Decision Explanation
+    - heading "Pinega programme model →" [level=4]:
+      - link "Pinega programme model →":
+        - /url: /docs/concepts/pinega-programme/
+    - paragraph: Understand the relationship among Pinega, Pinega Labs, technology programmes, research infrastructure, and future product boundaries.
+    - term: Applies to
+    - definition: Pinega master programme
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Design contract Explanation
+    - heading "Pinega Engine architecture →" [level=4]:
+      - link "Pinega Engine architecture →":
+        - /url: /docs/concepts/pinega-engine-architecture/
+    - paragraph: Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.
+    - term: Applies to
+    - definition: Pinega Engine architecture for PostgreSQL 19
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Decision Explanation
+    - heading "Maturity and evidence labels →" [level=4]:
+      - link "Maturity and evidence labels →":
+        - /url: /docs/concepts/maturity-and-evidence-labels/
+    - paragraph: Understand how Pinega separates available artefacts, design contracts, research, decisions, hypotheses, and future implementation claims.
+    - term: Applies to
+    - definition: Pinega public claims and research artefacts
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+  - article:
+    - text: Decision Explanation
+    - heading "Research-to-product workflow →" [level=4]:
+      - link "Research-to-product workflow →":
+        - /url: /docs/concepts/research-to-product-workflow/
+    - paragraph: Understand how Pinega moves work from sourced research and formalisation through executable verification, implementation, measurement, and product evidence.
+    - term: Applies to
+    - definition: Pinega research and engineering programmes
+    - term: Updated
+    - definition:
+      - time: 2026-08-07
+- region "Reference":
+  - paragraph: Reference
+  - heading "Reference" [level=3]
+  - paragraph: Exact repository, environment, command, and metadata contracts.
+  - article:
+    - text: Available Reference
+    - heading "Repository layout →" [level=4]:
+      - link "Repository layout →":
+        - /url: /docs/reference/repository-layout/
+    - paragraph: Reference the current likern/research directory boundaries for research artefacts, design assets, Web sources, generated outputs, tests, and GitHub workflows.
+    - term: Applies to
+    - definition: likern/research repository
+    - term: Updated
+    - definition:
+      - time: 2026-08-08
+  - article:
+    - text: Available Reference
+    - heading "Web build and environment →" [level=4]:
+      - link "Web build and environment →":
+        - /url: /docs/reference/web-build-and-environment/
+    - paragraph: Reference the Pinega Web package scripts, pinned Node and Playwright expectations, build outputs, local server, and CI validation commands.
+    - term: Applies to
+    - definition: Pinega Web workspace and CI
+    - term: Updated
+    - definition:
+      - time: 2026-08-08
+  - article:
+    - text: Available Reference
+    - heading "Content metadata schema →" [level=4]:
+      - link "Content metadata schema →":
+        - /url: /docs/reference/content-metadata-schema/
+    - paragraph: Reference the Pinega Web logical content registry schema v3, locale variants, per-locale documentation manifests, and discovery contracts.
+    - term: Applies to
+    - definition: Pinega Web content contract schema v3
+    - term: Updated
+    - definition:
+      - time: 2026-08-08
+- region "Contributing":
+  - paragraph: Contributing
+  - heading "Contributing" [level=3]
+  - paragraph: Review, validation, and release gates for changes to the shared programme workspace.
+  - article:
+    - text: Available Contributing
+    - heading "Review and release gates →" [level=4]:
+      - link "Review and release gates →":
+        - /url: /docs/contributing/review-and-release-gates/
+    - paragraph: Follow the Pinega contribution rule that implementation, tests, visual artefacts, CI, evidence labels, and review all have to agree before a Web or research change is ready.
+    - term: Applies to
+    - definition: Pinega repository pull requests and release gates
+    - term: Updated
+    - definition:
+      - time: 2026-08-07

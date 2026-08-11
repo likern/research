@@ -49,7 +49,10 @@ translation status, documentation filter, Lit inspector, benchmark,
 diagram/transcript, and native/Web Awesome code copy. Stable states use shared
 strict baselines; reset states use exact equivalence; hidden states prove that
 content is absent from the semantic projection; disconnect uses an explicit
-DOM/lifecycle oracle.
+DOM/lifecycle oracle. Platform-volatile SVG roots and vendor shadow-IDREF
+feedback use explicit DOM, IDREF, event, clipboard, and live-region evidence;
+their stable table and transcript subtrees remain strict cross-profile
+baselines instead of committing engine-specific accessibility projections.
 
 Every meaningfully revealed state is marked `axe: required`. The shared state
 helper runs the pinned WCAG A/AA tag set immediately after the state assertion,
