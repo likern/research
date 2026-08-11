@@ -2,28 +2,17 @@ import { expect, test, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { accessibilityCoverage } from './support/accessibility-contract.js';
 import {
   captureSemanticTree,
   expectSemanticBaseline,
   expectSemanticEquivalent,
 } from './support/accessibility-tree.js';
 
-interface CoverageRegistry {
-  policy: {
-    required_profiles: string[];
-  };
-  requirements: Array<{
-    oracle: {
-      snapshot: string;
-    };
-  }>;
-}
-
 const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const fixture = await readFile(resolve(webRoot, 'tests/fixtures/accessibility/serializer-conformance.html'), 'utf8');
-const registry = JSON.parse(await readFile(resolve(webRoot, 'tests/accessibility/coverage.json'), 'utf8')) as CoverageRegistry;
-const registeredProfiles = new Set(registry.policy.required_profiles);
-const baselineName = registry.requirements[0]?.oracle.snapshot;
+const registeredProfiles = new Set(accessibilityCoverage.policy.required_profiles);
+const baselineName = accessibilityCoverage.requirements[0]?.oracle.snapshot;
 
 if (!baselineName) throw new TypeError('Accessibility coverage registry does not name a serializer baseline.');
 
@@ -47,10 +36,17 @@ test.describe('Playwright ARIA serializer conformance', {
     const root = page.locator('#serializer-conformance');
     await test.step('strict shared serializer baseline', async () => {
       const before = await captureSemanticTree(root);
-      await expectSemanticBaseline(root, baselineName);
+      await expectSemanticBaseline(root, baselineName, {
+        attachmentStem: 'serializer-conformance-baseline',
+        testInfo,
+      });
       const after = await captureSemanticTree(root);
 
-      expectSemanticEquivalent(before, after, 'ARIA serialization changed between two captures of the same DOM');
+      await expectSemanticEquivalent(before, after, {
+        attachmentStem: 'serializer-conformance-repeat',
+        message: 'ARIA serialization changed between two captures of the same DOM',
+        testInfo,
+      });
       await expect(page.getByRole('button', { name: 'Add evidence item' })).toHaveAccessibleName('Add evidence item');
       expect(after).not.toContain('Decorative plus must stay hidden');
     });

@@ -1,6 +1,6 @@
 {
   "$schema": "./coverage.schema.json",
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "pinega-web-accessibility-tree-coverage",
   "policy": {
     "default_children": "deep-equal",
@@ -128,6 +128,192 @@
       "test_title": "serializes the accepted semantic projection identically in every profile"
     }
   ],
+  "semantic_equivalence": {
+    "oracle": "exact-yaml-equivalence",
+    "failure_attachments": {
+      "policy": "failure-only",
+      "actual": "required",
+      "reference": "required",
+      "content_type": "application/yaml"
+    },
+    "registered_transitions": [
+      {
+        "id": "TRANSITION-SHELL-EVIDENCE-UPGRADE",
+        "selector": "pinega-evidence",
+        "applies_to": [
+          "temporal",
+          "navigation"
+        ],
+        "reason": "The shell element currently adds its note role during upgrade; PR 3 owns the component-level before and after contract.",
+        "owner": "PR 3 — interactive component states"
+      },
+      {
+        "id": "TRANSITION-ROUTE-FEATURE-UPGRADE",
+        "selector": "pinega-benchmark, pinega-code-example, pinega-diagram-viewer, pinega-doc-search",
+        "applies_to": [
+          "temporal",
+          "navigation"
+        ],
+        "reason": "Critical, deferred, and viewport route features own explicit fallback-to-enhanced transitions that require component-state oracles in PR 3.",
+        "owner": "PR 3 — interactive component states"
+      },
+      {
+        "id": "TRANSITION-WEBAWESOME-CORE-UPGRADE",
+        "selector": "wa-badge, wa-breadcrumb, wa-breadcrumb-item, wa-button, wa-button-group, wa-callout, wa-card, wa-copy-button, wa-divider, wa-input, wa-spinner",
+        "applies_to": [
+          "temporal",
+          "navigation"
+        ],
+        "reason": "Web Awesome custom elements intentionally replace authored fallback projections with component semantics; PR 3 verifies every owned state.",
+        "owner": "PR 3 — interactive component states"
+      },
+      {
+        "id": "TRANSITION-RUNTIME-SOURCE-LABEL",
+        "selector": "[data-runtime-source]",
+        "applies_to": [
+          "temporal",
+          "navigation"
+        ],
+        "reason": "The diagnostic renderer label intentionally changes after the selected Web Awesome runtime is known and is asserted by its owner tests.",
+        "owner": "PR 3 — interactive component states"
+      },
+      {
+        "id": "TRANSITION-NAVIGATION-ANNOUNCEMENT",
+        "selector": "[data-pinega-navigation-announcer]",
+        "applies_to": [
+          "navigation"
+        ],
+        "reason": "A successful enhanced commit intentionally populates the persistent status announcer; navigation owner tests assert its localized message.",
+        "owner": "PR 3 — interactive component states"
+      }
+    ],
+    "temporal": {
+      "test": "tests/browser/visual-stability.spec.ts",
+      "test_title_template": "{id} keeps declared static regions and semantic projection stable through first load and reload",
+      "projection": "body-outside-registered-transitions",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "routes": [
+        {
+          "id": "home-en",
+          "route": "/",
+          "locale": "en"
+        },
+        {
+          "id": "home-ru",
+          "route": "/ru/",
+          "locale": "ru"
+        },
+        {
+          "id": "docs-en",
+          "route": "/docs/",
+          "locale": "en"
+        },
+        {
+          "id": "research-en",
+          "route": "/research/",
+          "locale": "en"
+        },
+        {
+          "id": "research-ru",
+          "route": "/ru/research/",
+          "locale": "ru"
+        },
+        {
+          "id": "component-lab",
+          "route": "/component-lab/",
+          "locale": "en"
+        }
+      ],
+      "phases": [
+        "initial-authored",
+        "initial-shell",
+        "initial-ready",
+        "reload-authored",
+        "reload-shell",
+        "reload-ready"
+      ],
+      "comparisons": [
+        {
+          "reference": "initial-authored",
+          "candidate": "initial-shell"
+        },
+        {
+          "reference": "initial-authored",
+          "candidate": "initial-ready"
+        },
+        {
+          "reference": "reload-authored",
+          "candidate": "reload-shell"
+        },
+        {
+          "reference": "reload-authored",
+          "candidate": "reload-ready"
+        },
+        {
+          "reference": "initial-ready",
+          "candidate": "reload-authored"
+        },
+        {
+          "reference": "initial-ready",
+          "candidate": "reload-ready"
+        }
+      ]
+    },
+    "navigation": {
+      "test": "tests/browser/navigation.spec.ts",
+      "archetype_fixture": "tests/fixtures/navigation/page-classes.json",
+      "test_title_template": "direct and enhanced delivery expose the same semantic projection for {id}",
+      "native_test_title_template": "{id} remains an explicit native-only semantic delivery archetype",
+      "projection": "body-outside-registered-transitions",
+      "profiles": [
+        "chromium-desktop",
+        "chromium-mobile",
+        "firefox-desktop",
+        "webkit-desktop"
+      ],
+      "native_route_exclusions": [
+        {
+          "id": "component-lab",
+          "route": "/component-lab/",
+          "content_type": "internal-validation",
+          "reason": "The component laboratory deliberately uses the native-policy shell and cannot be exercised as an enhanced route commit."
+        },
+        {
+          "id": "not-found",
+          "route": "/404.html",
+          "content_type": "system",
+          "reason": "The not-found document is a native-policy system response and therefore has no truthful enhanced delivery mode."
+        }
+      ],
+      "transaction_states": [
+        {
+          "id": "pending",
+          "test_title": "pending state is transaction-owned, accessible, and overlays the header without layout shift",
+          "invariant": "The current committed semantic projection remains exact while the destination is pending."
+        },
+        {
+          "id": "commit",
+          "test_title": "pending state is transaction-owned, accessible, and overlays the header without layout shift",
+          "invariant": "The winning committed semantic projection equals the target route direct-document projection."
+        },
+        {
+          "id": "cancel",
+          "test_title": "selecting the active route performs zero network and zero visible commits",
+          "invariant": "A cancelled active-route navigation leaves the committed semantic projection unchanged."
+        },
+        {
+          "id": "supersession",
+          "test_title": "supersession while reading a response body cannot commit the late route",
+          "invariant": "Late superseded work cannot mutate the winning route semantic projection before or after settlement."
+        }
+      ]
+    }
+  },
   "requirements": [
     {
       "id": "ARIA-SERIALIZER-HEADING-LEVELS",

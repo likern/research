@@ -178,7 +178,13 @@ export async function installUnexpectedShiftProbe(page: Page): Promise<void> {
 export async function waitForAuthoredRender(page: Page): Promise<void> {
   await page.waitForFunction(selector => {
     const stylesheet = document.querySelector<HTMLLinkElement>('link[rel="stylesheet"][href^="/assets/main-"][href$=".css"]');
-    return stylesheet?.sheet && document.querySelectorAll(selector).length > 0;
+    const header = document.querySelector<HTMLElement>('pinega-site-header');
+    if (!stylesheet?.sheet || !header || document.querySelectorAll(selector).length === 0) return false;
+    const rootStyles = getComputedStyle(document.documentElement);
+    const headerStyles = getComputedStyle(header);
+    return rootStyles.getPropertyValue('--pinega-sys-color-text-primary').trim().length > 0
+      && headerStyles.display === 'block'
+      && headerStyles.position === 'sticky';
   }, regionSelector);
   await page.evaluate(async () => {
     await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));

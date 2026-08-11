@@ -583,7 +583,12 @@ catalogue completeness, browser behaviour, keyboard interaction, accessibility,
 responsive overflow, and committed visual baselines.
 The accessibility-tree layer adds a schema-validated state registry, one
 strict cross-browser serializer-conformance baseline, and explicit DOM-only
-assertions for properties that Playwright 1.62 does not emit. See
+assertions for properties that Playwright 1.62 does not emit. Its PR 2 corpus
+also compares six authored/shell/ready load and reload timelines, 11
+direct-versus-enhanced route archetypes, two explicit native-policy
+archetypes, and pending/commit/cancel/supersession semantics. Exact YAML
+mismatches attach actual and reference trees; component-owned transitions are
+closed registry entries deferred to their PR 3 state oracles. See
 [`tests/accessibility/README.md`](tests/accessibility/README.md) for ownership
 and baseline-update policy.
 Gate 4.2 additionally covers A→B→C supersession, pending Back, focus and route
