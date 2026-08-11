@@ -1,0 +1,4 @@
+- banner:
+  - text: Nushell
+  - button "Copy code"
+- code: ^npm run test:aria

@@ -3,9 +3,9 @@ import test from 'node:test';
 
 import { validateAccessibilityCoverage } from '../../scripts/check-accessibility-coverage.mjs';
 
-test('accessibility-tree coverage is schema-valid, strict, and complete through temporal and navigation semantics', async () => {
+test('accessibility-tree coverage is schema-valid and complete through interactive component semantics', async () => {
   assert.deepEqual(await validateAccessibilityCoverage(), {
-    schemaVersion: 2,
+    schemaVersion: 3,
     serializerRequirements: 8,
     strictBaselines: 1,
     profiles: 4,
@@ -17,5 +17,9 @@ test('accessibility-tree coverage is schema-valid, strict, and complete through 
     enhancedRouteArchetypes: 11,
     nativeRouteExclusions: 2,
     transactionStates: 4,
+    interactiveStates: 46,
+    interactiveSurfaces: 8,
+    interactiveStrictBaselines: 25,
+    interactiveAxeStates: 31,
   });
 });

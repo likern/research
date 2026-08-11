@@ -1,0 +1,5 @@
+- button "Close model inspector" [expanded]
+- region "Validated semantic model":
+  - heading "Validated semantic model" [level=4]
+  - alert: The semantic model could not be loaded and validated.
+  - button "Retry"

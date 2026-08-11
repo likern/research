@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { createRequire } from 'node:module';
 import { openReadyDocument } from './support/direct-document.js';
+import { expectInteractiveState } from './support/interactive-accessibility.js';
 
 const require = createRequire(import.meta.url);
 const axePath = require.resolve('axe-core/axe.min.js');
@@ -25,9 +26,17 @@ const russianDocumentationRoutes = documentationRoutes.map(route => `/ru${route}
 const russianCorePublicRoutes = ['/ru/', '/ru/technology/', '/ru/research/', '/ru/docs/', '/ru/about/'];
 const russianPublicRoutes = publicRoutes.map(route => route === '/' ? '/ru/' : `/ru${route}`);
 const allCoreRoutes = [...corePublicRoutes, ...russianCorePublicRoutes, '/docs/getting-started/', '/ru/docs/getting-started/', '/component-lab/'];
+const semanticTest = { tag: ['@aria-tree', '@accessibility'] };
 
 async function ready(page: Page, route: string) {
   await openReadyDocument(page, route);
+}
+
+async function setDocumentationQuery(input: Locator, value: string): Promise<void> {
+  await input.evaluate((element: HTMLElement & { value?: string }, nextValue) => {
+    element.value = nextValue;
+    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+  }, value);
 }
 
 for (const route of allCoreRoutes) {
@@ -118,49 +127,64 @@ test('technology page separates active, research, and portfolio programmes', asy
   await expect(page.getByText('One PostgreSQL WAL', { exact: true })).toBeVisible();
 });
 
-test('documentation landing filters real metadata-backed pages by topic and group', async ({ page }) => {
+test('documentation landing filters real metadata-backed pages by topic and group', semanticTest, async ({ page }, testInfo) => {
   await ready(page, '/docs/');
   const cards = page.locator('[data-doc-card]');
   await expect(cards).toHaveCount(13);
   await expect(page.locator('[data-doc-group]')).toHaveCount(5);
   await expect(page.getByRole('heading', { name: 'Filter documentation topics' })).toBeVisible();
   await expect(page.locator('[data-doc-search-status]')).toHaveText('13 pages');
+  const initialSemantic = await expectInteractiveState(page, 'DOC-FILTER-EN-INITIAL', testInfo);
+  if (initialSemantic === undefined) throw new TypeError('English documentation filter initial state produced no semantic reference.');
 
   const input = page.locator('[data-doc-search-input]');
-  await input.evaluate((element: HTMLElement & { value?: string }) => {
-    element.value = 'engine architecture';
-    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-  });
+  await setDocumentationQuery(input, 'engine architecture');
   const visibleTitles = await cards.evaluateAll(elements =>
     elements.filter(element => !(element as HTMLElement).hidden).map(element => element.querySelector('h4')?.textContent?.trim()),
   );
   expect(visibleTitles).toEqual(['Pinega Engine architecture']);
   await expect(page.locator('[data-doc-search-status]')).toHaveText('1 of 13 pages');
   await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(1);
+  await expectInteractiveState(page, 'DOC-FILTER-EN-MATCH', testInfo);
 
-  await input.evaluate((element: HTMLElement & { value?: string }) => {
-    element.value = 'does-not-exist';
-    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-  });
+  await setDocumentationQuery(input, 'does-not-exist');
   await expect(page.locator('[data-doc-search-empty]')).toBeVisible();
   await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(0);
+  await expectInteractiveState(page, 'DOC-FILTER-EN-EMPTY', testInfo);
+
+  await setDocumentationQuery(input, '');
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('13 pages');
+  await expect(page.locator('[data-doc-search-empty]')).toBeHidden();
+  await expect(page.locator('[data-doc-card]:not([hidden])')).toHaveCount(13);
+  await expectInteractiveState(page, 'DOC-FILTER-EN-CLEAR', testInfo, { reference: initialSemantic });
 });
 
-test('Russian documentation filter uses locale-aware matching and plural forms', async ({ page }) => {
+test('Russian documentation filter uses locale-aware matching and plural forms', semanticTest, async ({ page }, testInfo) => {
   await ready(page, '/ru/docs/');
   const cards = page.locator('[data-doc-card]');
   await expect(cards).toHaveCount(13);
   await expect(page.locator('[data-doc-search-status]')).toHaveText('13 страниц');
+  const initialSemantic = await expectInteractiveState(page, 'DOC-FILTER-RU-INITIAL', testInfo);
+  if (initialSemantic === undefined) throw new TypeError('Russian documentation filter initial state produced no semantic reference.');
   const input = page.locator('[data-doc-search-input]');
-  await input.evaluate((element: HTMLElement & { value?: string }) => {
-    element.value = 'архитектура pinega engine';
-    element.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
-  });
+  await setDocumentationQuery(input, 'архитектура pinega engine');
   const visibleTitles = await cards.evaluateAll(elements =>
     elements.filter(element => !(element as HTMLElement).hidden).map(element => element.querySelector('h4')?.textContent?.trim()),
   );
   expect(visibleTitles).toEqual(['Архитектура Pinega Engine']);
   await expect(page.locator('[data-doc-search-status]')).toHaveText('1 из 13 страниц');
+  await expectInteractiveState(page, 'DOC-FILTER-RU-MATCH', testInfo);
+
+  await setDocumentationQuery(input, 'не-существует');
+  await expect(page.locator('[data-doc-search-empty]')).toBeVisible();
+  await expect(page.locator('[data-doc-group]:not([hidden])')).toHaveCount(0);
+  await expectInteractiveState(page, 'DOC-FILTER-RU-EMPTY', testInfo);
+
+  await setDocumentationQuery(input, '');
+  await expect(page.locator('[data-doc-search-status]')).toHaveText('13 страниц');
+  await expect(page.locator('[data-doc-search-empty]')).toBeHidden();
+  await expect(page.locator('[data-doc-card]:not([hidden])')).toHaveCount(13);
+  await expectInteractiveState(page, 'DOC-FILTER-RU-CLEAR', testInfo, { reference: initialSemantic });
 });
 
 test('documentation catalogues remain complete without JavaScript', async ({ request }) => {
@@ -399,12 +423,13 @@ test('Russian unknown routes use the Russian 404, locale messages, and peer swit
   await expect(page.locator('[data-theme-toggle]')).toHaveAttribute('aria-label', 'Использовать тёмную тему');
 });
 
-test('selecting an unavailable language keeps the current page and announces localized status', async ({ page }) => {
+test('selecting an unavailable language keeps the current page and announces localized status', semanticTest, async ({ page }, testInfo) => {
   await ready(page, '/component-lab/');
   const initialUrl = page.url();
   const russian = page.getByRole('navigation', { name: 'Language' }).getByRole('link', { name: 'Русский' });
   const notice = page.locator('[data-translation-notice]');
   await expect(notice).toBeHidden();
+  await expectInteractiveState(page, 'TRANSLATION-NOTICE-HIDDEN', testInfo);
 
   await russian.focus();
   await page.keyboard.press('Enter');
@@ -415,6 +440,8 @@ test('selecting an unavailable language keeps the current page and announces loc
   await expect(russian).toBeFocused();
   await expect(notice).toBeVisible();
   await expect(notice).toHaveText('A Russian translation of this page is not available. You are staying on the current page.');
+  await expect(notice).toHaveAttribute('aria-live', 'polite');
+  await expectInteractiveState(page, 'TRANSLATION-STATUS-ANNOUNCED', testInfo);
 });
 
 test('missing-translation notice has a static fragment fallback', async ({ request }) => {

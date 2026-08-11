@@ -79,6 +79,17 @@ export async function expectSemanticEquivalent(
   expect(candidate, options.message).toBe(reference);
 }
 
+export async function expectSemanticAbsent(
+  locator: Locator,
+  text: string,
+  options: SemanticAssertionOptions,
+): Promise<void> {
+  const snapshot = await captureSemanticTree(locator);
+  if (!snapshot.includes(text)) return;
+  await attachSemanticFailure(options.testInfo, options.attachmentStem, snapshot);
+  expect(snapshot, options.message).not.toContain(text);
+}
+
 async function attachSemanticFailure(
   testInfo: TestInfo,
   stem: string,

@@ -1,14 +1,13 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { createRequire } from 'node:module';
 
 import { openReadyDocument } from './support/direct-document.js';
+import { expectInteractiveState } from './support/interactive-accessibility.js';
 
 const modelId = 'version-chain-snapshot';
 const viewerSelector = `pinega-diagram-viewer[data-diagram-id="${modelId}"]`;
 const englishModelPath = `/diagrams/models/${modelId}.json`;
 const russianModelPath = `/content/diagrams/ru/${modelId}.json`;
-const require = createRequire(import.meta.url);
-const axePath = require.resolve('axe-core/axe.min.js');
+const semanticTest = { tag: ['@aria-tree', '@accessibility'] };
 
 interface ActivatedIsland {
   readonly details: Locator;
@@ -34,7 +33,7 @@ async function activateIsland(page: Page, route = '/research/'): Promise<Activat
   return { details, root, toggle, viewer };
 }
 
-test('canonical diagram remains complete when the Lit island cannot register', async ({ page }) => {
+test('canonical diagram remains complete when the Lit island cannot register', semanticTest, async ({ page }, testInfo) => {
   await page.route('**/assets/main-*.js', route => route.abort('failed'));
   await page.goto('/research/', { waitUntil: 'domcontentloaded' });
 
@@ -48,9 +47,20 @@ test('canonical diagram remains complete when the Lit island cannot register', a
   await expect(viewer.locator('[data-pinega-island-root]')).toBeHidden();
   await expect(viewer.locator('.pinega-diagram-model-toggle')).toHaveCount(0);
   expect(await page.evaluate(() => customElements.get('pinega-diagram-viewer') === undefined)).toBeTruthy();
+  await expectInteractiveState(page, 'LIT-INSPECTOR-NO-JS-FALLBACK', testInfo);
 });
 
-test('stateful inspector loads once on intent and retains component-local state', async ({ page }) => {
+test('stateful inspector exposes collapsed, pending, and complete semantics', semanticTest, async ({ page }, testInfo) => {
+  const canonical = await page.request.get(englishModelPath);
+  expect(canonical.ok()).toBeTruthy();
+  const canonicalBody = await canonical.text();
+  await canonical.dispose();
+  let releaseModel: (() => void) | undefined;
+  const modelGate = new Promise<void>(resolve => { releaseModel = resolve; });
+  await page.route(`**${englishModelPath}`, async route => {
+    await modelGate;
+    await route.fulfill({ status: 200, contentType: 'application/json', body: canonicalBody });
+  });
   const modelRequests: string[] = [];
   page.on('request', request => {
     const path = new URL(request.url()).pathname;
@@ -59,26 +69,22 @@ test('stateful inspector loads once on intent and retains component-local state'
   const island = await activateIsland(page);
   await page.locator('main').evaluate(element => { element.dataset.testIslandMainIdentity = 'preserved'; });
   expect(modelRequests).toHaveLength(0);
+  await expect(island.root.locator('.pinega-diagram-model-inspector')).toHaveAttribute('data-pinega-task-state', 'initial');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-COLLAPSED', testInfo);
 
   await island.toggle.click();
   await expect(island.toggle).toHaveAttribute('aria-expanded', 'true');
   const panel = island.root.locator('.pinega-diagram-model-panel');
+  await expect(panel).toHaveAttribute('data-pinega-model-state', 'pending');
+  await expect(panel).toHaveAttribute('aria-busy', 'true');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-PENDING', testInfo);
+  releaseModel?.();
   await expect(panel).toHaveAttribute('data-pinega-model-state', 'complete');
+  await expect(panel).toHaveAttribute('aria-busy', 'false');
   await expect(panel.getByRole('heading', { name: 'Validated semantic model' })).toBeVisible();
   await expect(panel.locator('.pinega-diagram-model-name')).toHaveText('Newest-to-oldest row-version chain');
   await expect(panel.locator('dd')).toHaveText(['v1', 'Version chain', '3']);
-  await page.addScriptTag({ path: axePath });
-  const blocking = await page.evaluate(selector => {
-    const context = document.querySelector(selector);
-    if (!context) throw new TypeError('Missing expanded Lit island for axe.');
-    const axe = (window as unknown as Window & {
-      axe: { run: (root: Element, options: unknown) => Promise<{ violations: Array<{ impact: string | null; id: string }> }> };
-    }).axe;
-    return axe.run(context, { resultTypes: ['violations'] }).then(results => (
-      results.violations.filter(violation => violation.impact === 'serious' || violation.impact === 'critical')
-    ));
-  }, viewerSelector);
-  expect(blocking).toEqual([]);
+  await expectInteractiveState(page, 'LIT-INSPECTOR-COMPLETE', testInfo);
   expect(modelRequests).toEqual([englishModelPath]);
   await expect(page.locator('main')).toHaveAttribute('data-test-island-main-identity', 'preserved');
 
@@ -107,15 +113,18 @@ test('Russian island reads only its localized component model', async ({ page })
   expect(modelRequests).toEqual([russianModelPath]);
 });
 
-test('@lit/task exposes deterministic error and retry states without route fallback', async ({ page }) => {
+test('@lit/task exposes deterministic error, retry-pending, and retry-complete states', semanticTest, async ({ page }, testInfo) => {
   const canonical = await page.request.get(englishModelPath);
   expect(canonical.ok()).toBeTruthy();
   const canonicalBody = await canonical.text();
   await canonical.dispose();
   const invalid = { ...JSON.parse(canonicalBody) as Record<string, unknown>, id: 'other-model' };
   let attempts = 0;
+  let releaseRetry: (() => void) | undefined;
+  const retryGate = new Promise<void>(resolve => { releaseRetry = resolve; });
   await page.route(`**${englishModelPath}`, async route => {
     attempts += 1;
+    if (attempts === 2) await retryGate;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -127,13 +136,18 @@ test('@lit/task exposes deterministic error and retry states without route fallb
   await island.toggle.click();
   await expect(island.root.getByRole('alert')).toHaveText('The semantic model could not be loaded and validated.');
   await expect(island.root.locator('.pinega-diagram-model-panel')).toHaveAttribute('data-pinega-model-state', 'error');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-ERROR', testInfo);
   await island.root.getByRole('button', { name: 'Retry' }).click();
+  await expect(island.root.locator('.pinega-diagram-model-panel')).toHaveAttribute('data-pinega-model-state', 'pending');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-RETRY-PENDING', testInfo);
+  releaseRetry?.();
   await expect(island.root.locator('.pinega-diagram-model-panel')).toHaveAttribute('data-pinega-model-state', 'complete');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-RETRY-COMPLETE', testInfo);
   await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research');
   expect(attempts).toBe(2);
 });
 
-test('disconnect aborts local async work and reconnect restores exactly one external listener', async ({ page }) => {
+test('disconnect aborts local async work and reconnect restores exactly one external listener', semanticTest, async ({ page }, testInfo) => {
   const canonical = await page.request.get(englishModelPath);
   expect(canonical.ok()).toBeTruthy();
   const canonicalBody = await canonical.text();
@@ -167,6 +181,7 @@ test('disconnect aborts local async work and reconnect restores exactly one exte
     const element = (window as Window & { __pinegaDetachedIsland?: { element: HTMLElement } }).__pinegaDetachedIsland?.element;
     return element ? { connected: element.isConnected, renderer: element.dataset.renderer ?? null, state: element.dataset.pinegaIslandState } : null;
   })).toEqual({ connected: false, renderer: null, state: 'disconnected' });
+  await expectInteractiveState(page, 'LIT-INSPECTOR-DISCONNECTED', testInfo);
 
   releaseFirst?.();
   await page.waitForTimeout(50);
@@ -188,15 +203,17 @@ test('disconnect aborts local async work and reconnect restores exactly one exte
   const reconnected = page.locator(viewerSelector);
   await expect(reconnected).toHaveAttribute('data-pinega-island-state', 'connected');
   await expect(reconnected.locator('.pinega-diagram-model-panel')).toHaveAttribute('data-pinega-model-state', 'complete');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-RECONNECTED', testInfo);
   const toggle = reconnected.locator('.pinega-diagram-model-toggle');
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   await page.keyboard.press('Escape');
   await expect(toggle).toHaveAttribute('aria-expanded', 'false');
   await expect(toggle).toBeFocused();
+  await expectInteractiveState(page, 'LIT-INSPECTOR-ESCAPE-COLLAPSED', testInfo);
   expect(attempts).toBe(2);
 });
 
-test('a fresh clone discards rendered markers and owns independent state and task', async ({ page }) => {
+test('a fresh clone discards rendered markers and owns independent state and task', semanticTest, async ({ page }, testInfo) => {
   const canonical = await page.request.get(englishModelPath);
   expect(canonical.ok()).toBeTruthy();
   const canonicalBody = await canonical.text();
@@ -228,7 +245,9 @@ test('a fresh clone discards rendered markers and owns independent state and tas
   await expect(clone.locator('.pinega-diagram-model-toggle')).toHaveCount(1);
   const cloneToggle = clone.locator('.pinega-diagram-model-toggle');
   await expect(cloneToggle).toHaveAttribute('aria-expanded', 'false');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-CLONE-COLLAPSED', testInfo);
   await cloneToggle.click();
   await expect(clone.locator('.pinega-diagram-model-panel')).toHaveAttribute('data-pinega-model-state', 'complete');
+  await expectInteractiveState(page, 'LIT-INSPECTOR-CLONE-COMPLETE', testInfo);
   expect(modelRequests).toBe(2);
 });

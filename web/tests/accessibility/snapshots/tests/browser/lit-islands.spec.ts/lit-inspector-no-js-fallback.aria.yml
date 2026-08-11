@@ -1,0 +1,5 @@
+- group:
+  - text: Text representation and semantic model
+  - code: "Newest-to-oldest row-version chain stable row head: v42 → v41 → v40 v42: balance = 120; xmin=T42; xmax=—; generation 42; visible; selected by S17 v41: balance = 100; xmin=T41; xmax=T42; generation 41; obsolete; kept for older snapshots v40: balance = 80; xmin=T40; xmax=T41; generation 40; retired; unlinked only after visibility permits Snapshot S17 → v42: T42 committed before the snapshot"
+  - link "Download semantic model":
+    - /url: /diagrams/models/version-chain-snapshot.json
