@@ -38,10 +38,26 @@ async function featureChunk(page: Page, featureId: string): Promise<string> {
   return chunk;
 }
 
-async function settleReducedMotionAnimations(page: Page): Promise<void> {
-  await page.evaluate(async () => {
-    await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined)));
-  });
+async function expectThemeActionColorsSettled(page: Page): Promise<void> {
+  await expect.poll(() => page.locator('.pinega-action-primary').evaluateAll(elements => {
+    if (elements.length === 0) return [{ index: -1, actual: 'missing primary action', expected: 'at least one primary action' }];
+
+    const probe = document.createElement('span');
+    probe.style.color = 'var(--pinega-sys-color-action-on-primary)';
+    probe.style.backgroundColor = 'var(--pinega-sys-color-action-primary)';
+    document.body.append(probe);
+    const probeStyle = getComputedStyle(probe);
+    const expected = { foreground: probeStyle.color, background: probeStyle.backgroundColor };
+    probe.remove();
+
+    return elements.flatMap((element, index) => {
+      const style = getComputedStyle(element);
+      const actual = { foreground: style.color, background: style.backgroundColor };
+      return actual.foreground === expected.foreground && actual.background === expected.background
+        ? []
+        : [{ index, actual, expected }];
+    });
+  }), { message: 'Primary action colours did not settle on the active theme tokens.' }).toEqual([]);
 }
 
 async function installClipboardMock(page: Page): Promise<void> {
@@ -173,7 +189,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(page.locator('html')).toHaveClass(/wa-dark/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await settleReducedMotionAnimations(page);
+  await expectThemeActionColorsSettled(page);
   await expectInteractiveState(page, 'THEME-EN-DARK', testInfo);
 
   await ready(page, '/ru/');
@@ -184,7 +200,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await toggle.click();
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
-  await settleReducedMotionAnimations(page);
+  await expectThemeActionColorsSettled(page);
   await expectInteractiveState(page, 'THEME-RU-DARK', testInfo);
 });
 
@@ -295,13 +311,12 @@ test('native code copy exposes success, error, and reset semantics', semanticTes
 });
 
 test('Web Awesome code copy exposes success, error, and reset semantics', semanticTest, async ({ page }, testInfo) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
   await installClipboardMock(page);
   await ready(page);
   const example = page.locator('pinega-code-example');
   const copy = example.locator('wa-copy-button');
   await expect(example).toHaveAttribute('data-copy-renderer', 'webawesome');
-  await copy.evaluate((element: HTMLElement & { feedbackDuration?: number }) => { element.feedbackDuration = 2_000; });
+  await copy.evaluate((element: HTMLElement & { feedbackDuration?: number }) => { element.feedbackDuration = 5_000; });
   await expect(copy).toHaveAttribute('from', /pinega-code-\d+/u);
   await expect(copy).toHaveAttribute('copy-label', 'Copy code');
   await expect(copy).toHaveAttribute('success-label', 'Code copied');
@@ -328,7 +343,8 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   await expect(copy).toHaveAttribute('data-test-wa-copy-value', /^fn pin_candidate/u);
   await expect(page.locator('[role="log"][aria-live="polite"]')).toContainText('Code copied');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-SUCCESS', testInfo);
-  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status)).toBe('success');
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 10_000 }).toBe('rest');
   await expect(button).toHaveAttribute('aria-label', 'Copy code');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo);
 
@@ -339,7 +355,8 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   await expect(copy).toHaveAttribute('data-test-wa-error-count', '1');
   await expect(page.locator('[role="log"][aria-live="polite"]')).toContainText('Copy failed');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-ERROR', testInfo);
-  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status)).toBe('error');
+  await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 10_000 }).toBe('rest');
   await expect(button).toHaveAttribute('aria-label', 'Copy code');
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo);
 });
