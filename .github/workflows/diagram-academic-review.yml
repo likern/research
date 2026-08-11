@@ -90,6 +90,11 @@ jobs:
         working-directory: web
         run: npm ci --ignore-scripts
 
+      - name: Install Typst
+        uses: typst-community/setup-typst@40d32bb6ccb235bd7f5164cb47cfd40a5ea3a314 # v5
+        with:
+          typst-version: "${{ steps.versions.outputs.typst }}"
+
       - name: Validate and build web diagrams
         working-directory: web
         run: npm run tokens:check && npm run typecheck && npm run test:unit && npm run build && npm run check:build
@@ -138,11 +143,6 @@ jobs:
           test -f "$review/authoring/pdf/layout-profile-review.pdf"
           mkdir -p "$review/playwright-baselines"
           cp -R web/tests/visual/semantic-diagrams.visual.spec.ts-snapshots "$review/playwright-baselines/"
-
-      - name: Install Typst
-        uses: typst-community/setup-typst@v5
-        with:
-          typst-version: "${{ steps.versions.outputs.typst }}"
 
       - name: Render Typst review assets
         shell: bash
