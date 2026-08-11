@@ -7,9 +7,16 @@ on:
     paths:
       - "design/**"
       - "web/**"
+      - ".nushell-version"
+      - ".typst-version"
+      - "research.nu"
+      - "research.toml"
+      - "ydmp/publications/**"
+      - "ydmp/templates/publication/**"
       - "docs/web-foundation.md"
       - "docs/web-delivery-gate-1.md"
       - "docs/web-static-navigation.md"
+      - "docs/web-publication-gate-5.md"
       - ".github/workflows/check-web-foundation.yml"
   pull_request:
     types:
@@ -19,9 +26,16 @@ on:
     paths:
       - "design/**"
       - "web/**"
+      - ".nushell-version"
+      - ".typst-version"
+      - "research.nu"
+      - "research.toml"
+      - "ydmp/publications/**"
+      - "ydmp/templates/publication/**"
       - "docs/web-foundation.md"
       - "docs/web-delivery-gate-1.md"
       - "docs/web-static-navigation.md"
+      - "docs/web-publication-gate-5.md"
       - ".github/workflows/check-web-foundation.yml"
   workflow_dispatch:
 
@@ -60,6 +74,29 @@ jobs:
           node-version: "26.7.0"
           cache: npm
           cache-dependency-path: web/package-lock.json
+
+      - name: Read the exact research toolchain versions
+        id: research-versions
+        working-directory: ${{ github.workspace }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "nushell=$(tr -d '[:space:]' < .nushell-version)" >> "$GITHUB_OUTPUT"
+          echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Install the pinned Nushell toolchain
+        uses: hustcer/setup-nu@f3fd65374ffc4d60974c0dd2f7263c6c5c285f81 # v3
+        with:
+          version: ${{ steps.research-versions.outputs.nushell }}
+
+      - name: Install the pinned Typst toolchain
+        uses: typst-community/setup-typst@40d32bb6ccb235bd7f5164cb47cfd40a5ea3a314 # v5
+        with:
+          typst-version: ${{ steps.research-versions.outputs.typst }}
+
+      - name: Verify the publication compiler boundary
+        working-directory: ${{ github.workspace }}
+        run: nu research.nu doctor
 
       - name: Resolve pull-request and tested commit identities
         if: github.event_name == 'pull_request'
@@ -157,10 +194,10 @@ jobs:
       - name: Record cold and warm desktop and mobile performance diagnostics
         run: npm run review:lighthouse
 
-      - name: Close the Gate 4.7 release review
+      - name: Close the Gate 4.7 delivery review for Gate 5.1
         run: node scripts/create-release-review.mjs
 
-      - name: Publish the Gate 4.7 review in the workflow summary
+      - name: Publish the Gate 4.7 delivery review in the workflow summary
         shell: bash
         run: cat artifacts/release-review/release-review.md >> "$GITHUB_STEP_SUMMARY"
 
@@ -397,6 +434,18 @@ jobs:
           fi
           echo "html-validator-mode=${html_validator_mode}" >> "$GITHUB_OUTPUT"
           curl "${curl_options[@]}" --fail --output docs.html "${DEPLOYMENT_URL}/docs/"
+          for publication in \
+            research/publications/dual-target-contract \
+            ru/research/publications/dual-target-contract; do
+            curl "${curl_options[@]}" --fail --dump-header publication-headers.txt --output publication.html "${DEPLOYMENT_URL}/${publication}/"
+            grep -Eiq '^content-type: *text/html' publication-headers.txt
+            grep -Eiq '^cache-control: *public, *max-age=0, *must-revalidate' publication-headers.txt
+            cmp "deployed/dist/${publication}/index.html" publication.html
+            curl "${curl_options[@]}" --fail --dump-header publication-pdf-headers.txt --output publication.pdf "${DEPLOYMENT_URL}/${publication}/paper.pdf"
+            grep -Eiq '^content-type: *application/pdf' publication-pdf-headers.txt
+            grep -Eiq '^cache-control: *public, *max-age=0, *must-revalidate' publication-pdf-headers.txt
+            cmp "deployed/dist/${publication}/paper.pdf" publication.pdf
+          done
           curl "${curl_options[@]}" --fail --output remote-manifest.json "${DEPLOYMENT_URL}/.well-known/pinega-deployment.json"
           cmp deployed/dist/.well-known/pinega-deployment.json remote-manifest.json
           curl "${curl_options[@]}" --fail --output remote-release.json "${DEPLOYMENT_URL}/.well-known/pinega-release.json"
@@ -533,17 +582,18 @@ jobs:
           PINEGA_EXPECTED_DIST: ${{ github.workspace }}/expected-deployment/dist
         run: npm run test:deployment
 
-      - name: Record the closed Gate 4.7 remote review
+      - name: Record the closed Gate 5.1 remote review
         env:
           DEPLOYMENT_URL: ${{ needs.deploy.outputs.deployment-url }}
         run: |
           {
-            echo "### Gate 4.7 deployed release review"
+            echo "### Gate 5.1 deployed release review"
             echo
             echo "- Immutable URL: ${DEPLOYMENT_URL}"
             echo "- Full inventoried bytes and SHA-256: pass"
             echo "- Cache-Control revalidation and exact HTML bytes: pass"
             echo "- Navigation, console, and WCAG A/AA blocking checks: pass"
+            echo "- Dual-target HTML and PDF bytes: pass"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload remote smoke diagnostics

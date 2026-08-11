@@ -14,6 +14,9 @@ programme beneath that master brand.
 /                                           master-brand homepage
 /technology/                                technology programmes and maturity boundaries
 /research/                                  research-area catalogue and active studies
+/research/publications/                     bilingual research-publication catalogue
+/research/publications/dual-target-contract/ responsive semantic publication reader
+/research/publications/dual-target-contract/paper.pdf exact paged publication artefact
 /docs/                                      documentation corpus and topic filter
 /docs/getting-started/                      orientation router
 /docs/start/project-overview/               programme/status orientation
@@ -69,8 +72,10 @@ versions exist.
 ## Content and route contract
 
 `content/content-index.json` is the versioned logical content and discovery
-registry. Gate 3A uses schema version 3: stable logical fields live on each
+registry. The current schema version is 4: stable logical fields live on each
 entry, while authored, route-bearing fields live in explicit locale variants.
+Gate 3A established this model as schema v3; Gate 5.1 adds the explicit
+publication-to-research-registry join.
 There is no implicit content fallback between languages.
 
 ```text
@@ -82,9 +87,13 @@ documentation.purpose
 documentation.order
 documentation.related
 entry.locales.*.documentation.applies_to
+publication.profile + publication.slug
+entry.locales.*.publication_document_id
 ```
 
-Native HTML under `pages/<locale>/` remains the durable semantic article body.
+Native HTML under `pages/<locale>/` remains the durable semantic article body
+for ordinary routes. A `research-publication` shell instead reserves one
+build-owned slot whose complete article comes from its registered Typst source.
 English retains the existing unprefixed public routes; Russian routes are
 reserved under `/ru/`. The build checks BCP 47 locale identity, locale-specific
 source and output paths, title, description, `data-page`, canonical policy, one
@@ -424,6 +433,19 @@ matching and hides groups with no matching pages.
 Site-wide full-text search remains a later gate, after documentation, blog, and
 paper content share a stable publishing/discovery model.
 
+## Gate 5.1 dual-target research publication
+
+The first deployable publication slice compiles one bilingual Typst specimen
+to responsive semantic HTML and exact paged PDF. Global Typst HTML remains
+disabled; only the explicit `dual-target` publication profile is allowlisted.
+The build validates the content-index/research-registry join, accepts one inert
+article from standalone Typst HTML, replaces its shared diagram placeholder,
+and inventories both PDF byte streams in the exact release artifact.
+
+The full scope, security boundary, routes, reproducibility contract, and later
+Gate 5 exclusions are in
+[`docs/web-publication-gate-5.md`](../docs/web-publication-gate-5.md).
+
 ## Working brand line
 
 The current master-brand line is:
@@ -576,7 +598,7 @@ with-env {
 ^npm run review:lighthouse
 ```
 
-Tests cover registered routes and fragments, content-registry v3 contracts,
+Tests cover registered routes and fragments, content-registry v4 contracts,
 master-brand and maturity claims, public navigation, component-lab isolation,
 documentation decomposition and generated discovery surfaces, no-JavaScript
 catalogue completeness, browser behaviour, keyboard interaction, accessibility,
@@ -584,7 +606,7 @@ responsive overflow, and committed visual baselines.
 The accessibility-tree layer adds a schema-validated state registry, one
 strict cross-browser serializer-conformance baseline, and explicit DOM-only
 assertions for properties that Playwright 1.62 does not emit. Its PR 2 corpus
-also compares six authored/shell/ready load and reload timelines, 11
+also compares nine authored/shell/ready load and reload timelines, 13
 direct-versus-enhanced route archetypes, two explicit native-policy
 archetypes, and pending/commit/cancel/supersession semantics. Exact YAML
 mismatches attach actual and reference trees; component-owned transitions are

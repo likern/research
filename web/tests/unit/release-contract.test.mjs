@@ -11,6 +11,7 @@ import {
   REVALIDATED_CACHE_CONTROL,
   createReleaseManifest,
   isFingerprintedAssetPath,
+  mediaTypeForPath,
   publicMappingForPath,
   renderReleaseHeaders,
   verifyReleaseManifest,
@@ -90,6 +91,8 @@ test('artifact paths have deterministic HTTP mappings and strict fingerprint rec
   assert.deepEqual(publicMappingForPath('index.html'), { url: '/', status: 200 });
   assert.deepEqual(publicMappingForPath('docs/index.html'), { url: '/docs/', status: 200 });
   assert.deepEqual(publicMappingForPath('assets/main-ABCDEFGH.js'), { url: '/assets/main-ABCDEFGH.js', status: 200 });
+  assert.deepEqual(publicMappingForPath('research/publications/specimen/paper.pdf'), { url: '/research/publications/specimen/paper.pdf', status: 200 });
+  assert.equal(mediaTypeForPath('research/publications/specimen/paper.pdf'), 'application/pdf');
   assert.equal(isFingerprintedAssetPath('assets/main-ABCDEFGH.js'), true);
   assert.equal(isFingerprintedAssetPath('assets/feature-graph-0123456789abcdef.json'), true);
   assert.equal(isFingerprintedAssetPath('assets/main.js'), false);

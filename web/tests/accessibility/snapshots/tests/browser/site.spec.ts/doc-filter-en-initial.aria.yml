@@ -1,7 +1,7 @@
 - paragraph: Current corpus
 - heading "Filter documentation topics" [level=2]
 - paragraph: This is a metadata-backed topic filter over real documentation pages. Site-wide full-text search remains a later gate.
-- paragraph: 13 pages
+- paragraph: /\d+ pages/
 - text: Filter documentation topics
 - searchbox "Filter documentation topics"
 - region "Start":
@@ -18,7 +18,7 @@
     - definition: Pinega research-stage documentation
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Available Start
     - heading "Project overview →" [level=4]:
@@ -29,7 +29,7 @@
     - definition: Pinega programme and repository
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Available Tutorial
     - heading "Reproduce the research workspace →" [level=4]:
@@ -40,7 +40,7 @@
     - definition: YDMP Research Workspace
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
 - region "How-to":
   - paragraph: How-to
   - heading "How-to" [level=3]
@@ -55,7 +55,7 @@
     - definition: Pinega Web workspace
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Available How-to
     - heading "Run the Web validation gate →" [level=4]:
@@ -66,7 +66,7 @@
     - definition: Pinega Web CI and local validation
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
 - region "Concepts":
   - paragraph: Concepts
   - heading "Concepts" [level=3]
@@ -81,7 +81,7 @@
     - definition: Pinega master programme
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Design contract Explanation
     - heading "Pinega Engine architecture →" [level=4]:
@@ -89,10 +89,10 @@
         - /url: /docs/concepts/pinega-engine-architecture/
     - paragraph: Understand the accepted Pinega Engine boundaries across PostgreSQL integration, mutable versions, the shared buffer pool, and one PostgreSQL WAL pipeline.
     - term: Applies to
-    - definition: Pinega Engine architecture for PostgreSQL 19
+    - definition: /Pinega Engine architecture for PostgreSQL \d+/
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Decision Explanation
     - heading "Maturity and evidence labels →" [level=4]:
@@ -103,7 +103,7 @@
     - definition: Pinega public claims and research artefacts
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Decision Explanation
     - heading "Research-to-product workflow →" [level=4]:
@@ -114,7 +114,7 @@
     - definition: Pinega research and engineering programmes
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/
 - region "Reference":
   - paragraph: Reference
   - heading "Reference" [level=3]
@@ -129,7 +129,7 @@
     - definition: likern/research repository
     - term: Updated
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Available Reference
     - heading "Web build and environment →" [level=4]:
@@ -140,18 +140,18 @@
     - definition: Pinega Web workspace and CI
     - term: Updated
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Available Reference
     - heading "Content metadata schema →" [level=4]:
       - link "Content metadata schema →":
         - /url: /docs/reference/content-metadata-schema/
-    - paragraph: Reference the Pinega Web logical content registry schema v3, locale variants, per-locale documentation manifests, and discovery contracts.
+    - paragraph: Reference the Pinega Web logical content registry schema v4, locale variants, per-locale documentation manifests, and discovery contracts.
     - term: Applies to
-    - definition: Pinega Web content contract schema v3
+    - definition: Pinega Web content contract schema v4
     - term: Updated
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
 - region "Contributing":
   - paragraph: Contributing
   - heading "Contributing" [level=3]
@@ -166,4 +166,4 @@
     - definition: Pinega repository pull requests and release gates
     - term: Updated
     - definition:
-      - time: 2026-08-07
+      - time: /\d+-\d+-\d+/

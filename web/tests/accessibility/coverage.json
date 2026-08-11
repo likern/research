@@ -224,6 +224,21 @@
           "locale": "ru"
         },
         {
+          "id": "publications-en",
+          "route": "/research/publications/",
+          "locale": "en"
+        },
+        {
+          "id": "publication-en",
+          "route": "/research/publications/dual-target-contract/",
+          "locale": "en"
+        },
+        {
+          "id": "publication-ru",
+          "route": "/ru/research/publications/dual-target-contract/",
+          "locale": "ru"
+        },
+        {
           "id": "component-lab",
           "route": "/component-lab/",
           "locale": "en"

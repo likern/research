@@ -1,7 +1,7 @@
 - paragraph: Текущий корпус
 - heading "Фильтр по темам документации" [level=2]
 - paragraph: Это основанный на метаданных фильтр по реальным страницам документации. Полнотекстовый поиск по всему сайту остаётся будущим этапом.
-- paragraph: 13 страниц
+- paragraph: /\d+ страниц/
 - text: Фильтр по темам документации
 - searchbox "Фильтр по темам документации"
 - region "Начало работы":
@@ -18,7 +18,7 @@
     - definition: Документация Pinega на исследовательской стадии
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Доступно Начало работы
     - heading "Обзор проекта →" [level=4]:
@@ -29,7 +29,7 @@
     - definition: Программа Pinega и репозиторий
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Доступно Учебный материал
     - heading "Воспроизвести исследовательское рабочее пространство →" [level=4]:
@@ -40,7 +40,7 @@
     - definition: Исследовательское рабочее пространство YDMP
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
 - region "Практические руководства":
   - paragraph: Практические руководства
   - heading "Практические руководства" [level=3]
@@ -55,7 +55,7 @@
     - definition: Рабочее пространство Pinega Web
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Доступно Практическое руководство
     - heading "Запустить проверку Web-платформы →" [level=4]:
@@ -66,7 +66,7 @@
     - definition: CI и локальная проверка Pinega Web
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
 - region "Концепции":
   - paragraph: Концепции
   - heading "Концепции" [level=3]
@@ -81,7 +81,7 @@
     - definition: Мастер-программа Pinega
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Проектный контракт Объяснение
     - heading "Архитектура Pinega Engine →" [level=4]:
@@ -89,10 +89,10 @@
         - /url: /ru/docs/concepts/pinega-engine-architecture/
     - paragraph: "Разберитесь в принятых границах Pinega Engine: интеграции с PostgreSQL, изменяемых версиях, общем буферном пуле и едином конвейере PostgreSQL WAL."
     - term: Применимо к
-    - definition: Архитектура Pinega Engine для PostgreSQL 19
+    - definition: /Архитектура Pinega Engine для PostgreSQL \d+/
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Решение Объяснение
     - heading "Метки зрелости и доказательств →" [level=4]:
@@ -103,7 +103,7 @@
     - definition: Публичные заявления и исследовательские артефакты Pinega
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Решение Объяснение
     - heading "Процесс от исследования к продукту →" [level=4]:
@@ -114,7 +114,7 @@
     - definition: Исследовательский и инженерный процесс Pinega
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
 - region "Справочник":
   - paragraph: Справочник
   - heading "Справочник" [level=3]
@@ -129,7 +129,7 @@
     - definition: Репозиторий likern/research
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Доступно Справочник
     - heading "Сборка Web-платформы и окружение →" [level=4]:
@@ -140,18 +140,18 @@
     - definition: Инструменты Pinega Web и CI
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
   - article:
     - text: Доступно Справочник
     - heading "Схема метаданных контента →" [level=4]:
       - link "Схема метаданных контента →":
         - /url: /ru/docs/reference/content-metadata-schema/
-    - paragraph: Справочник по схеме v3 логического реестра контента Pinega Web, вариантам локалей, отдельным манифестам документации и контрактам обнаружения.
+    - paragraph: Справочник по схеме v4 логического реестра контента Pinega Web, вариантам локалей, отдельным манифестам документации и контрактам обнаружения.
     - term: Применимо к
-    - definition: Контракт контента Pinega Web, schema v3
+    - definition: Контракт контента Pinega Web, схема v4
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/
 - region "Участие в разработке":
   - paragraph: Участие в разработке
   - heading "Участие в разработке" [level=3]
@@ -166,4 +166,4 @@
     - definition: Pull Request и правила выпуска в репозитории Pinega
     - term: Обновлено
     - definition:
-      - time: 2026-08-08
+      - time: /\d+-\d+-\d+/

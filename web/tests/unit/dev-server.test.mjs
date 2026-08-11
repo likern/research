@@ -43,6 +43,8 @@ test('ordinary serve mode does not alter built HTML', async t => {
   await writeFile(resolve(root, 'index.html'), html, 'utf8');
   await mkdir(resolve(root, 'assets'));
   await writeFile(resolve(root, 'assets/main-ABCDEFGH.js'), 'export {}\n', 'utf8');
+  await mkdir(resolve(root, 'research/publications/specimen'), { recursive: true });
+  await writeFile(resolve(root, 'research/publications/specimen/paper.pdf'), Buffer.from('%PDF-1.7\nPinega\n'));
 
   const server = await startPinegaServer({ root, port: 0, liveReload: false, log: false });
   t.after(async () => {
@@ -66,6 +68,12 @@ test('ordinary serve mode does not alter built HTML', async t => {
   assert.equal(asset.status, 200);
   assert.equal(asset.headers.get('cache-control'), 'public, max-age=31536000, immutable');
   assert.match(asset.headers.get('etag') ?? '', /^"sha256-[a-f0-9]{64}"$/u);
+
+  const publication = await fetch(`${server.url}/research/publications/specimen/paper.pdf`);
+  assert.equal(publication.status, 200);
+  assert.equal(publication.headers.get('content-type'), 'application/pdf');
+  assert.equal(publication.headers.get('cache-control'), 'public, max-age=0, must-revalidate');
+  assert.equal(Buffer.from(await publication.arrayBuffer()).toString(), '%PDF-1.7\nPinega\n');
 });
 
 test('not-found responses follow the requested locale prefix', async t => {

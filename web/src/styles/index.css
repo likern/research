@@ -10,6 +10,8 @@
 @import './docs.css';
 @import './diagrams.css';
 @import './diagram-academic.css';
+@import './typst-mathml.css';
+@import './publication.css';
 @import '../components/site-header/site-header.css';
 @import '../components/hero/hero.css';
 @import '../components/evidence/evidence.css';

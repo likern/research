@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { openReadyDocument } from './support/direct-document.js';
 import { expectInteractiveState } from './support/interactive-accessibility.js';
@@ -20,10 +21,11 @@ const documentationRoutes = [
   '/docs/reference/content-metadata-schema/',
   '/docs/contributing/review-and-release-gates/',
 ];
-const corePublicRoutes = ['/', '/technology/', '/research/', '/docs/', '/about/'];
-const publicRoutes = ['/', '/technology/', '/research/', '/docs/', ...documentationRoutes, '/about/'];
+const publicationRoutes = ['/research/publications/', '/research/publications/dual-target-contract/'];
+const corePublicRoutes = ['/', '/technology/', '/research/', ...publicationRoutes, '/docs/', '/about/'];
+const publicRoutes = ['/', '/technology/', '/research/', ...publicationRoutes, '/docs/', ...documentationRoutes, '/about/'];
 const russianDocumentationRoutes = documentationRoutes.map(route => `/ru${route}`);
-const russianCorePublicRoutes = ['/ru/', '/ru/technology/', '/ru/research/', '/ru/docs/', '/ru/about/'];
+const russianCorePublicRoutes = ['/ru/', '/ru/technology/', '/ru/research/', ...publicationRoutes.map(route => `/ru${route}`), '/ru/docs/', '/ru/about/'];
 const russianPublicRoutes = publicRoutes.map(route => route === '/' ? '/ru/' : `/ru${route}`);
 const allCoreRoutes = [...corePublicRoutes, ...russianCorePublicRoutes, '/docs/getting-started/', '/ru/docs/getting-started/', '/component-lab/'];
 const semanticTest = { tag: ['@aria-tree', '@accessibility'] };
@@ -249,6 +251,76 @@ test('Russian research diagrams localize visible and accessible text', async ({ 
   await expect(page.locator('svg text').filter({ hasText: 'Жизненный цикл публикации и рекламации буферного фрейма' })).toBeVisible();
 });
 
+test('dual-target publication is a semantic responsive reader in both locales', async ({ page }) => {
+  for (const locale of ['en', 'ru']) {
+    const prefix = locale === 'ru' ? '/ru' : '';
+    await ready(page, `${prefix}/research/publications/dual-target-contract/`);
+    await expect(page.locator('article.pinega-publication-article')).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(page.locator('math')).toHaveCount(7);
+    await expect(page.locator('.pinega-publication-table-scroll table')).toHaveCount(1);
+    await expect(page.locator('figure[data-diagram-id="linearizability-overlap"]')).toHaveCount(1);
+    await expect(page.locator('section.pinega-publication-endnotes[role="doc-endnotes"]')).toHaveCount(1);
+    await expect(page.locator('.pinega-publication-navigation a[type="application/pdf"]')).toHaveAttribute('href', `${prefix}/research/publications/dual-target-contract/paper.pdf`);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
+    const tableOverflow = await page.locator('.pinega-publication-table-scroll').evaluate(element => element.scrollWidth - element.clientWidth);
+    expect(tableOverflow).toBeGreaterThan(0);
+  }
+});
+
+test('publication catalogue and reader retain the same document across enhanced traversal', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Transactional traversal is exercised once; route parity is cross-browser through page-class coverage.');
+  await ready(page, '/research/');
+  const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+  await page.getByRole('link', { name: 'Research publications', exact: true }).click();
+  await expect(page).toHaveURL(/\/research\/publications\/$/u);
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research-publications');
+  await page.getByRole('link', { name: 'One source, two reading contracts', exact: true }).click();
+  await expect(page).toHaveURL(/\/research\/publications\/dual-target-contract\/$/u);
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'publication-dual-target-contract');
+  await expect(page.locator('article.pinega-publication-article')).toHaveCount(1);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  await page.goBack();
+  await expect(page.locator('main')).toHaveAttribute('data-pinega-route', 'research-publications');
+});
+
+test('publication HTML and exact PDF artefacts are available without client rendering', async ({ request }) => {
+  const publicationManifestResponse = await request.get('/content/publications-manifest.json');
+  expect(publicationManifestResponse.ok()).toBeTruthy();
+  const publicationManifest = await publicationManifestResponse.json() as {
+    schemaVersion: number;
+    entries: Array<{ locale: string; route: string; pdf: { url: string; bytes: number; sha256: string } }>;
+  };
+  expect(publicationManifest.schemaVersion).toBe(1);
+  expect(publicationManifest.entries).toHaveLength(2);
+  for (const publication of publicationManifest.entries) {
+    const htmlResponse = await request.get(publication.route);
+    const html = await htmlResponse.text();
+    expect(htmlResponse.ok()).toBeTruthy();
+    expect(html).toContain('<article class="pinega-publication-article"');
+    expect(html.match(/<h1\b/gu)).toHaveLength(1);
+    expect(html).toContain('<math');
+    expect(html).toContain('<table>');
+    expect(html).not.toContain('PINEGA_PUBLICATION_ARTICLE');
+    const pdfResponse = await request.get(publication.pdf.url);
+    const pdf = await pdfResponse.body();
+    expect(pdfResponse.ok()).toBeTruthy();
+    expect(pdfResponse.headers()['content-type']).toContain('application/pdf');
+    expect(pdf.byteLength).toBe(publication.pdf.bytes);
+    expect(createHash('sha256').update(pdf).digest('hex')).toBe(publication.pdf.sha256);
+    expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  }
+});
+
+test('publication reader confines wide content at 320 CSS pixels', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Exact 320 CSS pixel boundary is exercised once.');
+  await page.setViewportSize({ width: 320, height: 800 });
+  await ready(page, '/research/publications/dual-target-contract/');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  expect(await page.locator('.pinega-publication-table-scroll').evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
+});
+
 test('about page distinguishes Pinega, Pinega Labs, and future offerings', async ({ page }) => {
   await ready(page, '/about/');
   await expect(page.getByRole('heading', { level: 1 })).toContainText('defensible database technology');
@@ -264,6 +336,8 @@ test('representative routes expose one versioned build and route-feature contrac
   const representatives = [
     { route: '/', routeId: 'home', features: '', critical: '' },
     { route: '/research/', routeId: 'research', features: 'diagram-viewer', critical: '' },
+    { route: '/research/publications/', routeId: 'research-publications', features: '', critical: '' },
+    { route: '/research/publications/dual-target-contract/', routeId: 'publication-dual-target-contract', features: 'diagram-viewer', critical: '' },
     { route: '/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
     { route: '/component-lab/', routeId: 'component-lab', features: 'benchmark code-example', critical: 'benchmark' },
     { route: '/ru/docs/', routeId: 'documentation', features: 'doc-topic-filter', critical: '' },
@@ -318,9 +392,10 @@ test('generated discovery files expose the complete documentation corpus', async
       serviceWorker: boolean;
     };
     site: { tagline: string; defaultLocale: string; locales: Record<string, { pathPrefix: string }> };
-    routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown }>;
+    routes: Array<{ id: string; locale: string; route: string; sitemap: boolean; searchable: boolean; public: boolean; features: string[]; criticalFeatures: string[]; documentation?: unknown; publication?: unknown }>;
+    publications: { schemaVersion: number; profile: string; manifest: string; entries: Array<{ locale: string; route: string; pdf: string }> };
   };
-  expect(payload.schemaVersion).toBe(8);
+  expect(payload.schemaVersion).toBe(9);
   expect(payload.build.id).toMatch(/^sha256-[a-f0-9]{64}$/u);
   expect(payload.build.identityAlgorithm).toBe('sha256-normalized-artifact-v1');
   expect(payload.build.documentContractVersion).toBe('1');
@@ -374,14 +449,19 @@ test('generated discovery files expose the complete documentation corpus', async
   expect(payload.routes.filter(entry => entry.sitemap).map(entry => entry.route).toSorted()).toEqual([...publicRoutes, ...russianPublicRoutes].toSorted());
   expect(payload.routes.filter(entry => entry.searchable).map(entry => entry.route).toSorted()).toEqual([...publicRoutes, ...russianPublicRoutes].toSorted());
   expect(payload.routes.filter(entry => entry.documentation && !['/docs/', '/ru/docs/'].includes(entry.route))).toHaveLength(26);
-  expect(payload.routes.filter(entry => entry.locale === 'ru')).toHaveLength(19);
+  expect(payload.routes.filter(entry => entry.locale === 'ru')).toHaveLength(21);
   expect(payload.routes.find(entry => entry.route === '/docs/')?.features).toEqual(['doc-topic-filter']);
   expect(payload.routes.find(entry => entry.route === '/component-lab/')?.criticalFeatures).toEqual(['benchmark']);
+  expect(payload.publications.schemaVersion).toBe(1);
+  expect(payload.publications.profile).toBe('dual-target');
+  expect(payload.publications.manifest).toBe('/content/publications-manifest.json');
+  expect(payload.publications.entries.map(entry => entry.locale)).toEqual(['en', 'ru']);
+  expect(payload.routes.filter(entry => entry.publication)).toHaveLength(2);
 
   const registry = await request.get('/content/content-index.json');
   const registryPayload = await registry.json() as { schema_version: number; entries: unknown[] };
-  expect(registryPayload.schema_version).toBe(3);
-  expect(registryPayload.entries).toHaveLength(20);
+  expect(registryPayload.schema_version).toBe(4);
+  expect(registryPayload.entries).toHaveLength(22);
 
   const docsManifest = await request.get('/content/en/documentation-manifest.json');
   expect(docsManifest.ok()).toBeTruthy();
