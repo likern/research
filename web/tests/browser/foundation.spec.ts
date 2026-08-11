@@ -38,6 +38,12 @@ async function featureChunk(page: Page, featureId: string): Promise<string> {
   return chunk;
 }
 
+async function settleReducedMotionAnimations(page: Page): Promise<void> {
+  await page.evaluate(async () => {
+    await Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined)));
+  });
+}
+
 async function installClipboardMock(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const runtime = window as Window & {
@@ -155,6 +161,7 @@ test('keyboard navigation is trap-free from the shell into main content', async 
 });
 
 test('theme control exposes localized light and dark semantic states', semanticTest, async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('pinega-color-scheme', 'light'));
 
   await ready(page, '/');
@@ -166,6 +173,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(page.locator('html')).toHaveClass(/wa-dark/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await settleReducedMotionAnimations(page);
   await expectInteractiveState(page, 'THEME-EN-DARK', testInfo);
 
   await ready(page, '/ru/');
@@ -176,6 +184,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await toggle.click();
   await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+  await settleReducedMotionAnimations(page);
   await expectInteractiveState(page, 'THEME-RU-DARK', testInfo);
 });
 
@@ -310,8 +319,7 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   });
   const button = copy.locator('button[part="button"]');
   await expect(button).toHaveAttribute('aria-label', 'Copy code');
-  const idle = await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-IDLE', testInfo);
-  if (idle === undefined) throw new TypeError('Web Awesome idle state did not produce a semantic reference.');
+  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-IDLE', testInfo);
 
   await button.click();
   await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status)).toBe('success');
@@ -322,7 +330,7 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-SUCCESS', testInfo);
   await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
   await expect(button).toHaveAttribute('aria-label', 'Copy code');
-  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo, { reference: idle });
+  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo);
 
   await page.evaluate(() => { (window as Window & { __pinegaClipboardShouldFail?: boolean }).__pinegaClipboardShouldFail = true; });
   await button.click();
@@ -333,7 +341,7 @@ test('Web Awesome code copy exposes success, error, and reset semantics', semant
   await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-ERROR', testInfo);
   await expect.poll(() => copy.evaluate((element: HTMLElement & { status?: string }) => element.status), { timeout: 3_000 }).toBe('rest');
   await expect(button).toHaveAttribute('aria-label', 'Copy code');
-  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo, { reference: idle });
+  await expectInteractiveState(page, 'CODE-COPY-WEBAWESOME-RESET', testInfo);
 });
 
 test('passes WCAG A and AA automated accessibility checks without serious or critical violations', async ({ page }) => {

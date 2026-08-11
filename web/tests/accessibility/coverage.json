@@ -927,7 +927,7 @@
         "profiles": ["chromium-desktop", "chromium-mobile", "firefox-desktop", "webkit-desktop"],
         "owner_test": "tests/browser/foundation.spec.ts",
         "owner_test_title": "Web Awesome code copy exposes success, error, and reset semantics",
-        "aria": { "type": "exact-equivalence", "target": "pinega-code-example", "reference_state": "CODE-COPY-WEBAWESOME-IDLE" },
+        "aria": { "type": "dom-behaviour", "target": "pinega-code-example", "assertion": "Reset restores the vendor rest state and localized trigger label after both success and error." },
         "axe": { "mode": "not-applicable", "reason": "Reset returns to the already registered idle state." },
         "supplemental_oracles": ["dom", "renderer", "clipboard"]
       }

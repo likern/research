@@ -52,8 +52,6 @@ export async function expectInteractiveState(
       testInfo,
     });
     semantic = await captureSemanticTree(target);
-  } else if (state.aria.type === 'dom-behaviour') {
-    semantic = await captureSemanticTree(target);
   }
 
   if (state.axe.mode === 'required') {
