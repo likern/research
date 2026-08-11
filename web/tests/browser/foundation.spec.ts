@@ -58,6 +58,15 @@ async function expectThemeActionColorsSettled(page: Page): Promise<void> {
         : [{ index, actual, expected }];
     });
   }), { message: 'Primary action colours did not settle on the active theme tokens.' }).toEqual([]);
+  await page.evaluate(() => new Promise<void>(resolve => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+}
+
+async function enforceMotionlessThemeDocument(page: Page): Promise<void> {
+  await page.addStyleTag({
+    content: '*, *::before, *::after { animation: none !important; transition: none !important; }',
+  });
 }
 
 async function installClipboardMock(page: Page): Promise<void> {
@@ -181,6 +190,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await page.addInitScript(() => localStorage.setItem('pinega-color-scheme', 'light'));
 
   await ready(page, '/');
+  await enforceMotionlessThemeDocument(page);
   let toggle = page.locator('[data-theme-toggle]');
   await expect(page.locator('html')).toHaveClass(/pinega-light/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
@@ -193,6 +203,7 @@ test('theme control exposes localized light and dark semantic states', semanticT
   await expectInteractiveState(page, 'THEME-EN-DARK', testInfo);
 
   await ready(page, '/ru/');
+  await enforceMotionlessThemeDocument(page);
   toggle = page.locator('[data-theme-toggle]');
   await expect(page.locator('html')).toHaveClass(/pinega-light/u);
   await expect(toggle).toHaveAttribute('aria-pressed', 'false');
