@@ -73,6 +73,8 @@ that document and accepts exactly one publication `<article>`. The adapter:
 - verifies the compiler-emitted MathML support rules against the checked-in
   0.15.1 adapter stylesheet;
 - moves Typst endnotes into the article reading boundary;
+- places each block MathML root inside a localized, keyboard-focusable overflow
+  host while leaving the root's native `block math` layout untouched;
 - rejects scripts, forms, embedded documents, event handlers, unsafe URL
   schemes, unexpected inline style, and duplicate IDs;
 - requires the Gate 5.1 specimen surface: MathML, semantic table, code block,
@@ -83,7 +85,10 @@ that document and accepts exactly one publication `<article>`. The adapter:
 The Pinega shell continues to own route metadata, canonical and `hreflang`
 links, primary navigation, language selection, theme, focus, and enhanced
 navigation. Pinega Strata CSS owns reflow, dark mode, forced-colour behaviour,
-prose measure, and local overflow for wide mathematics, code, and tables.
+prose measure, and local overflow for wide mathematics, code, and tables. A
+block `<math>` is never itself converted into an ordinary CSS block or used as
+the scroll container: its HTML parent owns overflow so MathML remains one
+two-dimensional composition at narrow widths.
 
 ## Reproducibility and release evidence
 

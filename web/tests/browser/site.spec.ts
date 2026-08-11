@@ -313,12 +313,56 @@ test('publication HTML and exact PDF artefacts are available without client rend
   }
 });
 
-test('publication reader confines wide content at 320 CSS pixels', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'chromium-desktop', 'Exact 320 CSS pixel boundary is exercised once.');
-  await page.setViewportSize({ width: 320, height: 800 });
-  await ready(page, '/research/publications/dual-target-contract/');
-  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-  expect(await page.locator('.pinega-publication-table-scroll').evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
+test('publication reader preserves block MathML composition across narrow reflow boundaries', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium-desktop', 'Exact narrow-width geometry is exercised once in the pinned browser.');
+
+  for (const width of [657, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const locale of ['en', 'ru']) {
+      const prefix = locale === 'ru' ? '/ru' : '';
+      const expectedLabel = locale === 'ru'
+        ? 'Прокручиваемая математическая формула'
+        : 'Scrollable mathematical formula';
+      await ready(page, `${prefix}/research/publications/dual-target-contract/`);
+
+      const metrics = await page.locator('.pinega-publication-math-scroll').evaluateAll(wrappers => wrappers.map(wrapper => {
+        const mathematics = wrapper.querySelector(':scope > math[display="block"]');
+        if (!(mathematics instanceof MathMLElement)) throw new TypeError('Math scroll host must own one direct block MathML root.');
+        const children = [...mathematics.children]
+          .map(element => element.getBoundingClientRect())
+          .filter(rect => rect.width > 0 || rect.height > 0);
+        const horizontalSteps = children.slice(1)
+          .filter((rect, index) => rect.left > children[index]!.left + 0.5)
+          .length;
+        return {
+          label: wrapper.getAttribute('aria-label'),
+          role: wrapper.getAttribute('role'),
+          tabIndex: (wrapper as HTMLElement).tabIndex,
+          wrapperClientWidth: (wrapper as HTMLElement).clientWidth,
+          wrapperScrollWidth: (wrapper as HTMLElement).scrollWidth,
+          mathematicsWidth: mathematics.getBoundingClientRect().width,
+          mathematicsOverflowX: getComputedStyle(mathematics).overflowX,
+          horizontalStepRatio: children.length > 1 ? horizontalSteps / (children.length - 1) : 1,
+        };
+      }));
+
+      expect(metrics).toHaveLength(2);
+      for (const metric of metrics) {
+        expect(metric.label).toBe(expectedLabel);
+        expect(metric.role).toBe('group');
+        expect(metric.tabIndex).toBe(0);
+        expect(metric.mathematicsOverflowX).toBe('visible');
+        expect(metric.mathematicsWidth).toBeGreaterThanOrEqual(metric.wrapperClientWidth - 1);
+        expect(metric.wrapperScrollWidth).toBeGreaterThanOrEqual(metric.mathematicsWidth - 1);
+        expect(metric.horizontalStepRatio).toBeGreaterThan(0.6);
+      }
+      if (width === 320) {
+        expect(metrics.some(metric => metric.wrapperScrollWidth > metric.wrapperClientWidth + 1)).toBeTruthy();
+        expect(await page.locator('.pinega-publication-table-scroll').evaluate(element => element.scrollWidth - element.clientWidth)).toBeGreaterThan(0);
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    }
+  }
 });
 
 test('about page distinguishes Pinega, Pinega Labs, and future offerings', async ({ page }) => {

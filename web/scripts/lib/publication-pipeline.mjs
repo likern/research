@@ -15,6 +15,11 @@ const execFileAsync = promisify(execFile);
 const publicationIdPattern = /^[a-z][a-z0-9-]*$/u;
 const documentIdPattern = /^[a-z][a-z0-9-]*$/u;
 const expectedHtmlDiagnostic = 'warning: html export is under active development and incomplete';
+const htmlNamespace = 'http://www.w3.org/1999/xhtml';
+const mathScrollLabels = Object.freeze(new Map([
+  ['en', 'Scrollable mathematical formula'],
+  ['ru', 'Прокручиваемая математическая формула'],
+]));
 const forbiddenArticleElements = new Set([
   'base',
   'button',
@@ -294,7 +299,13 @@ export function extractPublicationArticle(standaloneHtml, expected, expectedMath
     const id = attributes(element).get('id');
     if (id) addUnique(ids, id, `${expected.documentId} article id`);
   }
-  if (findElements(article, element => element.tagName === 'math').length < 3) throw new TypeError(`${expected.documentId}: specimen must exercise MathML.`);
+  const mathematics = findElements(article, element => element.tagName === 'math');
+  if (mathematics.length < 3) throw new TypeError(`${expected.documentId}: specimen must exercise MathML.`);
+  const blockMathematics = mathematics.filter(element => attributes(element).get('display') === 'block');
+  if (blockMathematics.length < 1) throw new TypeError(`${expected.documentId}: specimen must exercise block MathML.`);
+  const mathScrollLabel = mathScrollLabels.get(expected.locale);
+  if (!mathScrollLabel) throw new TypeError(`${expected.documentId}: no block MathML scroll label exists for locale ${JSON.stringify(expected.locale)}.`);
+  for (const mathematicsElement of blockMathematics) wrapBlockMathematics(mathematicsElement, mathScrollLabel);
   if (findElements(article, element => element.tagName === 'table').length !== 1) throw new TypeError(`${expected.documentId}: specimen must contain one semantic table.`);
   const codeBlocks = findElements(article, element => element.tagName === 'pre');
   if (codeBlocks.length < 1) throw new TypeError(`${expected.documentId}: specimen must contain a code block.`);
@@ -404,6 +415,30 @@ function setAttribute(element, name, value) {
 
 function removeAttribute(element, name) {
   element.attrs = element.attrs.filter(attribute => attribute.name !== name);
+}
+
+function wrapBlockMathematics(mathematicsElement, label) {
+  const parent = mathematicsElement.parentNode;
+  if (!parent || parent.namespaceURI !== htmlNamespace) {
+    throw new TypeError('Block MathML must have an HTML parent before Pinega can provide local overflow.');
+  }
+  const index = parent.childNodes.indexOf(mathematicsElement);
+  if (index < 0) throw new TypeError('Block MathML parent does not contain its child.');
+  const wrapper = {
+    nodeName: 'div',
+    tagName: 'div',
+    attrs: [
+      { name: 'class', value: 'pinega-publication-math-scroll' },
+      { name: 'tabindex', value: '0' },
+      { name: 'role', value: 'group' },
+      { name: 'aria-label', value: label },
+    ],
+    namespaceURI: htmlNamespace,
+    childNodes: [mathematicsElement],
+    parentNode: parent,
+  };
+  parent.childNodes[index] = wrapper;
+  mathematicsElement.parentNode = wrapper;
 }
 
 function detach(node) {

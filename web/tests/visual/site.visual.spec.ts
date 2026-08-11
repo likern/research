@@ -95,6 +95,8 @@ test('publication reader reflows at the 320 pixel boundary in light and dark mod
   await page.setViewportSize({ width: 320, height: 900 });
   await open(page, '/research/publications/dual-target-contract/');
   await expect(page.locator('.pinega-publication-masthead')).toHaveScreenshot('publication-reader-mobile-masthead.png');
+  await expect(page.locator('.pinega-publication-math-scroll').first()).toHaveScreenshot('publication-reader-mobile-math-relation.png');
+  await expect(page.locator('.pinega-publication-math-scroll').nth(1)).toHaveScreenshot('publication-reader-mobile-math-matrix.png');
   await expect(page.locator('.pinega-publication-table-scroll')).toHaveScreenshot('publication-reader-mobile-table.png');
   await page.locator('[data-theme-toggle]').click();
   await expect(page.locator('[data-publication-panel="hypothesis"]')).toHaveScreenshot('publication-reader-mobile-thought-dark.png');

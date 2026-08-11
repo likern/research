@@ -284,6 +284,10 @@ for (const publication of publicationManifest.entries) {
   assert.equal((html.match(/<article class="pinega-publication-article"/gu) ?? []).length, 1, `${variant.route}: one Typst article`);
   assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${variant.route}: one publication h1`);
   assert.ok((html.match(/<math\b/gu) ?? []).length >= 3, `${variant.route}: MathML specimen`);
+  const blockMathCount = (html.match(/<math display="block">/gu) ?? []).length;
+  const wrappedBlockMathCount = (html.match(/<div class="pinega-publication-math-scroll" tabindex="0" role="group" aria-label="[^"]+"><math display="block">/gu) ?? []).length;
+  assert.ok(blockMathCount >= 1, `${variant.route}: block MathML specimen`);
+  assert.equal(wrappedBlockMathCount, blockMathCount, `${variant.route}: every block MathML root has one external overflow host`);
   assert.equal((html.match(/<table\b/gu) ?? []).length, 1, `${variant.route}: semantic table specimen`);
   assert.equal((html.match(/<pinega-diagram-viewer\b/gu) ?? []).length, 1, `${variant.route}: shared semantic diagram`);
   assert.match(html, /<section role="doc-endnotes" class="pinega-publication-endnotes">/u);

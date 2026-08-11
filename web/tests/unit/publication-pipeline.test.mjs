@@ -112,6 +112,12 @@ test('standalone Typst HTML is reduced to one inert semantic article', () => {
   assert.match(article, /<section role="doc-endnotes" class="pinega-publication-endnotes">/u);
   assert.doesNotMatch(article, /<html|<head|<body|<style|style=/u);
   assert.equal((article.match(/<math/gu) ?? []).length, 3);
+  assert.equal((article.match(/class="pinega-publication-math-scroll"/gu) ?? []).length, 1);
+  assert.match(
+    article,
+    /<div class="pinega-publication-math-scroll" tabindex="0" role="group" aria-label="Scrollable mathematical formula"><math display="block"><mi>z<\/mi><\/math><\/div>/u,
+  );
+  assert.match(article, /<math><mi>x<\/mi><\/math><math><mi>y<\/mi><\/math>/u, 'inline MathML must not gain a scroll wrapper');
   assert.match(article, /<pre tabindex="0"><code>return projection;<\/code><\/pre>/u);
 });
 

@@ -199,12 +199,18 @@
     border-inline-start-color: var(--pinega-research-color-hypothesis);
   }
 
-  .pinega-publication-body math[display='block'] {
-    display: block;
+  .pinega-publication-math-scroll {
+    inline-size: 100%;
+    min-inline-size: 0;
     max-inline-size: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-inline: contain;
     padding-block: var(--pinega-ref-space-s);
+  }
+
+  .pinega-publication-math-scroll > math[display='block'] {
+    min-inline-size: max-content;
   }
 
   .pinega-publication-table-scroll {
