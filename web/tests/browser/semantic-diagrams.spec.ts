@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 import { openReadyDocument } from './support/direct-document.js';
+import { expectInteractiveState } from './support/interactive-accessibility.js';
+
+const semanticTest = { tag: ['@aria-tree', '@accessibility'] };
 
 async function ready(page: Page): Promise<void> {
   await openReadyDocument(page, '/research/');
@@ -37,7 +40,7 @@ async function semanticDiagramState(page: Page, toggleTheme = false): Promise<Se
   }, toggleTheme);
 }
 
-test('research page exposes three accessible figures from shared semantic models', async ({ page }) => {
+test('research page exposes three accessible figures from shared semantic models', semanticTest, async ({ page }, testInfo) => {
   await ready(page);
   const figures = page.locator('figure.pinega-semantic-diagram');
   await expect(figures).toHaveCount(3);
@@ -56,9 +59,10 @@ test('research page exposes three accessible figures from shared semantic models
     'buffer-frame-lifecycle',
     'linearizability-overlap',
   ]);
+  await expectInteractiveState(page, 'DIAGRAM-SVG', testInfo);
 });
 
-test('diagram viewports and transcripts are keyboard reachable', async ({ page }) => {
+test('diagram viewports and transcripts expose closed, open, and keyboard states', semanticTest, async ({ page }, testInfo) => {
   await ready(page);
   const firstViewport = page.locator('.pinega-diagram-viewport').first();
   await firstViewport.focus();
@@ -69,6 +73,8 @@ test('diagram viewports and transcripts are keyboard reachable', async ({ page }
   await expect(firstViewer).toHaveAttribute('data-renderer', 'lit');
 
   const details = page.locator('.pinega-diagram-transcript').first();
+  await expect(details).not.toHaveAttribute('open', '');
+  await expectInteractiveState(page, 'DIAGRAM-TRANSCRIPT-CLOSED', testInfo);
   await details.locator('summary').click();
   const transcript = details.locator('pre');
   await expect(transcript).toBeVisible();
@@ -76,6 +82,7 @@ test('diagram viewports and transcripts are keyboard reachable', async ({ page }
   await transcript.click();
   await expect(transcript).toBeFocused();
   await expect(transcript).toContainText('Newest-to-oldest row-version chain');
+  await expectInteractiveState(page, 'DIAGRAM-TRANSCRIPT-OPEN', testInfo);
 });
 
 test('downloadable model endpoints preserve semantic JSON', async ({ request }) => {

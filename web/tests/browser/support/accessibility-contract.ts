@@ -28,11 +28,68 @@ interface NativeRouteExclusion {
   route: string;
 }
 
+interface StrictInteractiveAriaOracle {
+  snapshot: string;
+  target: string;
+  type: 'strict-baseline';
+}
+
+interface EquivalentInteractiveAriaOracle {
+  reference_state: string;
+  target: string;
+  type: 'exact-equivalence';
+}
+
+interface AbsentInteractiveAriaOracle {
+  target: string;
+  text: string;
+  type: 'semantic-absence';
+}
+
+interface DomInteractiveOracle {
+  assertion: string;
+  target: string;
+  type: 'dom-behaviour';
+}
+
+interface RequiredAxeOracle {
+  context: string;
+  mode: 'required';
+}
+
+interface ExemptAxeOracle {
+  mode: 'not-applicable';
+  reason: string;
+}
+
+export interface InteractiveAccessibilityState {
+  aria: StrictInteractiveAriaOracle | EquivalentInteractiveAriaOracle | AbsentInteractiveAriaOracle | DomInteractiveOracle;
+  axe: RequiredAxeOracle | ExemptAxeOracle;
+  fixture: string;
+  id: string;
+  locale: 'en' | 'ru' | 'not-applicable';
+  owner_test: string;
+  owner_test_title: string;
+  profiles: string[];
+  state: string;
+  supplemental_oracles: string[];
+  surface: string;
+}
+
 interface AccessibilityCoverageRegistry {
   policy: {
     required_profiles: string[];
   };
   requirements: CoverageRequirement[];
+  interactive_components: {
+    policy: {
+      axe: {
+        blocking_impacts: string[];
+        tags: string[];
+      };
+    };
+    states: InteractiveAccessibilityState[];
+  };
   semantic_equivalence: {
     registered_transitions: RegisteredTransition[];
     temporal: {
@@ -52,6 +109,14 @@ export const accessibilityCoverage = JSON.parse(
 
 export const temporalRoutes = accessibilityCoverage.semantic_equivalence.temporal.routes;
 export const nativeRouteExclusions = accessibilityCoverage.semantic_equivalence.navigation.native_route_exclusions;
+export const interactiveStates = accessibilityCoverage.interactive_components.states;
+export const interactiveAxePolicy = accessibilityCoverage.interactive_components.policy.axe;
+
+export function interactiveState(id: string): InteractiveAccessibilityState {
+  const state = interactiveStates.find(candidate => candidate.id === id);
+  if (!state) throw new TypeError(`Unknown interactive accessibility state ${JSON.stringify(id)}.`);
+  return state;
+}
 
 export function registeredTransitionsFor(scope: SemanticEquivalenceScope): RegisteredSemanticTransition[] {
   return accessibilityCoverage.semantic_equivalence.registered_transitions

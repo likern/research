@@ -7,6 +7,89 @@ import { NATIVE_NAVIGATION_ROUTE_IDS } from '../navigation/contract.mjs';
 
 const defaultWebRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
+const EXPECTED_INTERACTIVE_STATES = [
+  'HEADER-DESKTOP-NAVIGATION',
+  'HEADER-MOBILE-CLOSED',
+  'HEADER-MOBILE-OPEN',
+  'HEADER-MOBILE-ESCAPE',
+  'HEADER-MOBILE-COMMIT',
+  'THEME-EN-LIGHT',
+  'THEME-EN-DARK',
+  'THEME-RU-LIGHT',
+  'THEME-RU-DARK',
+  'TRANSLATION-NOTICE-HIDDEN',
+  'TRANSLATION-STATUS-ANNOUNCED',
+  'DOC-FILTER-EN-INITIAL',
+  'DOC-FILTER-EN-MATCH',
+  'DOC-FILTER-EN-EMPTY',
+  'DOC-FILTER-EN-CLEAR',
+  'DOC-FILTER-RU-INITIAL',
+  'DOC-FILTER-RU-MATCH',
+  'DOC-FILTER-RU-EMPTY',
+  'DOC-FILTER-RU-CLEAR',
+  'LIT-INSPECTOR-NO-JS-FALLBACK',
+  'LIT-INSPECTOR-COLLAPSED',
+  'LIT-INSPECTOR-PENDING',
+  'LIT-INSPECTOR-COMPLETE',
+  'LIT-INSPECTOR-ERROR',
+  'LIT-INSPECTOR-RETRY-PENDING',
+  'LIT-INSPECTOR-RETRY-COMPLETE',
+  'LIT-INSPECTOR-ESCAPE-COLLAPSED',
+  'LIT-INSPECTOR-DISCONNECTED',
+  'LIT-INSPECTOR-RECONNECTED',
+  'LIT-INSPECTOR-CLONE-COLLAPSED',
+  'LIT-INSPECTOR-CLONE-COMPLETE',
+  'BENCHMARK-FALLBACK',
+  'BENCHMARK-FALLBACK-TABLE-OPEN',
+  'BENCHMARK-PRO',
+  'BENCHMARK-PRO-TABLE-OPEN',
+  'DIAGRAM-SVG',
+  'DIAGRAM-TRANSCRIPT-CLOSED',
+  'DIAGRAM-TRANSCRIPT-OPEN',
+  'CODE-COPY-NATIVE-IDLE',
+  'CODE-COPY-NATIVE-SUCCESS',
+  'CODE-COPY-NATIVE-ERROR',
+  'CODE-COPY-NATIVE-RESET',
+  'CODE-COPY-WEBAWESOME-IDLE',
+  'CODE-COPY-WEBAWESOME-SUCCESS',
+  'CODE-COPY-WEBAWESOME-ERROR',
+  'CODE-COPY-WEBAWESOME-RESET',
+];
+
+const EXPECTED_AXE_STATES = [
+  'HEADER-MOBILE-OPEN',
+  'THEME-EN-LIGHT',
+  'THEME-EN-DARK',
+  'THEME-RU-LIGHT',
+  'THEME-RU-DARK',
+  'TRANSLATION-STATUS-ANNOUNCED',
+  'DOC-FILTER-EN-INITIAL',
+  'DOC-FILTER-EN-MATCH',
+  'DOC-FILTER-EN-EMPTY',
+  'DOC-FILTER-EN-CLEAR',
+  'DOC-FILTER-RU-INITIAL',
+  'DOC-FILTER-RU-MATCH',
+  'DOC-FILTER-RU-EMPTY',
+  'DOC-FILTER-RU-CLEAR',
+  'LIT-INSPECTOR-NO-JS-FALLBACK',
+  'LIT-INSPECTOR-PENDING',
+  'LIT-INSPECTOR-COMPLETE',
+  'LIT-INSPECTOR-ERROR',
+  'LIT-INSPECTOR-RETRY-PENDING',
+  'LIT-INSPECTOR-RETRY-COMPLETE',
+  'LIT-INSPECTOR-RECONNECTED',
+  'LIT-INSPECTOR-CLONE-COMPLETE',
+  'BENCHMARK-FALLBACK',
+  'BENCHMARK-FALLBACK-TABLE-OPEN',
+  'BENCHMARK-PRO',
+  'BENCHMARK-PRO-TABLE-OPEN',
+  'DIAGRAM-TRANSCRIPT-OPEN',
+  'CODE-COPY-NATIVE-SUCCESS',
+  'CODE-COPY-NATIVE-ERROR',
+  'CODE-COPY-WEBAWESOME-SUCCESS',
+  'CODE-COPY-WEBAWESOME-ERROR',
+];
+
 async function readJson(path) {
   return JSON.parse(await readFile(path, 'utf8'));
 }
@@ -105,6 +188,48 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
     'Navigation transaction semantic states are incomplete',
   );
 
+  const interactive = registry.interactive_components;
+  const interactiveStateIds = interactive.states.map(state => state.id);
+  const interactiveSurfaces = [...new Set(interactive.states.map(state => state.surface))].sort();
+  unique(interactiveStateIds, 'Interactive accessibility state IDs');
+  unique(
+    interactive.states.map(state => `${state.surface}:${state.state}:${state.locale}`),
+    'Interactive accessibility surface/state/locale tuples',
+  );
+  assert.deepEqual(interactiveStateIds, EXPECTED_INTERACTIVE_STATES, 'Interactive component state corpus is incomplete or reordered');
+  assert.deepEqual(
+    interactiveSurfaces,
+    [...interactive.policy.required_surfaces].sort(),
+    'Interactive component surfaces differ from the required policy',
+  );
+  const axeStateIds = interactive.states.filter(state => state.axe.mode === 'required').map(state => state.id);
+  assert.deepEqual(axeStateIds, EXPECTED_AXE_STATES, 'Meaningfully revealed states do not have exact axe coverage');
+
+  const interactiveStateSet = new Set(interactiveStateIds);
+  const interactiveBaselineFiles = new Set();
+  const interactiveSourceFiles = new Set();
+  for (const state of interactive.states) {
+    interactiveSourceFiles.add(state.owner_test);
+    for (const profile of state.profiles) {
+      assert.ok(profileIds.includes(profile), `${state.id}: unknown profile ${profile}`);
+    }
+    if (state.aria.type === 'strict-baseline') {
+      interactiveBaselineFiles.add(snapshotPath(
+        webRoot,
+        registry.policy.snapshot_path_template,
+        state.owner_test,
+        state.aria.snapshot,
+      ));
+    } else if (state.aria.type === 'exact-equivalence') {
+      assert.ok(interactiveStateSet.has(state.aria.reference_state), `${state.id}: unknown reference state ${state.aria.reference_state}`);
+      const reference = interactive.states.find(candidate => candidate.id === state.aria.reference_state);
+      assert.equal(reference?.aria.target, state.aria.target, `${state.id}: equivalence target differs from its reference state`);
+      assert.notEqual(reference?.aria.type, 'exact-equivalence', `${state.id}: equivalence references must not form chains`);
+    } else if (state.aria.type === 'dom-behaviour') {
+      assert.ok(state.supplemental_oracles.includes('dom'), `${state.id}: DOM behaviour has no DOM supplemental oracle`);
+    }
+  }
+
   const domOnlySet = new Set(domOnlyIds);
   const sourceFiles = new Set([
     ...registry.dom_only_properties.map(property => property.test),
@@ -112,6 +237,9 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
     equivalence.navigation.test,
     'tests/browser/support/accessibility-contract.ts',
     'tests/browser/support/accessibility-tree.ts',
+    'tests/browser/support/accessibility-audit.ts',
+    'tests/browser/support/interactive-accessibility.ts',
+    ...interactiveSourceFiles,
   ]);
   const fixtureFiles = new Set();
   fixtureFiles.add(equivalence.navigation.archetype_fixture);
@@ -136,6 +264,7 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
 
   for (const path of [...sourceFiles, ...fixtureFiles].map(relative => repositoryPath(webRoot, relative))) await access(path);
   for (const path of baselineFiles) await access(path);
+  for (const path of interactiveBaselineFiles) await access(path);
 
   const pageClasses = await readJson(repositoryPath(webRoot, equivalence.navigation.archetype_fixture));
   const archetypeIds = pageClasses.representatives.map(representative => representative.id);
@@ -162,10 +291,21 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
   const enhancedArchetypes = pageClasses.representatives.filter(representative => !nativeExclusionIds.includes(representative.id));
   assert.equal(enhancedArchetypes.length, 11, 'Exactly 11 route archetypes must support direct/enhanced equivalence');
 
-  const [config, serializerTestSource, helperSource, temporalTestSource, navigationTestSource, packageJson] = await Promise.all([
+  const [
+    config,
+    serializerTestSource,
+    helperSource,
+    interactiveHelperSource,
+    axeHelperSource,
+    temporalTestSource,
+    navigationTestSource,
+    packageJson,
+  ] = await Promise.all([
     readFile(resolve(webRoot, 'playwright.config.ts'), 'utf8'),
     readFile(resolve(webRoot, 'tests/browser/accessibility-tree.spec.ts'), 'utf8'),
     readFile(resolve(webRoot, 'tests/browser/support/accessibility-tree.ts'), 'utf8'),
+    readFile(resolve(webRoot, 'tests/browser/support/interactive-accessibility.ts'), 'utf8'),
+    readFile(resolve(webRoot, 'tests/browser/support/accessibility-audit.ts'), 'utf8'),
     readFile(repositoryPath(webRoot, equivalence.temporal.test), 'utf8'),
     readFile(repositoryPath(webRoot, equivalence.navigation.test), 'utf8'),
     readJson(resolve(webRoot, 'package.json')),
@@ -198,12 +338,28 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
   for (const state of equivalence.navigation.transaction_states) {
     assert.ok(navigationTestSource.includes(state.test_title), `${state.id}: registered transaction test title is absent`);
   }
+  const interactiveSources = new Map(await Promise.all(
+    [...interactiveSourceFiles].map(async path => [path, await readFile(repositoryPath(webRoot, path), 'utf8')]),
+  ));
+  for (const state of interactive.states) {
+    const source = interactiveSources.get(state.owner_test);
+    assert.ok(source?.includes(state.owner_test_title), `${state.id}: registered owner test title is absent`);
+    assert.ok(source?.includes(state.id), `${state.id}: owner test never exercises the registered state`);
+  }
+  for (const [path, source] of interactiveSources) {
+    assert.match(source, /@aria-tree/u, `${path}: interactive owner tests are not included in test:aria`);
+    assert.match(source, /@accessibility/u, `${path}: interactive owner tests are not tagged for accessibility evidence`);
+  }
   assert.match(helperSource, /ariaSnapshot\(\{ boxes: false \}\)/u, 'Semantic snapshots must exclude geometry');
   assert.match(helperSource, /\.aria\\\.yml/u, 'The helper must reject non-ARIA baseline names');
   assert.match(helperSource, /testInfo\.attach/u, 'Semantic failures do not create Playwright attachments');
   assert.match(helperSource, /-actual\.aria\.yml/u, 'Semantic failures do not attach actual YAML');
   assert.match(helperSource, /application\/yaml/u, 'Semantic YAML attachments use the wrong media type');
   assert.match(helperSource, /data-pinega-test-semantic-mask/u, 'Registered transition roots are not explicitly masked');
+  assert.match(interactiveHelperSource, /expectNoBlockingAxeViolations/u, 'Interactive state helper does not enforce registered axe scans');
+  assert.match(interactiveHelperSource, /expectSemanticAbsent/u, 'Interactive hidden states do not assert semantic absence');
+  assert.match(axeHelperSource, /testInfo\.attach/u, 'Axe failures do not create diagnostic attachments');
+  assert.match(axeHelperSource, /-axe\.json/u, 'Axe diagnostic attachment naming is missing');
   assert.match(packageJson.scripts['test:aria'], /tests\/browser.*--grep @aria-tree/u, 'test:aria does not run the complete tagged semantic corpus');
 
   return {
@@ -219,6 +375,10 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
     enhancedRouteArchetypes: enhancedArchetypes.length,
     nativeRouteExclusions: nativeExclusionIds.length,
     transactionStates: transactionStateIds.length,
+    interactiveStates: interactiveStateIds.length,
+    interactiveSurfaces: interactiveSurfaces.length,
+    interactiveStrictBaselines: interactiveBaselineFiles.size,
+    interactiveAxeStates: axeStateIds.length,
   };
 }
 
@@ -230,7 +390,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     + `${summary.profiles} profiles (${summary.mobileProfiles} mobile), `
     + `${summary.temporalRoutes} temporal routes, ${summary.routeArchetypes} route archetypes `
     + `(${summary.enhancedRouteArchetypes} enhanced, ${summary.nativeRouteExclusions} native-only), `
-    + `${summary.transactionStates} transaction states, ${summary.registeredTransitions} registered transitions, `
+      + `${summary.transactionStates} transaction states, ${summary.registeredTransitions} registered transitions, `
+      + `${summary.interactiveStates} interactive states across ${summary.interactiveSurfaces} surfaces `
+      + `(${summary.interactiveStrictBaselines} strict baselines, ${summary.interactiveAxeStates} axe-audited), `
     + `${summary.domOnlyProperties} DOM-only properties.`,
   );
 }
