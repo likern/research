@@ -180,6 +180,8 @@ def documents-for-paper [paper: record] {
       formats: ($doc | get -o formats | default ["pdf"])
       categories: ([$paper.stage] | append $paper.tags | append ($doc | get -o categories | default []) | uniq)
       inputs: ($doc | get -o inputs | default {})
+      publication_profile: ($doc | get -o publication_profile | default null)
+      locale: ($doc | get -o locale | default null)
       required: ($doc | get -o required | default true)
       exists: ($source | path exists)
     }
@@ -201,6 +203,8 @@ def workspace-documents [] {
       formats: ($doc | get -o formats | default ["pdf"])
       categories: ($doc | get -o categories | default ["workspace"])
       inputs: ($doc | get -o inputs | default {})
+      publication_profile: ($doc | get -o publication_profile | default null)
+      locale: ($doc | get -o locale | default null)
       required: ($doc | get -o required | default true)
       exists: ($source | path exists)
     }
@@ -241,6 +245,17 @@ def output-path [doc: record, format: string, root: path] {
 }
 
 
+def html-enabled-for [doc: record] {
+  let cfg = (config)
+  let profile = ($doc | get -o publication_profile | default null)
+  let profiles = ($cfg.typst | get -o html_profiles | default [])
+  if $profiles != ["dual-target"] {
+    error make { msg: "Typst HTML profiles must be exactly [dual-target] for Gate 5.1" }
+  }
+  $cfg.typst.html_enabled or ($profile != null and ($profile in $profiles))
+}
+
+
 def compile-one [doc: record, format: string, out_root: path, typst: path, variant] {
   let cfg = (config)
   if not $doc.exists {
@@ -249,8 +264,8 @@ def compile-one [doc: record, format: string, out_root: path, typst: path, varia
   if not ($format in $doc.formats) {
     return { document_id: $doc.document_id, format: $format, status: "unsupported-format", output: null, stderr: ($doc.formats | str join ", ") }
   }
-  if $format == "html" and not $cfg.typst.html_enabled {
-    return { document_id: $doc.document_id, format: $format, status: "html-disabled", output: null, stderr: "HTML is disabled in research.toml" }
+  if $format == "html" and not (html-enabled-for $doc) {
+    return { document_id: $doc.document_id, format: $format, status: "html-disabled", output: null, stderr: "HTML is disabled for this document profile in research.toml" }
   }
 
   let output = (output-path $doc $format $out_root)
@@ -470,7 +485,7 @@ export def watch [
   let typst = (require-toolchain)
   let doc = (find-document $document_id)
   if not ($format in $doc.formats) { error make { msg: $"Unsupported format ($format)" } }
-  if $format == "html" and not $cfg.typst.html_enabled { error make { msg: "HTML is disabled" } }
+  if $format == "html" and not (html-enabled-for $doc) { error make { msg: "HTML is disabled for this document profile" } }
   let output = (output-path $doc $format ($ROOT | path join $cfg.workspace.build_root))
   mkdir ($output | path dirname)
   let selected_variant = if $variant == null { $cfg.typst.default_variant } else { $variant }

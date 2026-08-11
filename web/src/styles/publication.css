@@ -1,0 +1,312 @@
+@layer pinega.components {
+  .pinega-publication-catalogue-hero {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+    padding-block: clamp(4.5rem, 3rem + 6vi, 9rem);
+  }
+
+  .pinega-publication-catalogue-hero h1 {
+    max-inline-size: 14ch;
+  }
+
+  .pinega-publication-catalogue-hero > p:last-child {
+    color: var(--pinega-sys-color-text-secondary);
+    font-family: var(--pinega-sys-font-family-reading);
+    font-size: clamp(1.08rem, 1rem + 0.35vi, 1.35rem);
+    line-height: 1.7;
+  }
+
+  .pinega-publication-card {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+    max-inline-size: 56rem;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-block-start: 0.3rem solid var(--pinega-sys-color-action-primary);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+    padding: clamp(1.25rem, 0.9rem + 2vi, 2.5rem);
+  }
+
+  .pinega-publication-card > div:first-child {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--pinega-ref-space-s);
+  }
+
+  .pinega-publication-card-profile {
+    color: var(--pinega-sys-color-text-quiet);
+    font-family: var(--pinega-sys-font-family-code);
+    font-size: 0.76rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .pinega-publication-card > p,
+  .pinega-publication-card dd {
+    color: var(--pinega-sys-color-text-secondary);
+  }
+
+  .pinega-publication-card dl,
+  .pinega-publication-metadata {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--pinega-ref-space-l);
+    margin: 0;
+  }
+
+  .pinega-publication-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pinega-publication-card dl > div,
+  .pinega-publication-metadata > div {
+    display: grid;
+    align-content: start;
+    gap: var(--pinega-ref-space-2xs);
+  }
+
+  .pinega-publication-card dt,
+  .pinega-publication-metadata dt {
+    color: var(--pinega-sys-color-text-quiet);
+    font-size: 0.72rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .pinega-publication-card dd,
+  .pinega-publication-metadata dd {
+    margin: 0;
+  }
+
+  .pinega-publication-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--pinega-ref-space-s) var(--pinega-ref-space-l);
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), 76rem) !important;
+    margin-inline: auto;
+    border-block-end: 1px solid var(--pinega-sys-color-border-subtle);
+    padding-block: var(--pinega-ref-space-l);
+    font-size: 0.88rem;
+  }
+
+  .pinega-publication-navigation a:last-child {
+    margin-inline-start: auto;
+  }
+
+  .pinega-publication-navigation [aria-current='page'] {
+    color: var(--pinega-sys-color-text-quiet);
+    font-weight: var(--pinega-ref-font-weight-bold);
+  }
+
+  .pinega-publication-article {
+    inline-size: min(calc(100% - 2 * var(--pinega-ref-space-l)), 76rem) !important;
+    margin-inline: auto;
+    padding-block: clamp(3rem, 2rem + 4vi, 6.5rem);
+  }
+
+  .pinega-publication-masthead {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+    margin-block-end: clamp(3rem, 2rem + 3vi, 5.5rem);
+    border-block-start: 0.4rem solid var(--pinega-sys-color-action-primary);
+    border-block-end: 1px solid var(--pinega-sys-color-border-subtle);
+    padding-block: clamp(1.5rem, 1rem + 2vi, 3rem);
+  }
+
+  .pinega-publication-kicker {
+    color: var(--pinega-sys-color-action-primary);
+    font-size: 0.76rem;
+    font-weight: var(--pinega-ref-font-weight-bold);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .pinega-publication-masthead h1 {
+    max-inline-size: 18ch;
+    font-size: clamp(2.5rem, 1.8rem + 3.6vi, 5.5rem);
+  }
+
+  .pinega-publication-subtitle {
+    max-inline-size: 48rem;
+    color: var(--pinega-sys-color-text-secondary);
+    font-family: var(--pinega-sys-font-family-reading);
+    font-size: clamp(1.08rem, 1rem + 0.35vi, 1.3rem);
+    line-height: 1.65;
+  }
+
+  .pinega-publication-body {
+    display: grid;
+    gap: var(--pinega-ref-space-l);
+    max-inline-size: calc(var(--pinega-sys-measure-prose) * 1ch);
+    margin-inline: auto;
+    font-family: var(--pinega-sys-font-family-reading);
+    font-size: clamp(1rem, 0.97rem + 0.14vi, 1.08rem);
+    line-height: 1.72;
+  }
+
+  .pinega-publication-body :where(h2, h3) {
+    font-family: var(--pinega-sys-font-family-ui);
+  }
+
+  .pinega-publication-body h2 {
+    margin-block-start: var(--pinega-ref-space-2xl);
+    padding-block-start: var(--pinega-ref-space-m);
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    font-size: clamp(1.7rem, 1.35rem + 1.25vi, 2.6rem);
+  }
+
+  .pinega-publication-body h3 {
+    margin-block-start: var(--pinega-ref-space-xl);
+  }
+
+  .pinega-publication-body :where(p, li, dd, figcaption) {
+    max-inline-size: none;
+    overflow-wrap: anywhere;
+  }
+
+  .pinega-publication-abstract,
+  .pinega-publication-panel {
+    display: grid;
+    gap: var(--pinega-ref-space-s);
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-inline-start: 0.28rem solid var(--pinega-research-color-inferred);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+    padding: clamp(1.1rem, 0.9rem + 1vi, 1.75rem);
+  }
+
+  .pinega-publication-abstract {
+    border-inline-start-color: var(--pinega-sys-color-action-primary);
+  }
+
+  .pinega-publication-abstract h2,
+  .pinega-publication-panel h3 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+    font-size: 1.05rem;
+  }
+
+  .pinega-publication-panel[data-publication-panel='confirmed'] {
+    border-inline-start-color: var(--pinega-research-color-confirmed);
+  }
+
+  .pinega-publication-panel[data-publication-panel='hypothesis'] {
+    border-inline-start-color: var(--pinega-research-color-hypothesis);
+  }
+
+  .pinega-publication-math-scroll {
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    padding-block: var(--pinega-ref-space-s);
+  }
+
+  .pinega-publication-math-scroll > math[display='block'] {
+    min-inline-size: max-content;
+  }
+
+  .pinega-publication-table-scroll {
+    max-inline-size: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--pinega-sys-color-border-subtle);
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-surface-raised);
+  }
+
+  .pinega-publication-table-scroll table {
+    min-inline-size: 48rem;
+  }
+
+  .pinega-publication-table-scroll :where(th, td) {
+    border-block-end: 1px solid var(--pinega-sys-color-border-subtle);
+    padding: var(--pinega-ref-space-s) var(--pinega-ref-space-m);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .pinega-publication-table-scroll thead {
+    background: var(--pinega-sys-color-surface-lowered);
+  }
+
+  .pinega-publication-table-scroll figcaption {
+    color: var(--pinega-sys-color-text-quiet);
+    padding: var(--pinega-ref-space-s) var(--pinega-ref-space-m);
+    font-size: 0.86rem;
+  }
+
+  .pinega-publication-body pre {
+    max-inline-size: 100%;
+    border-radius: var(--pinega-sys-radius-panel);
+    background: var(--pinega-sys-color-code-surface);
+    color: var(--pinega-sys-color-code-text);
+    padding: var(--pinega-ref-space-l);
+    font-size: 0.84rem;
+    line-height: 1.55;
+  }
+
+  .pinega-publication-body :not(pre) > code {
+    border-radius: var(--pinega-sys-radius-control);
+    background: var(--pinega-sys-color-surface-lowered);
+    padding: 0.1em 0.3em;
+    font-size: 0.88em;
+  }
+
+  .pinega-publication-body :where([role='doc-bibliography'], .pinega-publication-endnotes) {
+    font-size: 0.9rem;
+  }
+
+  .pinega-publication-body :where([role='doc-bibliography'] ul, .pinega-publication-endnotes ol) {
+    display: grid;
+    gap: var(--pinega-ref-space-s);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .pinega-publication-endnotes {
+    margin-block-start: var(--pinega-ref-space-xl);
+    border-block-start: 1px solid var(--pinega-sys-color-border-subtle);
+    padding-block-start: var(--pinega-ref-space-l);
+  }
+
+  .pinega-publication-article .pinega-diagram-feature {
+    margin-block: var(--pinega-ref-space-l);
+  }
+
+  @media (width <= 44rem) {
+    .pinega-publication-card dl,
+    .pinega-publication-metadata {
+      grid-template-columns: 1fr;
+      gap: var(--pinega-ref-space-m);
+    }
+
+    .pinega-publication-navigation,
+    .pinega-publication-article {
+      inline-size: min(calc(100% - 2 * var(--pinega-ref-space-m)), 76rem) !important;
+    }
+
+    .pinega-publication-navigation a:last-child {
+      margin-inline-start: 0;
+    }
+
+    .pinega-publication-body {
+      min-inline-size: 0;
+    }
+  }
+}
+
+@layer pinega.overrides {
+  @media (forced-colors: active) {
+    :where(.pinega-publication-card, .pinega-publication-abstract, .pinega-publication-panel, .pinega-publication-table-scroll) {
+      border-color: CanvasText;
+    }
+  }
+}

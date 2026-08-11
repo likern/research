@@ -2,6 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 import { releaseReporters } from './playwright.reporters.js';
 
+const chromiumExecutablePath = process.env.PINEGA_PLAYWRIGHT_CHROMIUM_EXECUTABLE;
+const chromiumLaunch = chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {};
+
 export default defineConfig({
   testDir: '.',
   fullyParallel: true,
@@ -35,11 +38,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 1000 } },
+      use: { ...devices['Desktop Chrome'], ...chromiumLaunch, viewport: { width: 1440, height: 1000 } },
     },
     {
       name: 'chromium-mobile',
-      use: { ...devices['Pixel 7'] },
+      use: { ...devices['Pixel 7'], ...chromiumLaunch },
     },
     {
       name: 'firefox-desktop',

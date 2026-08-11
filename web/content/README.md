@@ -2,16 +2,16 @@
 
 `content-index.json` is the versioned logical content registry for public
 routes, internal web surfaces, navigation, maturity, audience, discovery
-metadata, locale variants, and the documentation information architecture. It
-does not own article body content: native HTML remains the durable semantic
-source for each localized page.
+metadata, locale variants, publication joins, and the documentation information
+architecture. Ordinary pages keep native HTML as their durable semantic source;
+research-publication entries join their shells to registered Typst sources.
 
 The build validates that every registered page agrees with the registry on:
 
 - BCP 47 locale, route prefix, source, and output identity;
 - document title and meta description;
 - canonical URL policy;
-- one visible `h1`;
+- one visible `h1` after any registered publication article is compiled;
 - `data-page` identity;
 - locale-specific public-navigation destinations;
 - sitemap and searchability flags;
@@ -24,7 +24,7 @@ consume the same metadata to generate blog indexes, RSS/Atom feeds, paper
 catalogues, JSON-LD, related-content links, and a static full-text search index.
 Those systems must not introduce a second manually maintained route catalogue.
 
-## Schema v3 logical and localized fields
+## Schema v4 logical, localized, and publication fields
 
 Each entry has a stable `id`, shared classification/discovery fields, a logical
 `revision`, and a `locales` object. A locale variant contains all fields that
@@ -32,6 +32,11 @@ must be authored and reviewed in that language: route, source/output path,
 title, summary, dates, publication flags, `reviewed_revision`, and localized
 documentation applicability. Variants are either complete and publishable or
 absent; there is no `fallback`, `pending`, or partially translated state.
+
+A `research-publication` entry additionally owns a `publication` record with a
+closed profile and slug. Every localized variant points to one
+`publication_document_id` in `research.toml`; profile, locale, source, and both
+HTML/PDF formats must match. Arbitrary Typst HTML remains globally disabled.
 
 English sources live under `pages/en/` while preserving their existing public
 URLs. Russian sources live under `pages/ru/` and can only publish under `/ru/`.

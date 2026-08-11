@@ -40,30 +40,33 @@ const expectedDocumentationRoutes = [
   '/docs/reference/content-metadata-schema/',
   '/docs/contributing/review-and-release-gates/',
 ];
-const expectedPublicRoutes = ['/', '/technology/', '/research/', '/docs/', ...expectedDocumentationRoutes, '/about/'];
+const publicationRoutes = ['/research/publications/', '/research/publications/dual-target-contract/'];
+const expectedPublicRoutes = ['/', '/technology/', '/research/', ...publicationRoutes, '/docs/', ...expectedDocumentationRoutes, '/about/'];
 const expectedRussianPublicRoutes = expectedPublicRoutes.map(route => route === '/' ? '/ru/' : `/ru${route}`);
 const expectedPrimaryNavigation = ['/technology/', '/research/', '/docs/', '/about/', 'https://github.com/likern/research'];
+const publicationArtifactRoutes = new Set(variants.filter(entry => entry.publication).map(entry => `${entry.route}paper.pdf`));
 
-test('content registry v3 is the logical multilingual route and discovery contract', async () => {
-  assert.equal(contentIndex.schema_version, 3);
-  assert.equal(contentSchema.properties.schema_version.const, 3);
+test('content registry v4 is the logical multilingual route, discovery, and publication contract', async () => {
+  assert.equal(contentIndex.schema_version, 4);
+  assert.equal(contentSchema.properties.schema_version.const, 4);
   assert.ok(contentSchema.$defs.site_locale);
   assert.ok(contentSchema.$defs.localized_page);
+  assert.ok(contentSchema.$defs.publication);
   assert.equal(contentIndex.site.default_locale, 'en');
   assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
   assert.equal(contentIndex.site.locales.en.path_prefix, '');
   assert.equal(contentIndex.site.locales.ru.path_prefix, '/ru');
   assert.equal(contentIndex.site.tagline, 'Correctness under concurrency.');
   assert.deepEqual(englishNavigation, expectedPrimaryNavigation);
-  assert.equal(entries.length, 20);
-  assert.equal(variants.length, 39);
+  assert.equal(entries.length, 22);
+  assert.equal(variants.length, 43);
   assert.equal(new Set(entries.map(entry => entry.id)).size, entries.length);
   assert.equal(new Set(variants.map(entry => entry.route)).size, variants.length);
   assert.equal(new Set(variants.map(entry => entry.source_path)).size, variants.length);
   assert.equal(new Set(variants.map(entry => entry.output_path)).size, variants.length);
   assert.deepEqual(variants.filter(entry => entry.sitemap).map(entry => entry.route).toSorted(), [...expectedPublicRoutes, ...expectedRussianPublicRoutes].toSorted());
   assert.deepEqual(variants.filter(entry => entry.searchable).map(entry => entry.route).toSorted(), [...expectedPublicRoutes, ...expectedRussianPublicRoutes].toSorted());
-  assert.equal(russianVariants.filter(entry => entry.canonical).length, 18, 'Gate 3B publishes the complete Russian public corpus');
+  assert.equal(russianVariants.filter(entry => entry.canonical).length, 20, 'Gate 5.1 publishes the complete Russian public corpus');
   for (const entry of entries.filter(entry => entry.public && entry.id !== 'not-found')) {
     assert.deepEqual(Object.keys(entry.locales), ['en', 'ru'], `${entry.id}: every canonical public page must have both reviewed variants`);
   }
@@ -102,7 +105,13 @@ test('registered locale variants preserve semantic HTML and registry metadata wi
     assert.match(html, new RegExp(`<html\\b[^>]*\\bdata-page="${escapeRegex(entry.id)}"`, 'u'));
     assert.match(html, new RegExp(`<title>${escapeRegex(entry.canonical_title)}<\\/title>`, 'u'));
     assert.match(html, new RegExp(`<meta name="description" content="${escapeRegex(entry.summary)}">`, 'u'));
-    assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${entry.route} must have one h1`);
+    if (entry.publication) {
+      assert.equal((html.match(/<h1\b/gu) ?? []).length, 0, `${entry.route}: the Typst source must own the publication h1`);
+      assert.equal((html.match(/<!-- PINEGA_PUBLICATION_ARTICLE -->/gu) ?? []).length, 1, `${entry.route}: publication shell must expose one article slot`);
+    } else {
+      assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${entry.route} must have one h1`);
+      assert.doesNotMatch(html, /PINEGA_PUBLICATION_ARTICLE/u);
+    }
     assert.match(html, /<main id="main-content"/u, `${entry.route} must have main content`);
     assert.match(html, /<!-- PINEGA_PROJECT_META -->/u, `${entry.route} must expose the private Pro boundary`);
     assert.doesNotMatch(html, /innerHTML\s*=/u, `${entry.route} must remain durable source HTML`);
@@ -162,6 +171,7 @@ test('all author-written internal routes and fragments resolve to registered dur
     for (const href of links) {
       if (/^(?:https?:|mailto:|tel:)/u.test(href)) continue;
       const target = new URL(href, `https://pinega.example${entry.route}`);
+      if (publicationArtifactRoutes.has(target.pathname)) continue;
       const targetEntry = routeMap.get(target.pathname);
       assert.ok(targetEntry, `${entry.source_path}: unresolved local route ${href}`);
       if (target.hash) {
@@ -232,7 +242,7 @@ test('Pinega Engine explanation preserves accepted architecture boundaries witho
 
 test('build generates locale-aware discovery, navigation, SEO, and freshness checks', async () => {
   const build = await read('scripts/build.mjs');
-  assert.match(build, /schema_version !== 3/u);
+  assert.match(build, /schema_version !== 4/u);
   assert.match(build, /reviewed_revision !== entry\.revision/u);
   assert.match(build, /renderLanguageSwitcher/u);
   assert.match(build, /renderTranslationNotices/u);

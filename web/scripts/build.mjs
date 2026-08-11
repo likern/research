@@ -22,6 +22,7 @@ import {
 import { finalizeBuildIdentity } from './lib/build-identity.mjs';
 import { applyDocumentContract, validateDocumentContract } from './lib/document-contract.mjs';
 import { createVerifiedFeatureGraph } from './lib/feature-graph.mjs';
+import { buildPublications, PUBLICATION_MANIFEST_PATH } from './lib/publication-pipeline.mjs';
 import {
   IMMUTABLE_CACHE_CONTROL,
   NOT_FOUND_CACHE_CONTROL,
@@ -34,6 +35,7 @@ import {
 } from './lib/release-contract.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const repositoryRoot = resolve(root, '..');
 const dist = resolve(root, 'dist');
 const contentRoot = resolve(root, 'content');
 const diagramRoot = resolve(root, '../design/diagrams');
@@ -54,6 +56,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(resolve(dist, 'assets'), { recursive: true });
 await mkdir(diagramBuildRoot, { recursive: true });
 const diagrams = await buildSemanticDiagrams();
+const publications = await buildPublications({ contentIndex, dist, repositoryRoot, webRoot: root });
 const staticAssets = await emitStaticAssets();
 
 const browserBundle = await esbuild({
@@ -94,7 +97,9 @@ const featureGraphAsset = await writeFingerprintedJson(
 );
 
 for (const page of pages) {
-  const source = await readFile(resolve(root, page.source), 'utf8');
+  const template = await readFile(resolve(root, page.source), 'utf8');
+  validatePageTemplate(template, page);
+  const source = replacePublicationPlaceholder(template, page, publications.articles);
   validatePageSource(source, page);
   let html = rewriteShellAssetReferences(source, page.source, {
     script: verifiedFeatures.graph.entry.script,
@@ -154,7 +159,7 @@ await writeFile(resolve(dist, 'sitemap.xml'), renderSitemap(siteOrigin, publicRo
 await writeFile(
   resolve(dist, 'site-manifest.json'),
   `${JSON.stringify({
-    schemaVersion: 8,
+    schemaVersion: 9,
     build: {
       id: BUILD_ID_PLACEHOLDER,
       identityAlgorithm: BUILD_ID_ALGORITHM,
@@ -257,9 +262,28 @@ await writeFile(
       criticalFeatures: page.criticalFeatures,
       requests: page.requestManifest,
       documentation: page.documentation ?? null,
+      publication: page.publication ? {
+        profile: page.publication.profile,
+        documentId: page.publication_document_id,
+        pdf: publications.plans.find(plan => plan.entryId === page.id && plan.locale === page.locale)?.pdfUrl,
+      } : null,
       translations: Object.fromEntries(page.translations.map(translation => [translation.locale, translation.route])),
     })),
     diagrams: diagrams.ids.map(id => ({ id, model: `/diagrams/models/${id}.json` })),
+    publications: {
+      schemaVersion: publications.manifest.schemaVersion,
+      profile: 'dual-target',
+      manifest: `/${PUBLICATION_MANIFEST_PATH}`,
+      toolchain: publications.manifest.toolchain,
+      design: publications.manifest.design,
+      entries: publications.manifest.entries.map(entry => ({
+        id: entry.id,
+        locale: entry.locale,
+        documentId: entry.documentId,
+        route: entry.route,
+        pdf: entry.pdf.url,
+      })),
+    },
   }, null, 2)}\n`,
   'utf8',
 );
@@ -268,10 +292,10 @@ const buildId = await finalizeBuildIdentity(dist, [
   ...builtPages.map(page => page.output),
   'site-manifest.json',
 ]);
-await writeReleaseHeaders(dist, builtPages.map(page => page.route));
+await writeReleaseHeaders(dist, [...builtPages.map(page => page.route), ...publications.artifactRoutes]);
 await writeReleaseManifest(dist, buildId);
 
-console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants and ${diagrams.ids.length} semantic diagrams`);
+console.log(`Built Pinega website ${buildId} at ${dist} with ${builtPages.length} localized page variants, ${publications.manifest.entries.length} publication artefacts, and ${diagrams.ids.length} semantic diagrams`);
 
 async function buildSemanticDiagrams() {
   const rendererPath = resolve(diagramBuildRoot, 'renderer.mjs');
@@ -377,7 +401,7 @@ function assertEquivalentDiagramStructure(canonical, localized, locale) {
 
 function validateContentIndex(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new TypeError('content-index.json must contain an object');
-  if (value.schema_version !== 3) throw new TypeError(`Unsupported content index schema: ${JSON.stringify(value.schema_version)}`);
+  if (value.schema_version !== 4) throw new TypeError(`Unsupported content index schema: ${JSON.stringify(value.schema_version)}`);
   if (!value.site || typeof value.site !== 'object') throw new TypeError('Content index must define site metadata');
   for (const field of ['name', 'organization', 'tagline', 'default_locale']) requireString(value.site, field, 'site');
   if (!value.site.locales || typeof value.site.locales !== 'object' || Array.isArray(value.site.locales)) throw new TypeError('Content index must define site.locales');
@@ -419,6 +443,14 @@ function validateContentIndex(value) {
     if (entry.published_at !== null && !/^\d{4}-\d{2}-\d{2}$/u.test(entry.published_at)) throw new TypeError(`${entry.id}: published_at must be null or YYYY-MM-DD`);
     if (entry.research_area !== null && typeof entry.research_area !== 'string') throw new TypeError(`${entry.id}: research_area must be a string or null`);
     if (!entry.locales || typeof entry.locales !== 'object' || Array.isArray(entry.locales) || Object.keys(entry.locales).length === 0) throw new TypeError(`${entry.id}.locales must define at least one published variant`);
+    if (entry.publication !== undefined) {
+      if (!entry.publication || typeof entry.publication !== 'object' || Array.isArray(entry.publication)) throw new TypeError(`${entry.id}.publication must be an object`);
+      if (entry.content_type !== 'research-publication') throw new TypeError(`${entry.id}: publication entries must use content_type research-publication`);
+      if (entry.publication.profile !== 'dual-target') throw new TypeError(`${entry.id}: unsupported publication profile ${JSON.stringify(entry.publication.profile)}`);
+      if (!/^[a-z][a-z0-9-]*$/u.test(entry.publication.slug ?? '')) throw new TypeError(`${entry.id}.publication.slug is invalid`);
+    } else if (entry.content_type === 'research-publication') {
+      throw new TypeError(`${entry.id}: research-publication entries require a publication contract`);
+    }
 
     addUnique(identities, entry.id, 'content id');
     for (const [locale, localized] of Object.entries(entry.locales)) {
@@ -438,6 +470,11 @@ function validateContentIndex(value) {
       if (localized.source_path.startsWith('pages/') && !localized.source_path.startsWith(`pages/${locale}/`)) throw new TypeError(`${entry.id}.${locale}: localized page sources must live below pages/${locale}/`);
       if (entry.documentation) validateDocumentationMetadata(entry, localized, locale, value.site.locales[locale], documentationPositions);
       else if (localized.documentation !== undefined) throw new TypeError(`${entry.id}.${locale}: non-documentation content must not define localized documentation metadata`);
+      if (entry.publication) {
+        if (typeof localized.publication_document_id !== 'string' || !/^[a-z][a-z0-9-]*$/u.test(localized.publication_document_id)) throw new TypeError(`${entry.id}.${locale}: publication_document_id is invalid`);
+      } else if (localized.publication_document_id !== undefined) {
+        throw new TypeError(`${entry.id}.${locale}: publication_document_id requires an entry publication contract`);
+      }
       addUnique(routes, localized.route, 'route');
       addUnique(sources, localized.source_path, 'source path');
       addUnique(outputs, localized.output_path, 'output path');
@@ -618,6 +655,26 @@ function validatePageSource(html, page) {
     for (const marker of ['PINEGA_DOC_NAV', 'PINEGA_BREADCRUMBS', 'PINEGA_DOC_PROVENANCE']) if (!html.includes(`<!-- ${marker} -->`)) throw new TypeError(`${page.source}: missing ${marker} build marker`);
   }
   if (!html.includes('<!-- PINEGA_LANGUAGE_SWITCHER -->')) throw new TypeError(`${page.source}: every registered page must expose the language-switcher marker`);
+}
+
+function validatePageTemplate(html, page) {
+  const markerCount = html.split('<!-- PINEGA_PUBLICATION_ARTICLE -->').length - 1;
+  const headingCount = (html.match(/<h1\b/gu) ?? []).length;
+  if (page.publication) {
+    if (markerCount !== 1) throw new TypeError(`${page.source}: publication shell must contain exactly one article marker`);
+    if (headingCount !== 0) throw new TypeError(`${page.source}: publication h1 must be owned by the Typst source`);
+  } else if (markerCount !== 0) {
+    throw new TypeError(`${page.source}: non-publication page contains a publication article marker`);
+  }
+}
+
+function replacePublicationPlaceholder(html, page, articles) {
+  if (!page.publication) return html;
+  const article = articles.get(`${page.id}:${page.locale}`);
+  if (!article) throw new TypeError(`${page.source}: compiled publication article is missing`);
+  const output = html.replace('<!-- PINEGA_PUBLICATION_ARTICLE -->', article);
+  if (/PINEGA_PUBLICATION_ARTICLE/u.test(output)) throw new TypeError(`${page.source}: unresolved publication article marker`);
+  return output;
 }
 
 function replaceLocalePlaceholders(html, page) {
@@ -889,12 +946,17 @@ function addUnique(values, value, label) {
   values.add(value);
 }
 function replaceDiagramPlaceholders(html, figures, locale, sourcePath) {
-  const output = html.replace(/<!--\s*PINEGA_DIAGRAM:([a-z][a-z0-9-]*)\s*-->/gu, (_match, id) => {
+  const render = id => {
     const figure = figures.get(`${locale}:${id}`);
     if (!figure) throw new TypeError(`${sourcePath}: unknown semantic diagram ${JSON.stringify(id)}`);
     return figure;
-  });
-  if (/PINEGA_DIAGRAM:/u.test(output)) throw new TypeError(`${sourcePath}: unresolved semantic diagram placeholder`);
+  };
+  let output = html.replace(/<!--\s*PINEGA_DIAGRAM:([a-z][a-z0-9-]*)\s*-->/gu, (_match, id) => render(id));
+  output = output.replace(
+    /<div\b(?=[^>]*\bclass="pinega-publication-diagram-slot")(?=[^>]*\bdata-pinega-diagram-placeholder="([a-z][a-z0-9-]*)")[^>]*><\/div>/gu,
+    (_match, id) => render(id),
+  );
+  if (/PINEGA_DIAGRAM:|data-pinega-diagram-placeholder/u.test(output)) throw new TypeError(`${sourcePath}: unresolved semantic diagram placeholder`);
   return output;
 }
 function normalizeSiteOrigin(value) {

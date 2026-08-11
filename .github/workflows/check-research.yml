@@ -14,6 +14,7 @@ on:
       - "docs/nushell-workspace.md"
       - "docs/semantic-diagrams.md"
       - "ydmp/**/*.typ"
+      - "ydmp/**/*.bib"
       - "ydmp/**/paper.toml"
       - "ydmp/**/prepare.json"
       - ".github/workflows/check-research.yml"
@@ -28,6 +29,7 @@ on:
       - "docs/nushell-workspace.md"
       - "docs/semantic-diagrams.md"
       - "ydmp/**/*.typ"
+      - "ydmp/**/*.bib"
       - "ydmp/**/paper.toml"
       - "ydmp/**/prepare.json"
       - ".github/workflows/check-research.yml"
@@ -41,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
 
       - name: Read pinned versions
         id: versions
@@ -51,12 +53,12 @@ jobs:
           echo "typst=$(tr -d '[:space:]' < .typst-version)" >> "$GITHUB_OUTPUT"
 
       - name: Install pinned Nushell
-        uses: hustcer/setup-nu@v3
+        uses: hustcer/setup-nu@f3fd65374ffc4d60974c0dd2f7263c6c5c285f81 # v3
         with:
           version: ${{ steps.versions.outputs.nushell }}
 
       - name: Install pinned Typst
-        uses: typst-community/setup-typst@v5
+        uses: typst-community/setup-typst@40d32bb6ccb235bd7f5164cb47cfd40a5ea3a314 # v5
         with:
           typst-version: ${{ steps.versions.outputs.typst }}
 

@@ -21,6 +21,7 @@ const mediaTypes = new Map([
   ['.js', 'application/javascript'],
   ['.json', 'application/json'],
   ['.map', 'application/json'],
+  ['.pdf', 'application/pdf'],
   ['.svg', 'image/svg+xml'],
   ['.txt', 'text/plain'],
   ['.xml', 'application/xml'],

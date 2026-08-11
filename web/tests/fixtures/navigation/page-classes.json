@@ -11,7 +11,9 @@
     { "contentType": "documentation-tutorial", "id": "docs-research-workspace", "locale": "en", "route": "/docs/start/research-workspace/" },
     { "contentType": "internal-validation", "id": "component-lab", "locale": "en", "route": "/component-lab/" },
     { "contentType": "landing", "id": "home", "locale": "en", "route": "/" },
+    { "contentType": "publication-catalogue", "id": "research-publications", "locale": "en", "route": "/research/publications/" },
     { "contentType": "research-catalogue", "id": "research", "locale": "en", "route": "/research/" },
+    { "contentType": "research-publication", "id": "publication-dual-target-contract", "locale": "en", "route": "/research/publications/dual-target-contract/" },
     { "contentType": "system", "id": "not-found", "locale": "en", "route": "/404.html" },
     { "contentType": "technology-catalogue", "id": "technology", "locale": "en", "route": "/technology/" }
   ]

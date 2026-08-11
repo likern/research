@@ -72,6 +72,36 @@ test('Russian research keeps localized semantic diagrams legible', async ({ page
   await expect(page.locator('figure[data-diagram-id="buffer-frame-lifecycle"]')).toHaveScreenshot('research-ru-lifecycle.png', { maxDiffPixelRatio: 0.02 });
 });
 
+test('publication catalogue and bilingual reader preserve the Strata reading hierarchy', async ({ page }) => {
+  await open(page, '/research/publications/');
+  await expect(page.locator('.pinega-publication-catalogue-hero')).toHaveScreenshot('publication-catalogue.png');
+  await expect(page.locator('.pinega-publication-card')).toHaveScreenshot('publication-card.png');
+  await open(page, '/research/publications/dual-target-contract/');
+  await expect(page.locator('.pinega-publication-masthead')).toHaveScreenshot('publication-reader-masthead.png');
+  await expect(page.locator('.pinega-publication-table-scroll')).toHaveScreenshot('publication-reader-table.png');
+  await open(page, '/ru/research/publications/dual-target-contract/');
+  await expect(page.locator('.pinega-publication-masthead')).toHaveScreenshot('publication-reader-ru-masthead.png');
+});
+
+test('publication reader remains deliberate in dark mode', async ({ page }) => {
+  await open(page, '/research/publications/dual-target-contract/');
+  await page.locator('[data-theme-toggle]').click();
+  await expect(page.locator('html')).toHaveClass(/pinega-dark/u);
+  await expect(page.locator('.pinega-publication-abstract')).toHaveScreenshot('publication-reader-abstract-dark.png');
+  await expect(page.locator('[data-publication-panel="confirmed"]')).toHaveScreenshot('publication-reader-evidence-dark.png');
+});
+
+test('publication reader reflows at the 320 pixel boundary in light and dark modes', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await open(page, '/research/publications/dual-target-contract/');
+  await expect(page.locator('.pinega-publication-masthead')).toHaveScreenshot('publication-reader-mobile-masthead.png');
+  await expect(page.locator('.pinega-publication-math-scroll').first()).toHaveScreenshot('publication-reader-mobile-math-relation.png');
+  await expect(page.locator('.pinega-publication-math-scroll').nth(1)).toHaveScreenshot('publication-reader-mobile-math-matrix.png');
+  await expect(page.locator('.pinega-publication-table-scroll')).toHaveScreenshot('publication-reader-mobile-table.png');
+  await page.locator('[data-theme-toggle]').click();
+  await expect(page.locator('[data-publication-panel="hypothesis"]')).toHaveScreenshot('publication-reader-mobile-thought-dark.png');
+});
+
 test('about and company-boundary narrative', async ({ page }) => {
   await open(page, '/about/');
   await expect(page.locator('.pinega-research-hero')).toHaveScreenshot('about-hero.png');

@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "site", "entries"],
   "properties": {
-    "schema_version": { "const": 3 },
+    "schema_version": { "const": 4 },
     "site": { "$ref": "#/$defs/site" },
     "entries": {
       "type": "array",
@@ -99,6 +99,15 @@
         "applies_to": { "type": "string", "minLength": 1 }
       }
     },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "slug"],
+      "properties": {
+        "profile": { "const": "dual-target" },
+        "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
+      }
+    },
     "localized_page": {
       "type": "object",
       "additionalProperties": false,
@@ -120,7 +129,8 @@
         "searchable": { "type": "boolean" },
         "structured_data_type": { "type": ["string", "null"] },
         "canonical": { "type": "boolean" },
-        "documentation": { "$ref": "#/$defs/localized_documentation" }
+        "documentation": { "$ref": "#/$defs/localized_documentation" },
+        "publication_document_id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" }
       }
     },
     "entry": {
@@ -158,6 +168,7 @@
         "public": { "type": "boolean" },
         "revision": { "type": "integer", "minimum": 1 },
         "documentation": { "$ref": "#/$defs/documentation" },
+        "publication": { "$ref": "#/$defs/publication" },
         "locales": {
           "type": "object",
           "minProperties": 1,

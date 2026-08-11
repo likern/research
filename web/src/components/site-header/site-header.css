@@ -248,7 +248,13 @@
     }
 
     pinega-site-header .pinega-cluster {
+      min-inline-size: 0;
       gap: var(--pinega-ref-space-2xs);
+    }
+
+    pinega-site-header .pinega-shell-control {
+      max-inline-size: 100%;
+      white-space: normal;
     }
 
     .pinega-language-option {

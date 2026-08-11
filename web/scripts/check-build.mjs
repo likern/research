@@ -53,6 +53,9 @@ const bundleManifestPath = artifactPathFromUrl(manifest.navigation?.featureGraph
 const featureGraph = JSON.parse(await readFile(resolve(root, featureGraphPath), 'utf8'));
 const bundleManifest = JSON.parse(await readFile(resolve(root, bundleManifestPath), 'utf8'));
 const releaseManifest = JSON.parse(await readFile(resolve(root, RELEASE_MANIFEST_PATH), 'utf8'));
+const publicationManifestPath = 'content/publications-manifest.json';
+const publicationManifest = JSON.parse(await readFile(resolve(root, publicationManifestPath), 'utf8'));
+const publicationVariants = variants.filter(entry => entry.publication);
 const faviconPath = releaseManifest.files.find(entry => /^assets\/static\/favicon-(?:[A-Z0-9]{8}|[a-f0-9]{16})\.svg$/u.test(entry.path))?.path;
 assert.ok(faviconPath, 'Release manifest must expose one fingerprinted favicon.');
 const required = [
@@ -73,6 +76,8 @@ const required = [
   'content/localization-policy.md',
   'content/localization-review.ru.md',
   'content/terminology.ru.json',
+  publicationManifestPath,
+  ...publicationVariants.map(entry => `${entry.output_path.slice(0, -'index.html'.length)}paper.pdf`),
   ...Object.keys(contentIndex.site.locales).flatMap(locale => [
     `content/messages/${locale}.json`,
     `content/${locale}/documentation-manifest.json`,
@@ -182,10 +187,10 @@ for (const entry of variants) {
   }
 }
 
-assert.equal(contentIndex.schema_version, 3);
+assert.equal(contentIndex.schema_version, 4);
 assert.equal(contentIndex.site.default_locale, 'en');
 assert.deepEqual(Object.keys(contentIndex.site.locales), ['en', 'ru']);
-assert.equal(manifest.schemaVersion, 8);
+assert.equal(manifest.schemaVersion, 9);
 assert.equal(manifest.build.identityAlgorithm, BUILD_ID_ALGORITHM);
 assert.equal(manifest.build.documentContractVersion, DOCUMENT_CONTRACT_VERSION);
 assert.equal(manifest.build.shellVersion, SHELL_VERSION);
@@ -244,6 +249,56 @@ assert.deepEqual(manifest.routes.map(entry => entry.route), variants.map(entry =
 assert.deepEqual(manifest.routes.filter(entry => entry.sitemap).map(entry => entry.route), variants.filter(entry => entry.sitemap).map(entry => entry.route));
 assert.deepEqual(manifest.routes.filter(entry => entry.searchable).map(entry => entry.route), variants.filter(entry => entry.searchable).map(entry => entry.route));
 assert.deepEqual(manifest.diagrams.map(entry => entry.id).toSorted(), diagramIds.toSorted());
+assert.equal(publicationManifest.schemaVersion, 1);
+assert.equal(publicationManifest.kind, 'pinega-dual-target-publications');
+assert.deepEqual(publicationManifest.toolchain, { typst: '0.15.1', htmlFeature: 'experimental-allowlist', sourceDateEpoch: 0 });
+assert.equal(publicationManifest.design.system, 'Pinega Strata');
+assert.equal(publicationManifest.entries.length, 2);
+assert.deepEqual(publicationManifest.entries.map(entry => entry.locale), ['en', 'ru']);
+assert.deepEqual(manifest.publications, {
+  schemaVersion: 1,
+  profile: 'dual-target',
+  manifest: `/${publicationManifestPath}`,
+  toolchain: publicationManifest.toolchain,
+  design: publicationManifest.design,
+  entries: publicationManifest.entries.map(entry => ({
+    id: entry.id,
+    locale: entry.locale,
+    documentId: entry.documentId,
+    route: entry.route,
+    pdf: entry.pdf.url,
+  })),
+});
+for (const publication of publicationManifest.entries) {
+  const variant = publicationVariants.find(entry => entry.locale === publication.locale && entry.publication_document_id === publication.documentId);
+  assert.ok(variant, `Missing publication registry variant ${publication.documentId}`);
+  assert.equal(publication.profile, variant.publication.profile);
+  assert.equal(publication.route, variant.route);
+  const manifestRoute = manifestRoutes.get(`${variant.id}:${variant.locale}`);
+  assert.deepEqual(manifestRoute.publication, {
+    profile: variant.publication.profile,
+    documentId: variant.publication_document_id,
+    pdf: publication.pdf.url,
+  });
+  const html = await readFile(resolve(root, variant.output_path), 'utf8');
+  assert.equal((html.match(/<article class="pinega-publication-article"/gu) ?? []).length, 1, `${variant.route}: one Typst article`);
+  assert.equal((html.match(/<h1\b/gu) ?? []).length, 1, `${variant.route}: one publication h1`);
+  assert.ok((html.match(/<math\b/gu) ?? []).length >= 3, `${variant.route}: MathML specimen`);
+  const blockMathCount = (html.match(/<math display="block">/gu) ?? []).length;
+  const wrappedBlockMathCount = (html.match(/<div class="pinega-publication-math-scroll" tabindex="0" role="group" aria-label="[^"]+"><math display="block">/gu) ?? []).length;
+  assert.ok(blockMathCount >= 1, `${variant.route}: block MathML specimen`);
+  assert.equal(wrappedBlockMathCount, blockMathCount, `${variant.route}: every block MathML root has one external overflow host`);
+  assert.equal((html.match(/<table\b/gu) ?? []).length, 1, `${variant.route}: semantic table specimen`);
+  assert.equal((html.match(/<pinega-diagram-viewer\b/gu) ?? []).length, 1, `${variant.route}: shared semantic diagram`);
+  assert.match(html, /<section role="doc-endnotes" class="pinega-publication-endnotes">/u);
+  assert.doesNotMatch(html, /PINEGA_PUBLICATION_ARTICLE|data-pinega-diagram-placeholder/u);
+  const release = releaseManifest.files.find(file => file.path === publication.pdf.output);
+  assert.ok(release, `${publication.pdf.output}: exact release inventory entry`);
+  assert.equal(release.mediaType, 'application/pdf');
+  assert.equal(release.bytes, publication.pdf.bytes);
+  assert.equal(release.sha256, publication.pdf.sha256);
+  assert.equal(release.url, publication.pdf.url);
+}
 assert.equal(featureGraph.schemaVersion, 1);
 assert.equal(featureGraph.kind, 'pinega-dynamic-feature-graph');
 assert.deepEqual(featureGraph.bundler, {

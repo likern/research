@@ -271,7 +271,7 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
   const archetypeContentTypes = pageClasses.representatives.map(representative => representative.contentType);
   unique(archetypeIds, 'Route archetype IDs');
   unique(archetypeContentTypes, 'Route archetype content types');
-  assert.equal(pageClasses.representatives.length, 13, 'Route archetype corpus must account for all 13 page classes');
+  assert.equal(pageClasses.representatives.length, 15, 'Route archetype corpus must account for all 15 page classes');
 
   const nativeExclusionIds = equivalence.navigation.native_route_exclusions.map(exclusion => exclusion.id);
   unique(nativeExclusionIds, 'Native route semantic exclusions');
@@ -289,7 +289,7 @@ export async function validateAccessibilityCoverage({ webRoot = defaultWebRoot }
     );
   }
   const enhancedArchetypes = pageClasses.representatives.filter(representative => !nativeExclusionIds.includes(representative.id));
-  assert.equal(enhancedArchetypes.length, 11, 'Exactly 11 route archetypes must support direct/enhanced equivalence');
+  assert.equal(enhancedArchetypes.length, 13, 'Exactly 13 route archetypes must support direct/enhanced equivalence');
 
   const [
     config,
