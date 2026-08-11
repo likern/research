@@ -296,7 +296,9 @@ export function extractPublicationArticle(standaloneHtml, expected, expectedMath
   }
   if (findElements(article, element => element.tagName === 'math').length < 3) throw new TypeError(`${expected.documentId}: specimen must exercise MathML.`);
   if (findElements(article, element => element.tagName === 'table').length !== 1) throw new TypeError(`${expected.documentId}: specimen must contain one semantic table.`);
-  if (findElements(article, element => element.tagName === 'pre').length < 1) throw new TypeError(`${expected.documentId}: specimen must contain a code block.`);
+  const codeBlocks = findElements(article, element => element.tagName === 'pre');
+  if (codeBlocks.length < 1) throw new TypeError(`${expected.documentId}: specimen must contain a code block.`);
+  for (const codeBlock of codeBlocks) setAttribute(codeBlock, 'tabindex', '0');
   if (findElements(article, element => attributes(element).has('data-pinega-diagram-placeholder')).length !== 1) {
     throw new TypeError(`${expected.documentId}: specimen must contain one shared semantic diagram placeholder.`);
   }

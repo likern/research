@@ -107,6 +107,17 @@ jobs:
         working-directory: web
         run: npm run test:visual
 
+      - name: Upload visual failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: scientific-diagrams-visual-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            web/test-results
+            web/playwright-report
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Capture web and authoring review assets
         shell: bash
         env:

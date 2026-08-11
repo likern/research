@@ -112,6 +112,7 @@ test('standalone Typst HTML is reduced to one inert semantic article', () => {
   assert.match(article, /<section role="doc-endnotes" class="pinega-publication-endnotes">/u);
   assert.doesNotMatch(article, /<html|<head|<body|<style|style=/u);
   assert.equal((article.match(/<math/gu) ?? []).length, 3);
+  assert.match(article, /<pre tabindex="0"><code>return projection;<\/code><\/pre>/u);
 });
 
 test('HTML adapter rejects active content, unsafe URLs, duplicate identities, and compiler CSS drift', () => {
