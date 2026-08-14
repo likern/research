@@ -24,20 +24,23 @@ focal_sources:
     provider: CS Space
     term: "Fall 2025"
     role: primary-lecture-spine
+    url: "https://csspace.io/course/2025fall-lin-opt"
   textbook:
     id: vanderbei-linear-programming-5e
     title: "Linear Programming: Foundations and Extensions"
     author: Robert J. Vanderbei
     edition: 5
     year: 2020
+    doi: "10.1007/978-3-030-39415-8"
+    uploaded_filename: vanderbei2020.pdf
     role: primary-textbook-spine
-    local_source: /mnt/data/vanderbei2020.pdf
 
 external_exercise_sources:
   - id: mit-15-053-spring-2013
     title: Optimization Methods in Management Science
     provider: MIT OpenCourseWare
     level: undergraduate
+    url: "https://ocw.mit.edu/courses/15-053-optimization-methods-in-management-science-spring-2013/"
     use_for:
       - lp-formulation
       - simplex-intuition
@@ -52,6 +55,7 @@ external_exercise_sources:
     title: Network Optimization
     provider: MIT OpenCourseWare
     level: graduate
+    url: "https://ocw.mit.edu/courses/15-082j-network-optimization-fall-2010/"
     use_for:
       - shortest-path
       - network-flow
