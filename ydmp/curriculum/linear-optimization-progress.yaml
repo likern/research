@@ -1,0 +1,52 @@
+course_id: linear-optimization-deep-mastery
+version: 1
+as_of: 2026-08-14
+protocol: ydmp/protocol/lecture-book-mastery.md
+curriculum: ydmp/curriculum/linear-optimization.yaml
+
+state:
+  status: awaiting-explicit-stage-report
+  active_lecture: null
+  active_source_frontier: null
+  active_mode: null
+  next_action: "Wait for a natural-language stage report and dispatch it through the protocol."
+
+policies:
+  assistant_owns_orchestration: true
+  do_not_require_learner_to_remember_protocol: true
+  do_not_infer_stage_from_hypothetical_examples: true
+  one_question_at_a_time: true
+  preserve_answers_verbatim: true
+  max_repair_questions_per_answer: 1
+  spoiler_boundary: ask-before-crossing
+  canonical_notes_format: typst
+
+confirmed_progress:
+  lectures_watched: []
+  diagnostic_recalls_captured: []
+  textbook_frontiers_completed: []
+  exercises_verified: []
+  corrected_recalls_passed: []
+  canonical_models_completed: []
+  transfer_tasks_completed: []
+  implementation_tasks_completed: []
+
+historical_context:
+  status: unverified-for-progress
+  note: >-
+    Earlier conversations discuss material from several initial lectures, but the
+    learner used "просмотрел лекцию 3" as an example in the authorization message.
+    No current lecture or protocol stage is therefore marked complete until the
+    learner explicitly reports it.
+
+accepted_status_reports:
+  - "Просмотрел лекцию N"
+  - "Вот мой пересказ"
+  - "Прочитал главу/раздел ..."
+  - "Решил задачу ..."
+  - "Застрял"
+  - "Не понимаю ..."
+  - "Сделал конспект"
+  - "Готов дальше"
+  - "CAPTURE"
+  - "RESUME"
