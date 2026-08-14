@@ -1,0 +1,263 @@
+id: linear-optimization-deep-mastery
+name: Linear Optimization Deep Mastery
+version: 1
+protocol: ydmp/protocol/lecture-book-mastery.md
+response_language: ru
+assistant_orchestrated: true
+spoiler_boundary: ask-before-crossing
+canonical_notes_format: typst
+
+mission:
+  gate: linear-optimization
+  downstream:
+    - milp-and-polyhedra
+    - dantzig-wolfe-and-column-generation
+    - vrp-and-resource-constrained-shortest-path
+    - branch-and-price-and-cut
+    - stochastic-and-online-optimization
+    - canonical-moving-target-routing-problem
+
+focal_sources:
+  lecture_course:
+    id: csspace-linear-optimization-2025-fall
+    title: "Линейная оптимизация"
+    provider: CS Space
+    term: "Fall 2025"
+    role: primary-lecture-spine
+  textbook:
+    id: vanderbei-linear-programming-5e
+    title: "Linear Programming: Foundations and Extensions"
+    author: Robert J. Vanderbei
+    edition: 5
+    year: 2020
+    role: primary-textbook-spine
+    local_source: /mnt/data/vanderbei2020.pdf
+
+external_exercise_sources:
+  - id: mit-15-053-spring-2013
+    title: Optimization Methods in Management Science
+    provider: MIT OpenCourseWare
+    level: undergraduate
+    use_for:
+      - lp-formulation
+      - simplex-intuition
+      - duality
+      - introductory-network-and-integer-models
+    materials:
+      - lecture-notes
+      - recitation-problems
+      - problem-sets
+      - problem-set-solutions
+  - id: mit-15-082j-fall-2010
+    title: Network Optimization
+    provider: MIT OpenCourseWare
+    level: graduate
+    use_for:
+      - shortest-path
+      - network-flow
+      - min-cost-flow
+      - max-flow
+      - assignment-and-transportation
+    materials:
+      - lecture-notes
+      - problem-sets
+      - projects
+
+source_priority:
+  - focal-lecture-and-inspected-textbook
+  - focal-course-problem-materials
+  - official-university-problem-sets-and-solutions
+  - authoritative-textbooks
+  - generated-and-independently-verified
+
+lecture_map:
+  - lecture: 1
+    topics:
+      - lp-formulation
+      - feasibility
+      - boundedness
+      - first-duality-motivation
+    vanderbei:
+      required:
+        - "Chapter 1"
+      supporting:
+        - "Chapter 5, Sections 1-2"
+
+  - lecture: 2
+    topics:
+      - primal-and-dual-problems
+      - weak-duality
+      - dual-of-general-form
+    vanderbei:
+      required:
+        - "Chapter 5, Sections 2-3"
+      supporting:
+        - "Chapter 5, Section 8"
+
+  - lecture: 3
+    topics:
+      - primal-simplex
+      - dictionaries
+      - basic-feasible-solutions
+      - pivot
+      - phase-i-and-phase-ii
+      - unboundedness
+    vanderbei:
+      required:
+        - "Chapter 2, Sections 1-4"
+      deferred:
+        - "Chapter 2, Section 5 -> revisit with Lecture 5"
+    essential_exercises:
+      - "Vanderbei 2.1"
+      - "Vanderbei 2.3"
+      - "Vanderbei 2.14"
+    diagnostic_exercises:
+      - "Vanderbei 2.5"
+      - "Vanderbei 2.6"
+      - "Vanderbei 2.7"
+    conceptual_exercises:
+      - "Vanderbei 2.18"
+
+  - lecture: 4
+    topics:
+      - degeneracy
+      - cycling
+      - anti-cycling-rules
+      - simplex-worst-case
+    vanderbei:
+      required:
+        - "Chapter 3, Sections 1-4"
+        - "Chapter 4, Sections 1-4"
+      supporting:
+        - "Chapter 3, Sections 5-6"
+
+  - lecture: 5
+    topics:
+      - polyhedral-geometry
+      - vertices-and-bases
+      - fundamental-theorem-of-linear-programming
+    vanderbei:
+      required:
+        - "Chapter 2, Section 5"
+        - "Chapter 3, Sections 5-6"
+      supporting:
+        - "Chapter 10, Section 1"
+
+  - lecture: 6
+    topics:
+      - duality-via-kkt
+      - complementary-slackness
+      - lagrangian-view
+    vanderbei:
+      required:
+        - "Chapter 5, Sections 3-5"
+      supporting:
+        - "Chapter 5, Section 10"
+
+  - lecture: 7
+    topics:
+      - strong-duality
+      - optimality-certificates
+    vanderbei:
+      required:
+        - "Chapter 5, Section 4"
+      supporting:
+        - "Chapter 5, Sections 3 and 5"
+
+  - lecture: 8
+    topics:
+      - dual-simplex
+    vanderbei:
+      required:
+        - "Chapter 5, Section 6"
+        - "Chapter 6, Section 4"
+
+  - lecture: 9
+    topics:
+      - dual-simplex-continuation
+      - dual-based-phase-i
+    vanderbei:
+      required:
+        - "Chapter 5, Section 7"
+        - "Chapter 6, Section 5"
+
+  - lecture: 10
+    topics:
+      - barrier-problem
+      - central-path
+      - perturbed-complementarity
+    vanderbei:
+      required:
+        - "Chapter 17"
+
+  - lecture: 11
+    topics:
+      - path-following
+      - newton-step
+      - barrier-parameter
+      - step-length
+    vanderbei:
+      required:
+        - "Chapter 18, Sections 1-4"
+
+  - lecture: 12
+    topics:
+      - interior-point-convergence
+    vanderbei:
+      required:
+        - "Chapter 18, Section 5"
+
+  - lecture: 13
+    topics:
+      - kkt-linear-system
+      - reduced-kkt-system
+      - normal-equations
+      - numerical-linear-algebra
+    vanderbei:
+      required:
+        - "Chapter 19"
+      supporting:
+        - "Chapter 20, Sections 1-2"
+
+post_course_priority:
+  - order: 1
+    source: "Vanderbei Chapter 14"
+    purpose: network-flow-theory-and-integrality
+  - order: 2
+    source: "Vanderbei Chapter 15"
+    purpose: transportation-assignment-shortest-path-and-max-flow
+  - order: 3
+    source: "Vanderbei Chapter 7"
+    purpose: sensitivity-parametric-analysis-and-warm-starts
+  - order: 4
+    source: "Vanderbei Chapter 8"
+    purpose: revised-simplex-and-implementation
+
+unit_states:
+  - not-started
+  - lecture-in-progress
+  - lecture-watched
+  - diagnostic-recall-in-progress
+  - diagnostic-recall-captured
+  - textbook-reading
+  - local-probe
+  - exercises
+  - verification
+  - corrected-recall-in-progress
+  - canonical-model
+  - transfer
+  - implementation
+  - spaced-recall
+  - complete-for-now
+
+completion_gate:
+  - lecture-coverage-recorded
+  - diagnostic-recall-captured-verbatim
+  - focal-textbook-frontier-completed
+  - essential-definitions-and-derivations-reconstructed
+  - selected-exercises-solved
+  - independent-verification-completed
+  - corrected-recall-passed
+  - canonical-typst-model-audited
+  - transfer-or-implementation-completed
+  - spaced-recall-cards-created
