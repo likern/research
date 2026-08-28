@@ -1,0 +1,123 @@
+version: 1
+paper_id: vanderbei-linear-programming-5e
+source_type: textbook
+unit_id: chapter-01-introduction
+curriculum: linear-optimization-deep-mastery
+updated_at: '2026-08-28'
+current_stage: capture-complete
+unit_state: diagnostic-recall-captured
+
+source:
+  title: Linear Programming - Foundations and Extensions
+  author: Robert J. Vanderbei
+  edition: 5
+  year: 2020
+  doi: 10.1007/978-3-030-39415-8
+  reading_source: uploaded vanderbei2020.pdf
+
+reading_frontier:
+  completed:
+    - Chapter 1 - Introduction
+    - Chapter 1, Section 1 - Managing a Production Facility
+    - Chapter 1, Section 2 - The Linear Programming Problem
+  not_read:
+    - Chapter 2 - The Simplex Method
+  spoiler_boundary: ask-before-crossing
+
+lifecycle:
+  prepare:
+    status: completed
+    evidence:
+      - The focal textbook identity and DOI are registered in the linear-optimization curriculum.
+      - The supplied fifth-edition PDF was inspected for this capture.
+  read_1:
+    status: completed
+    learner_report: Chapter 1 was read before the recall pass.
+  closed_book_recall:
+    status: completed
+    session_id: chapter-01-closed-book-recall-001
+    session_type: source-recall-after-first-reading
+    date_range:
+      from: '2026-08-23'
+      to: '2026-08-28'
+    core_rounds: 8
+    repair_rounds: 5
+    note: >-
+      This bounded pass tested source-level recall after the first reading. It is
+      not R1: the chapter exercises and independent verification have not yet
+      been completed.
+  capture:
+    status: completed
+    artifacts:
+      - sessions/chapter-01-closed-book-recall-001.md
+      - model.md
+      - verification.md
+      - gaps.yaml
+      - recall-cards.yaml
+      - exercise-ledger.yaml
+  model:
+    status: partial
+    completed_topics:
+      - production-manager resource-allocation model
+      - opportunity-cost interpretation of raw-material market values
+      - comptroller valuation model and no-arbitrage constraints
+      - change of variables from w to y
+      - standard form and basic LP terminology
+      - infeasible and unbounded problems
+    unresolved_topics:
+      - independent reconstruction of the complete indexed standard form
+      - learner reconstruction of the slack-variable equivalence proof
+      - application of Chapter 1 models in Exercises 1.1-1.3
+  verify:
+    status: partial
+    verified_scopes:
+      - source fidelity against Chapter 1 of the supplied fifth-edition PDF
+      - algebra of the w-to-y substitution
+      - algebra of the opportunity-cost constant
+    unresolved_scopes:
+      - learner solutions to Exercises 1.1-1.3
+      - independent numerical or solver verification of a Chapter 1 model
+      - delayed re-test of corrected recall gaps
+  problem_map:
+    status: not_started
+  transfer:
+    status: not_started
+  implement:
+    status: not_started
+    note: Chapter 1 has no solution algorithm; implementation will encode and check a model with an LP solver.
+  spaced_recall:
+    status: ready
+    card_file: recall-cards.yaml
+
+session_policy:
+  learner_answers_verbatim: true
+  handwritten_answers_transcribed: true
+  assistant_explanations_normalized: true
+  historical_session_append_only: true
+  canonical_model_separate: true
+  maximum_core_questions_respected: true
+
+mastery_snapshot:
+  understood:
+    - meanings and formulation of the production-manager model
+    - derivation of net revenue from the value of products and raw materials
+    - price-taker assumption
+    - comptroller constraints and their no-arbitrage direction
+    - algebraic w-to-y transformation
+    - verbal distinction between infeasible and unbounded after repair
+    - decision variables, objective function, and the shape of Vanderbei standard form
+  partial:
+    - complete indexed specification of A, b, c, and x with domains
+    - solution versus feasible solution in exceptional cases
+    - exact effect of objective transformations on argmin or argmax and optimal value
+    - economic wording of y_i as a raw-material markup
+  deferred:
+    - strict learner proof of slack-variable equivalence
+    - fresh examples and counterexamples beyond the source-recall level
+
+next_action:
+  id: vanderbei-exercise-1-1
+  action: >-
+    Solve Vanderbei Exercise 1.1 independently: define variables, formulate the
+    LP with units and bounds, and solve it by inspection before checking the answer.
+
