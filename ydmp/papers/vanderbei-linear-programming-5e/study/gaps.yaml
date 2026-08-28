@@ -1,0 +1,83 @@
+version: 1
+paper_id: vanderbei-linear-programming-5e
+unit_id: chapter-01-introduction
+updated_at: '2026-08-28'
+
+status_values:
+  - understood
+  - partial
+  - not_recalled
+  - misconception
+  - misconception_corrected
+  - deferred
+
+gaps:
+  - id: standard-form-indexing-and-domains
+    topic: Complete indexed standard form and domains
+    status: partial
+    scope: CONFIRMED
+    evidence:
+      - The first answer used i both as a summed and a free index in one constraint.
+      - The repair defined I, J, m, and n but omitted c, the domains of A, b, and c, and the constraint block itself.
+      - The later repair correctly identified m as the number of constraints and n as the number of decision variables.
+    next_action: Reconstruct A, b, c, x and the full model with explicit quantifiers during R1.
+
+  - id: solution-versus-feasible
+    topic: Solution, feasible solution, optimal solution, and infeasibility
+    status: partial
+    scope: CONFIRMED
+    evidence:
+      - The first answer correctly distinguished a proposed solution, a feasible solution, and an optimal solution.
+      - In the first answer to Question 7, infeasible was described as having no solution rather than no feasible solution.
+      - The repair supplied the required phrase no feasible solutions.
+    next_action: Classify several proposed vectors as solution, feasible solution, or optimal solution without notes.
+
+  - id: unboundedness-definition
+    topic: Unbounded LP versus an infinite value at one solution
+    status: misconception_corrected
+    scope: CONFIRMED
+    evidence:
+      - The first answer placed the objective value in an extended-real interval and associated this with unboundedness.
+      - The first answer to Question 7 used the wrong quantifier pattern and did not require feasible solutions.
+      - The repair recalled that an unbounded problem has arbitrarily large objective values.
+    next_action: State the verbal definition and then add the feasible-solution quantifiers during delayed recall.
+
+  - id: objective-transformations
+    topic: Constants, sign changes, optimizers, and optimal values
+    status: misconception_corrected
+    scope: CONFIRMED_AND_INFERRED
+    evidence:
+      - Question 6 proposed min f = max(1/f), which is not an equivalent transformation.
+      - Question 8 repaired the transformation to maximizing -zeta and correctly stated that the optimizers agree while optimal values differ by sign.
+      - The w-to-y derivation correctly exposed a constant, but the distinction between the optimizer and the numerical optimum required refinement.
+    next_action: Re-derive both argmin f = argmax(-f) and argmin(f+K) = argmin f, including the corresponding optimal values.
+
+  - id: yi-economic-meaning
+    topic: Economic meaning of y_i
+    status: misconception_corrected
+    scope: CONFIRMED
+    evidence:
+      - The algebra y_i = w_i - rho_i and y_i >= 0 was correct.
+      - The answer called y_i an added value of product i; it is the markup of the assigned unit value of raw material i over its market value.
+    next_action: Recall the meaning of w_i, rho_i, and y_i together with their units.
+
+  - id: slack-equivalence-proof
+    topic: Strict equivalence of a less-than constraint and a slack-variable equality
+    status: deferred
+    scope: INFERRED_DERIVATION
+    evidence:
+      - The learner recalled the correct equality L(x) + s = b with s >= 0.
+      - The learner explicitly reported not knowing how to prove equivalence rigorously.
+      - An H4 derivation established L(x) <= b iff there exists a unique s >= 0 with L(x) + s = b.
+    next_action: Reconstruct both implications, uniqueness of s, and the induced bijection without looking at the saved proof.
+
+  - id: source-level-question-scope
+    topic: Keep first-pass source recall distinct from derivation and transfer
+    status: misconception_corrected
+    scope: PROCESS
+    evidence:
+      - A proposed formal question requiring quantifiers and new counterexamples was judged above the source-recall level and withdrawn.
+      - The corrected Questions 7 and 8 stayed within the content explicitly present in Chapter 1.
+      - The pass ended after eight core questions as required by the bounded-recall policy.
+    next_action: Move formal proofs, fresh counterexamples, and transfer tasks to the exercise, MODEL, VERIFY, and R1 stages.
+

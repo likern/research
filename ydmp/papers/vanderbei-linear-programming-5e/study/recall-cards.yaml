@@ -1,0 +1,80 @@
+version: 1
+paper_id: vanderbei-linear-programming-5e
+unit_id: chapter-01-introduction
+updated_at: '2026-08-28'
+
+card_policy:
+  core_cards_only: true
+  full_dialogue_replay: false
+  expected_elements_not_essay: true
+
+cards:
+  - id: standard-form-objects
+    prompt: State Vanderbei's standard form through I and J, including m, n, A, b, c, x, and all domains.
+    expected_elements:
+      - m is the number of constraints and n is the number of decision variables
+      - A is real m by n, b is real m, and c is real n
+      - maximize the sum over j of c_j x_j
+      - for every i, the sum over j of a_ij x_j is at most b_i
+      - every x_j is nonnegative
+    source_scope: focal-textbook-chapter-1-section-2
+    difficulty: hard
+
+  - id: solution-feasible-optimal
+    prompt: Distinguish solution, feasible solution, and optimal solution in Vanderbei's terminology.
+    expected_elements:
+      - a solution is a proposal of specific values for the decision variables
+      - feasible means satisfying every constraint
+      - optimal means feasible and attaining the desired maximum
+    source_scope: focal-textbook-chapter-1-section-2
+    difficulty: easy
+
+  - id: infeasible-versus-unbounded
+    prompt: Why does neither an infeasible nor an unbounded maximization problem have an optimal solution, and why are the reasons different?
+    expected_elements:
+      - infeasible means there is no feasible solution
+      - unbounded means feasible solutions attain arbitrarily large objective values
+      - the first lacks candidates and the second lacks a greatest attainable value
+    source_scope: focal-textbook-chapter-1-section-2
+    difficulty: medium
+
+  - id: comptroller-no-arbitrage
+    prompt: State the comptroller model in w_i and explain the direction of both constraint families.
+    expected_elements:
+      - minimize total lost opportunity cost sum_i b_i w_i
+      - w_i is at least rho_i so raw material is not sold below its market value
+      - sum_i w_i a_ij is at least sigma_j to exclude buy-inputs-produce-resell arbitrage
+    source_scope: focal-textbook-chapter-1-section-1-2
+    difficulty: medium
+
+  - id: y-substitution
+    prompt: What does y_i = w_i - rho_i mean, and what happens to the objective and constraints?
+    expected_elements:
+      - y_i is the raw-material unit-value markup over market value
+      - y_i is nonnegative
+      - the objective gains the constant sum_i b_i rho_i, which does not change the minimizing y
+      - the product constraints become sum_i y_i a_ij at least c_j
+    source_scope: focal-textbook-chapter-1-section-1-2
+    difficulty: medium
+
+  - id: minimization-to-maximization
+    prompt: Convert min zeta(x) to an equivalent maximization and distinguish optimizers from optimal values.
+    expected_elements:
+      - solve max of negative zeta over the same feasible set
+      - argmin zeta equals argmax of negative zeta
+      - finite optimal values differ by sign
+      - reciprocal transformation is not valid in general
+    source_scope: focal-textbook-chapter-1-section-2
+    difficulty: medium
+
+deferred_cards:
+  - id: slack-equivalence-proof
+    prompt: Prove L(x) <= b iff there exists a unique s >= 0 such that L(x) + s = b.
+    expected_elements:
+      - choose s = b - L(x) in the forward direction
+      - infer L(x) = b - s <= b in the reverse direction
+      - equality determines s uniquely
+      - feasible x correspond bijectively to feasible pairs (x, s)
+    source_scope: inferred-derivation-from-chapter-1-section-2
+    difficulty: hard
+    reason: The learner asked to retain this proof obligation for a later derivation-level pass.
