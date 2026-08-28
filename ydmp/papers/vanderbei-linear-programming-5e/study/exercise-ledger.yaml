@@ -1,0 +1,53 @@
+version: 1
+paper_id: vanderbei-linear-programming-5e
+unit_id: chapter-01-introduction
+updated_at: '2026-08-28'
+
+source:
+  title: Linear Programming - Foundations and Extensions
+  edition: 5
+  chapter: 1
+  printed_pages: 8-10
+  pdf_pages: 30-32
+
+exercises:
+  - id: vanderbei-1-1
+    title: Steel rolling mill allocation
+    type:
+      - reconstruction
+      - formulation
+      - inspection
+    status: not_started
+    next: true
+    verification_plan:
+      - check units in every term
+      - inspect all corner candidates or give an equivalent geometric argument
+      - compare the chosen production plan and profit with an independent LP solver
+
+  - id: vanderbei-1-2
+    title: Ivy Air seat-allocation model
+    type:
+      - formulation
+      - transfer
+    status: not_started
+    prerequisites:
+      - vanderbei-1-1
+    verification_plan:
+      - check all nine decision variables and demand bounds
+      - check both flight-leg capacity constraints
+      - compare with an independent LP solver after the learner attempt
+
+  - id: vanderbei-1-3
+    title: Statistical decision rule as an LP
+    type:
+      - formulation
+      - transfer
+    status: not_started
+    prerequisites:
+      - vanderbei-1-1
+    verification_plan:
+      - derive the type-I-error constraint from q
+      - derive the objective from p
+      - check probability bounds on every x_j
+      - compare with an independent LP solver on a small instance
+
